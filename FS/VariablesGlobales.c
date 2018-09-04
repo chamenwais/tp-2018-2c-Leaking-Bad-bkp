@@ -1,0 +1,12 @@
+/*
+ * VariablesGlobales.c
+ *
+ *  Created on: 2 sep. 2018
+ *      Author: utnso
+ */
+
+#include "VariablesGlobales.h"
+
+t_configuracionDelFS configuracionDelFS;
+t_configuracionMetadata configuracionDeMetadata;
+pthread_t threadConsola;
