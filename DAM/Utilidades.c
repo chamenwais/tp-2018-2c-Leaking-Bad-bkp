@@ -24,3 +24,9 @@ void terminar_controladamente(int return_nr){
 	log_destroy(logger);
 	exit(return_nr);
 }
+
+void enlazar_hilos(pthread_t hilo1, pthread_t hilo2){
+	pthread_join(hilo1, NULL);
+	pthread_join(hilo2, NULL);
+	return;
+}

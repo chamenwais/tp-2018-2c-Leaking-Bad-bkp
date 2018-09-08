@@ -5,9 +5,10 @@
  *      Author: faromero
  */
 
-#ifndef CONEXIONESSALIENTES_C_
-#define CONEXIONESSALIENTES_C_
+#include "ConexionesSalientes.h"
 
-
-
-#endif /* CONEXIONESSALIENTES_C_ */
+pthread_t *crear_hilo_conexiones_salientes(){
+	pthread_t conexiones_salientes;
+	//pthread_create(&conexiones_salientes, NULL, printDataAndWait, NULL);
+	return conexiones_salientes;
+}
