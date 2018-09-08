@@ -74,3 +74,13 @@ int inicializarVariablesSAFA(){
 
 	return EXIT_SUCCESS;
 }
+
+int finalizarTodo(){
+	log_info(LOG_SAFA, "Finalizando SAFA");
+	log_info(LOG_SAFA, "Liberando estructuras");
+	log_info(LOG_SAFA, "Chau Log");
+	log_destroy(LOG_SAFA);
+
+	exit(1);
+	return EXIT_SUCCESS;
+}
