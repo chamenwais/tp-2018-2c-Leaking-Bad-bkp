@@ -11,7 +11,7 @@
  */
 char * path_archivo_log="/home/utnso/DAM.log";
 char * path_archivo_configuracion="configDAM.properties";
-char * clave_puerto_de_escucha="puerto.de.escucha";
+char * clave_puerto_de_escucha="PUERTO_DE_ESCUCHA";
 
 t_log * logger;
 t_config * configuracion;
