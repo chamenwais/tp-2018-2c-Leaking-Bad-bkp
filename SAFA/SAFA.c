@@ -21,7 +21,7 @@ int main(int argc, char** argv){
 		else{
 			ubicacionDelArchivoDeConfiguracion = "configuracionSAFA.cfg";
 			}
-			if(levantarConfiguracionDelCoordinador(ubicacionDelArchivoDeConfiguracion)==EXIT_SUCCESS){
+			if(levantarConfiguracionSAFA(ubicacionDelArchivoDeConfiguracion)==EXIT_SUCCESS){
 				log_info(LOG_SAFA,"Configuracion de SAFA recuperada exitosamente");
 			}
 			else{

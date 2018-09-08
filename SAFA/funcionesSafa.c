@@ -13,7 +13,7 @@ int inicializarLog(){
 	return EXIT_SUCCESS;
 }
 
-int levantarConfiguracionDelCoordinador(char* ubicacionDelArchivoConfiguracion) {
+int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 
 	t_configuracionSAFA* configuracion = config_create(ubicacionDelArchivoConfiguracion);
 

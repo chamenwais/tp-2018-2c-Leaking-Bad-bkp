@@ -12,6 +12,6 @@
 #include <readline/readline.h>
 
 int inicializarLog();
-int levantarConfiguracionDelCoordinador(char* ubicacionDelArchivoConfiguracion);
+int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion);
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */
