@@ -14,9 +14,12 @@ int main(int argc,char** argv) {
 
 	inicializarLog();
 	inicializarVariables();
-	if(levantarArchivoDeConfiguracion(argc,argv)==EXIT_FAILURE) finalizarTodo();
-	if(iniciarConsola()==EXIT_FAILURE) finalizarTodo();
-	levantarMetadataBin();
+	if(levantarArchivoDeConfiguracion(argc,argv)==EXIT_FAILURE) finalizarTodoPorError();
+	if(iniciarConsola()==EXIT_FAILURE) finalizarTodoPorError();
+	if(levantarMetadataBin()==EXIT_FAILURE) finalizarTodoPorError();
+	if(levantarBitMap()==EXIT_FAILURE) finalizarTodoPorError();
 	esperarAQueTermineLaConsola();
+
+	liberarRecursos();
 	return EXIT_SUCCESS;
 }

@@ -25,5 +25,6 @@ typedef struct defConfiguracionMetadata {
 extern t_configuracionDelFS configuracionDelFS;
 extern t_configuracionMetadata configuracionDeMetadata;
 extern pthread_t threadConsola;
+extern t_bitarray *bitmap;
 
 #endif /* VARIABLESGLOBALES_H_ */

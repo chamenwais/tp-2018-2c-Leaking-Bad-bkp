@@ -10,3 +10,4 @@
 t_configuracionDelFS configuracionDelFS;
 t_configuracionMetadata configuracionDeMetadata;
 pthread_t threadConsola;
+t_bitarray *bitmap;

@@ -24,7 +24,7 @@ int levantarLineasDelArchivoDeConfiguracion(char* ubicacionDelArchivoConfiguraci
 	if(configuracion!=NULL){
 		log_info(LOGGER,"El archivo de configuracion existe");
 	}else{
-		log_error(LOGGER,"No existe el archivo de configuracion");
+		log_error(LOGGER,"No existe el archivo de configuracion en: %s",ubicacionDelArchivoConfiguracion);
 		return EXIT_FAILURE;
 		}
 	log_info(LOGGER,"Abriendo el archivo de configuracion del FS, su ubicacion es: %s",ubicacionDelArchivoConfiguracion);
@@ -60,7 +60,7 @@ int levantarLineasDelArchivoDeConfiguracion(char* ubicacionDelArchivoConfiguraci
 	configuracionDelFS.retardo = config_get_int_value(configuracion,"RETARDO");
 	log_info(LOGGER,"Retardo del archivo de configuracion del FS recuperado: %d",
 			configuracionDelFS.retardo);
-
+	config_destroy(configuracion);
 	return EXIT_SUCCESS;
 }
 
@@ -170,8 +170,20 @@ int esperarAQueTermineLaConsola(){
 	return EXIT_SUCCESS;
 }
 
-void finalizarTodo(){
+int finalizarTodoPorError(){
+	log_info(LOGGER,"Hubo un error insalvable, finalizando el programa");
+	log_info(LOGGER,"Cerrando esctructuras");
+	log_info(LOGGER,"Cerrando log");
+
+	log_destroy(LOGGER);
 	exit(1);
+	return EXIT_FAILURE;
+}
+
+void liberarRecursos(){
+	log_info(LOGGER,"Cerrando esctructuras");
+	log_info(LOGGER,"Cerrando log");
+	log_destroy(LOGGER);
 }
 
 int listarDirectorioActual(){
@@ -233,5 +245,64 @@ int levantarMetadataBin(){
 		log_error(LOGGER,"No existe el archivo \"Metadata.bin\"");
 		return EXIT_FAILURE;
 		}
+	log_info(LOGGER,"Cerrando \"Metadata.bin\", info recuperada");
+	config_destroy(configuracion);
 	return EXIT_SUCCESS;
 }
+
+bool existeElArchivo(char *directorioDelArchivo){
+  int fd=fopen(directorioDelArchivo, "r");
+  if(fd<0){
+	  log_info(LOGGER,"No existe el archivo %s",directorioDelArchivo);
+	  return false;
+  	  }
+  log_info(LOGGER,"Si existe el archivo %s",directorioDelArchivo);
+  close(fd);
+  return true;
+}
+
+int levantarBitMap(){
+	FILE *archivoBitmap;
+	char* ubicacionDelArchivo;
+	ubicacionDelArchivo=string_new();
+	string_append(&ubicacionDelArchivo,configuracionDelFS.punto_montaje);
+	string_append(&ubicacionDelArchivo, "/Metadata/Bitmap.bin");
+	log_info(LOGGER,"Buscando el archivo \"Bitmap.bin\" en el directorio: %s",ubicacionDelArchivo);
+	if(existeElArchivo(ubicacionDelArchivo)){
+		log_info(LOGGER,"Levantando el BITMAP de disco");
+		archivoBitmap=fopen(ubicacionDelArchivo, "wb");
+		fread(bitmap,configuracionDeMetadata.cantidadBloques,1,archivoBitmap);
+		fclose(archivoBitmap);
+	}else{
+		log_info(LOGGER,"Generando el BITMAP con los datos de \"Bitmap.bin\"");
+		bitmap=bitarray_create(ubicacionDelArchivo,configuracionDeMetadata.cantidadBloques);
+		for(int i=0;i<configuracionDeMetadata.cantidadBloques<i;i++){
+			bitarray_clean_bit(bitmap,i);
+			}
+		bajarADiscoBitmap();
+	}
+	return EXIT_SUCCESS;
+
+}
+
+int bajarADiscoBitmap(){
+	FILE *archivoBitMap;
+	char *ubicacionDelArchivo;
+	ubicacionDelArchivo=string_new();
+	string_append(&ubicacionDelArchivo,configuracionDelFS.punto_montaje);
+	string_append(&ubicacionDelArchivo, "/Metadata/Bitmap.bin");
+	archivoBitMap = fopen(ubicacionDelArchivo, "wb");
+
+	if(ubicacionDelArchivo==-1){
+		log_error(LOGGER,"No se pudo abrir el archivo de bitmap en %s para bajar a disco",ubicacionDelArchivo);
+		return EXIT_FAILURE;
+	}else{
+		log_info(LOGGER,"Se pudo abrir el archivo de bitmap en %s para bajar a disco",ubicacionDelArchivo);
+		fwrite(bitmap,1,bitarray_get_max_bit(bitmap),ubicacionDelArchivo);
+		fclose(archivoBitMap);
+		log_info(LOGGER,"Bitmap bajado a disco");
+		return EXIT_SUCCESS;
+		}
+	return EXIT_SUCCESS;
+}
+
