@@ -9,6 +9,8 @@
 #define FUNCIONESDELFILESYSTEM_H_
 
 #include "FileSystem.h"
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <readline/readline.h>
 
 int inicializarLog();
@@ -19,9 +21,14 @@ int iniciarConsola();
 char** parser_instruccion(char* linea);
 void *funcionHiloConsola(void *arg);
 int esperarAQueTermineLaConsola();
-void finalizarTodo();
+int finalizarTodoPorError();
+void liberarRecursos();
 int listarDirectorioActual();
 int listarDirectorio(char* directorio);
 int levantarMetadataBin();
+bool existeElArchivo(char *directorioDelArchivo);
+int levantarBitMap();
+int bajarADiscoBitmap();
+
 
 #endif /* FUNCIONESDELFILESYSTEM_H_ */
