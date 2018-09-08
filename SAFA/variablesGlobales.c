@@ -8,3 +8,4 @@
 #include "variablesGlobales.h"
 
 t_configuracionSAFA configSAFA;
+char estadoSAFA;

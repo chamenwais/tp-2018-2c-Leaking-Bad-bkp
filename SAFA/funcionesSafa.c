@@ -68,3 +68,9 @@ int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 
 	return EXIT_SUCCESS;
 }
+
+int inicializarVariablesSAFA(){
+	estadoSAFA = 'C'; //Se inicializa en estado CORRUPTO
+
+	return EXIT_SUCCESS;
+}

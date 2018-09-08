@@ -13,5 +13,6 @@
 
 int inicializarLog();
 int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion);
+int inicializarVariablesSAFA();
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */

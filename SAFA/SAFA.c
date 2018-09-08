@@ -11,8 +11,9 @@ t_log* LOG_SAFA;
 
 int main(int argc, char** argv){
 
-	//Inicio el Log//
+	//Inicio el Log y variables//
 	inicializarLog();
+	inicializarVariablesSAFA(); // estado = CORRUPTO
 	/*Levanto archivo de configuracion*/
 	char* ubicacionDelArchivoDeConfiguracion;
 		if(argc > 1){
@@ -28,5 +29,10 @@ int main(int argc, char** argv){
 				log_error(LOG_SAFA,"No se pudo levantar la configuracion de SAFA, abortando");
 				return EXIT_FAILURE;
 			}
+	/*Iniciar Consola
+	 * iniciarConsola();
+	 */
+
+
 
 }

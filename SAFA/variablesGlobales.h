@@ -19,6 +19,7 @@ typedef struct defConfiguracionSAFA {
 } t_configuracionSAFA;
 
 extern t_configuracionSAFA configSAFA;
+extern char estadoSAFA;
 
 
 #endif /* SAFA_VARIABLESGLOBALES_H_ */
