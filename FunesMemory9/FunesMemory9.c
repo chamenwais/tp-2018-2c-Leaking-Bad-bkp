@@ -7,6 +7,61 @@
 
 #include "FunesMemory9.h"
 
+void cargar_archivo_de_configuracion(char * path){
+
+	logger_funesMemory9(escribir_loguear, l_info, "Cargando archivo de configuración...\n");
+
+	t_config * config_file = config_create(path);
+	char * modo;
+
+	if(config_file==NULL){
+		logger_funesMemory9(escribir_loguear, l_error, "No se pudo cargar el archivo de configuracion.\n");
+		finalizar_funesMemory9();
+		exit(EXIT_FAILURE);
+	}
+
+	if (config_has_property(config_file,ARCH_CONFIG_MODO_EJECUCION)){
+		modo = strdup(config_get_string_value(config_file, ARCH_CONFIG_MODO_EJECUCION));
+		if (string_equals_ignore_case(modo, "SEG")){
+			//Segmentacion pura
+			MODO_EJECUCION = SEGMENTACION_PURA;
+			logger_funesMemory9(escribir_loguear, l_info, "Se obtuvo configuración 'Modo de ejecucion': %s - %d\n", modo, MODO_EJECUCION);
+		}
+		else if (string_equals_ignore_case(modo, "TPI")){
+			//Tabla de paginas invertida
+			MODO_EJECUCION = TABLA_PAGINAS_INVERTIDA;
+			logger_funesMemory9(escribir_loguear, l_info, "Se obtuvo configuración 'Modo de ejecucion': %s - %d\n", modo, MODO_EJECUCION);
+		}
+		else if (string_equals_ignore_case(modo, "SPA")){
+			//Segmentacion paginada
+			MODO_EJECUCION = SEGMENTACION_PAGINADA;
+			logger_funesMemory9(escribir_loguear, l_info, "Se obtuvo configuración 'Modo de ejecucion': %s - %d\n", modo, MODO_EJECUCION);
+		}
+	}
+
+	if (config_has_property(config_file,ARCH_CONFIG_TAMANIO_MEMORIA)){
+		TAMANIO_MEMORIA = config_get_int_value(config_file, ARCH_CONFIG_TAMANIO_MEMORIA);
+		logger_funesMemory9(escribir_loguear, l_info, "Se obtuvo configuración 'Tamanio de la memoria': %d \n", TAMANIO_MEMORIA);
+	}
+
+	if (config_has_property(config_file,ARCH_CONFIG_PUERTO_ESCUCHA)){
+		PUERTO_ESCUCHA = strdup(config_get_string_value(config_file, ARCH_CONFIG_PUERTO_ESCUCHA));
+		logger_funesMemory9(escribir_loguear, l_info, "Se obtuvo configuración 'Puerto de escucha': %s\n",PUERTO_ESCUCHA);
+	}
+
+	if (config_has_property(config_file,ARCH_CONFIG_TAMANIO_MAX_LINEA)){
+		TAMANIO_MAX_LINEA = config_get_int_value(config_file, ARCH_CONFIG_TAMANIO_MAX_LINEA);
+		logger_funesMemory9(escribir_loguear, l_info, "Se obtuvo configuración 'Tamaño maximo de linea': %d\n",TAMANIO_MAX_LINEA);
+	}
+
+	if (config_has_property(config_file,ARCH_CONFIG_TAMANIO_PAGINA)){
+		TAMANIO_PAGINA = config_get_int_value(config_file, ARCH_CONFIG_TAMANIO_PAGINA);
+		logger_funesMemory9(escribir_loguear, l_info, "Se obtuvo configuración 'Tamanio de pagina': %d\n",TAMANIO_PAGINA);
+	}
+
+	free(modo);
+	config_destroy(config_file);
+}
 
 int iniciar_servidor(char * port){
 	int server_socket = crear_listen_socket(port,MAX_CLIENTES_CPU);
@@ -208,19 +263,19 @@ void inicializar_logger(){
 	logger = log_create("Log_FunesMemory9.txt", "FunesMemory9", false, LOG_LEVEL_TRACE);
 }
 
-void iniciar_funes_memory_9(){
+void iniciar_funes_memory_9(char * path){
 	inicializar_logger();
 
 	logger_funesMemory9(escribir_loguear, l_warning,"\nHola! Soy Funes Memory 9, a sus ordenes... :) \n");
 
-	//cargar_archivo_de_configuracion();
+	cargar_archivo_de_configuracion(path);
 
 	configurar_signals();
 }
 
-int main(){
+int main(int argc, char **argv){
 
-	iniciar_funes_memory_9();
+	iniciar_funes_memory_9(argv[1]);
 
 	int server_FM9 = iniciar_servidor(PUERTO_ESCUCHA);
 
@@ -237,3 +292,4 @@ int main(){
 	finalizar_funesMemory9();
 
 }
+

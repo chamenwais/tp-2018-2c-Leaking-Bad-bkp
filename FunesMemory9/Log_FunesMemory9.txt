@@ -166,3 +166,69 @@ Cerrada la conexión con socket cliente
 [WARNING] 14:14:03:912 FunesMemory9/(7007:7007): 
 Finalizando proceso... Gracias vuelva prontos.
 
+[WARNING] 15:00:21:157 FunesMemory9/(8393:8393): 
+Hola! Soy Funes Memory 9, a sus ordenes... :) 
+
+[INFO] 15:00:21:171 FunesMemory9/(8393:8393): Cargando archivo de configuración...
+
+[ERROR] 15:00:21:174 FunesMemory9/(8393:8393): No se pudo cargar el archivo de configuracion
+
+[WARNING] 15:02:04:174 FunesMemory9/(8423:8423): 
+Hola! Soy Funes Memory 9, a sus ordenes... :) 
+
+[INFO] 15:02:04:188 FunesMemory9/(8423:8423): Cargando archivo de configuración...
+
+[ERROR] 15:02:04:192 FunesMemory9/(8423:8423): No se pudo cargar el archivo de configuracion
+
+[WARNING] 15:05:27:975 FunesMemory9/(8510:8510): 
+Hola! Soy Funes Memory 9, a sus ordenes... :) 
+
+[INFO] 15:05:27:975 FunesMemory9/(8510:8510): Cargando archivo de configuración...
+
+[INFO] 15:05:27:975 FunesMemory9/(8510:8510): Se obtuvo configuración 'Modo de ejecucion': SEG - 0
+
+[INFO] 15:05:27:976 FunesMemory9/(8510:8510): Se obtuvo configuración 'Tamanio de la memoria': 2048 
+
+[INFO] 15:05:27:976 FunesMemory9/(8510:8510): Se obtuvo configuración 'Puerto': 8000
+
+[INFO] 15:05:27:976 FunesMemory9/(8510:8510): Se obtuvo configuración 'Tamaño maximo de linea': 128
+
+[INFO] 15:05:27:976 FunesMemory9/(8510:8510): Se obtuvo configuración 'Tamanio de pagina': 1024
+
+[TRACE] 15:05:27:976 FunesMemory9/(8510:8510): Socket servidor (4) escuchando
+[WARNING] 15:06:02:606 FunesMemory9/(8510:8510): 
+Finalizando proceso... Gracias vuelva prontos.
+
+[WARNING] 15:07:04:790 FunesMemory9/(8549:8549): 
+Hola! Soy Funes Memory 9, a sus ordenes... :) 
+
+[INFO] 15:07:04:791 FunesMemory9/(8549:8549): Cargando archivo de configuración...
+
+[INFO] 15:07:04:791 FunesMemory9/(8549:8549): Se obtuvo configuración 'Modo de ejecucion': SEG - 0
+
+[INFO] 15:07:04:791 FunesMemory9/(8549:8549): Se obtuvo configuración 'Tamanio de la memoria': 2048 
+
+[INFO] 15:07:04:792 FunesMemory9/(8549:8549): Se obtuvo configuración 'Puerto': 8000
+
+[INFO] 15:07:04:792 FunesMemory9/(8549:8549): Se obtuvo configuración 'Tamaño maximo de linea': 128
+
+[INFO] 15:07:04:792 FunesMemory9/(8549:8549): Se obtuvo configuración 'Tamanio de pagina': 1024
+
+[TRACE] 15:07:04:792 FunesMemory9/(8549:8549): Socket servidor (4) escuchando
+[TRACE] 15:07:13:785 FunesMemory9/(8549:8549): 
+Se aceptó un nuevo CPU, conexión (5)
+[INFO] 15:07:13:788 FunesMemory9/(8549:8561): Esperando mensajes... 
+
+[INFO] 15:07:23:790 FunesMemory9/(8549:8561): 
+Cerrada la conexión con socket cliente
+
+[WARNING] 15:07:34:407 FunesMemory9/(8549:8549): 
+Finalizando proceso... Gracias vuelva prontos.
+
+[WARNING] 15:07:41:251 FunesMemory9/(8569:8569): 
+Hola! Soy Funes Memory 9, a sus ordenes... :) 
+
+[INFO] 15:07:41:254 FunesMemory9/(8569:8569): Cargando archivo de configuración...
+
+[ERROR] 15:07:41:254 FunesMemory9/(8569:8569): No se pudo cargar el archivo de configuracion.
+

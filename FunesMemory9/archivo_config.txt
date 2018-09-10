@@ -1,0 +1,5 @@
+puerto_escucha=8000
+modo_ejecucion=SEG
+tamanio_memoria=2048
+tamanio_max_linea=128
+tamanio_pagina=1024

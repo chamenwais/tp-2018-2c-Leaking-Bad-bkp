@@ -56,7 +56,7 @@ int conectar_fm9(char * ip, char * puerto){
 }
 
 int main(){
-	int server = conectar_fm9("0.0.0.0", "8003");
+	int server = conectar_fm9("127.0.0.1", "8000");
 	sleep(6);
 	printf("\nChau, ya viste que me puedo conectar \n");
 	return(0);
