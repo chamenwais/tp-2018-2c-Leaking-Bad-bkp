@@ -85,9 +85,8 @@ int levantarArchivoDeConfiguracion(int argc,char** argv){
 }
 
 int iniciarConsola(){
-	log_info(LOGGER,"Iniciando consola");
+	log_info(LOGGER,"Iniciando hilo de consola");
 	int resultadoDeCrearHilo = pthread_create( &threadConsola, NULL, funcionHiloConsola, "Hilo consola");
-
 		if(resultadoDeCrearHilo){
 			log_error(LOGGER,"Error al crear el hilo, return code: %d",resultadoDeCrearHilo);
 			exit(EXIT_FAILURE);
@@ -306,3 +305,34 @@ int bajarADiscoBitmap(){
 	return EXIT_SUCCESS;
 }
 
+int iniciarEscuchaConDMA(){
+	log_info(LOGGER,"Iniciando hilo para la comunicacion con el DMA");
+	int resultadoDeCrearHilo = pthread_create(
+			&threadComunicacionConElDMA, NULL, funcionHiloComunicacionConElDMA,
+			&configuracionDelFS);
+	if(resultadoDeCrearHilo){
+		log_error(LOGGER,"Error no se pudo crear el hilo para la comunicacion con el DMA: %d",resultadoDeCrearHilo);
+		exit(EXIT_FAILURE);
+		}
+	else{
+		log_info(LOGGER,"Se creo el hilo para la comunicacion con el DMA");
+		return EXIT_SUCCESS;
+		}
+	return EXIT_SUCCESS;
+}
+
+void *funcionHiloComunicacionConElDMA(void *arg){
+	log_info(LOGGER,"Esperando conexion entrante del DMA por el puerto: %d", configuracionDelFS.puerto);
+	int port = configuracionDelFS.puerto;
+	int sockDelServer = escucharEn(port); //crea servidor
+	log_info(LOGGER,"Esperando conexion entrante del DMA por el puerto: %d", configuracionDelFS.puerto);
+	int client_fd = aceptarConexion(sockDelServer);
+	if(recibirHandshake(FS,DMA,client_fd) > 0){
+		//Inicio trabajo con el DMA
+		log_info(LOGGER,"Handshake exitoso con el DMA :)");
+	}else{
+		log_error(LOGGER,"El proceso no es el esperado");
+		return EXIT_FAILURE;
+		}
+	return EXIT_SUCCESS;
+}

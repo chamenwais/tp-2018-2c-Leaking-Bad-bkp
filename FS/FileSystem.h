@@ -19,7 +19,7 @@
 #include <commons/bitarray.h>
 #include "VariablesGlobales.h"
 #include "FuncionesDelFileSystem.h"
-#include "../COM/lqvg/com.h"
+
 
 extern t_log* LOGGER;
 
