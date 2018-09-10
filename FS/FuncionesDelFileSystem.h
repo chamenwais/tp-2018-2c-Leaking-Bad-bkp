@@ -12,6 +12,11 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <readline/readline.h>
+#include <lqvg/com.h>
+//#include <sys/com.h>
+#include "lqvg/com.h"
+//#include "//home/utnso/rep/tp-2018-2c-Leaking-Bad/COM/lqvg/com.h"
+#include "../COM/lqvg/com.h"
 
 int inicializarLog();
 int inicializarVariables();
@@ -29,6 +34,7 @@ int levantarMetadataBin();
 bool existeElArchivo(char *directorioDelArchivo);
 int levantarBitMap();
 int bajarADiscoBitmap();
-
+int iniciarEscuchaConDMA();
+void *funcionHiloComunicacionConElDMA(void *arg);
 
 #endif /* FUNCIONESDELFILESYSTEM_H_ */

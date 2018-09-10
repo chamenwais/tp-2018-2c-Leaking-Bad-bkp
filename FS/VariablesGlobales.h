@@ -26,5 +26,6 @@ extern t_configuracionDelFS configuracionDelFS;
 extern t_configuracionMetadata configuracionDeMetadata;
 extern pthread_t threadConsola;
 extern t_bitarray *bitmap;
+extern pthread_t threadComunicacionConElDMA;
 
 #endif /* VARIABLESGLOBALES_H_ */
