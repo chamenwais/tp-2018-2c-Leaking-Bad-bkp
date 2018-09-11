@@ -30,7 +30,9 @@ enum MENSAJES {
 	ValidarArchivo,
 	CrearArchivo,
 	ObtenerDatos,
-	GuardarDatos
+	GuardarDatos,
+	MemoriaDown,
+	MemoriaUp
 };
 
 typedef struct {

@@ -14,7 +14,8 @@ int inicializarLog(){
 }
 
 int inicializarVariables(){
-
+	FDDMA=0;
+	resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_SUCCESS;
 	return EXIT_SUCCESS;
 }
 
@@ -163,10 +164,21 @@ void *funcionHiloConsola(void *arg){
 	pthread_exit(ret);
 }
 
+int esperarAQueTermineLaEscuchaConElDMA(){
+	int resultado = pthread_join(threadComunicacionConElDMA, NULL);
+	log_info(LOGGER,"Hilo de la comunicacion con el DMA finalizado");
+	if(resultado==EXIT_FAILURE){
+		log_info(LOGGER,"Hilo de la comunicacion con el DMA finalizado exitosamente");
+	}else{
+		log_error(LOGGER,"Hilo de la comunicacion con el DMA finalizado por error");
+	}
+	return resultado;
+}
+
 int esperarAQueTermineLaConsola(){
-	pthread_join( threadConsola, NULL);
+	int resultado = pthread_join( threadConsola, NULL);
 	log_info(LOGGER,"Hilo de consola finalizado");
-	return EXIT_SUCCESS;
+	return resultado;
 }
 
 int finalizarTodoPorError(){
@@ -312,7 +324,7 @@ int iniciarEscuchaConDMA(){
 			&configuracionDelFS);
 	if(resultadoDeCrearHilo){
 		log_error(LOGGER,"Error no se pudo crear el hilo para la comunicacion con el DMA: %d",resultadoDeCrearHilo);
-		exit(EXIT_FAILURE);
+		return EXIT_FAILURE;
 		}
 	else{
 		log_info(LOGGER,"Se creo el hilo para la comunicacion con el DMA");
@@ -326,13 +338,32 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 	int port = configuracionDelFS.puerto;
 	int sockDelServer = escucharEn(port); //crea servidor
 	log_info(LOGGER,"Esperando conexion entrante del DMA por el puerto: %d", configuracionDelFS.puerto);
-	int client_fd = aceptarConexion(sockDelServer);
-	if(recibirHandshake(FS,DMA,client_fd) > 0){
+	FDDMA = aceptarConexion(sockDelServer);
+	if(recibirHandshake(FS,DMA,FDDMA) > 0){
 		//Inicio trabajo con el DMA
 		log_info(LOGGER,"Handshake exitoso con el DMA :)");
+		t_cabecera cabecera = recibirCabecera(FDDMA);
+		if(cabecera.tipoDeMensaje==MemoriaUp){
+			log_info(LOGGER,"El proceso memoria esta levantado, me aviso el DMA");
+			iniciarTrabajoConElDMA();
+		}else{
+			if(cabecera.tipoDeMensaje==MemoriaDown){
+				log_error(LOGGER,"El proceso memoria esta caido, me aviso el DMA");
+				resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
+				return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
+			}else{
+				log_error(LOGGER,"Error en el tipo de mensaje, no se si la memoria esta andando o no");
+				return (void *)EXIT_FAILURE;
+			}
+		}
 	}else{
 		log_error(LOGGER,"El proceso no es el esperado");
-		return EXIT_FAILURE;
+		pthread_exit(EXIT_FAILURE);
 		}
+	pthread_exit(EXIT_SUCCESS);
+}
+
+int iniciarTrabajoConElDMA(){
+
 	return EXIT_SUCCESS;
 }

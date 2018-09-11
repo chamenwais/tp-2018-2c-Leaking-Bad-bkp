@@ -12,3 +12,5 @@ t_configuracionMetadata configuracionDeMetadata;
 pthread_t threadConsola;
 t_bitarray *bitmap;
 pthread_t threadComunicacionConElDMA;
+int resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
+int FDDMA;

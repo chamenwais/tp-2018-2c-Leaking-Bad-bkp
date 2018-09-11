@@ -9,13 +9,11 @@
 int escucharEn(int puerto){
 	int escucha;
 	struct sockaddr_in miDireccion;
-	int yes=1; // para setsockopt() SO_REUSEADDR, más abajo
-
+	int yes=1;
 	if ((escucha = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		perror("socket");
 		exit(1);
 	}
-
 	if (setsockopt(escucha, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
 		perror("setsockopt");
 		exit(1);

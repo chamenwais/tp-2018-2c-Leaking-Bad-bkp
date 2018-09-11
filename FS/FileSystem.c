@@ -18,11 +18,12 @@ int main(int argc,char** argv) {
 
 	if(levantarMetadataBin()==EXIT_FAILURE) finalizarTodoPorError();
 	if(levantarBitMap()==EXIT_FAILURE) finalizarTodoPorError();
-	iniciarEscuchaConDMA();
+	if(iniciarEscuchaConDMA()==EXIT_FAILURE) finalizarTodoPorError();
 
 	if(iniciarConsola()==EXIT_FAILURE) finalizarTodoPorError();
-	esperarAQueTermineLaConsola();
 
+	if(esperarAQueTermineLaEscuchaConElDMA()==EXIT_FAILURE) finalizarTodoPorError();
+	if(esperarAQueTermineLaConsola()==EXIT_FAILURE) finalizarTodoPorError();
 	liberarRecursos();
 	return EXIT_SUCCESS;
 }
