@@ -24,6 +24,7 @@ int main(int argc,char** argv) {
 
 	if(esperarAQueTermineLaEscuchaConElDMA()==EXIT_FAILURE) finalizarTodoPorError();
 	if(esperarAQueTermineLaConsola()==EXIT_FAILURE) finalizarTodoPorError();
+
 	liberarRecursos();
 	return EXIT_SUCCESS;
 }

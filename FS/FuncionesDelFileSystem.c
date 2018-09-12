@@ -123,7 +123,9 @@ void *funcionHiloConsola(void *arg){
 			free(instruccion);
 			free(linea);
 			log_info(LOGGER,"Cerrando consola");
-			pthread_exit(ret);
+			resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
+			return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
+			//pthread_exit(ret);
 			}else{
 		if(strcmp(instruccion[0],"ls")==0){
 			if(instruccion[1]==NULL){
@@ -161,24 +163,26 @@ void *funcionHiloConsola(void *arg){
 		for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
 		free(instruccion);
 	}//Cierre del while(1)
-	pthread_exit(ret);
+	resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
+	return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
+	//pthread_exit(ret);
 }
 
 int esperarAQueTermineLaEscuchaConElDMA(){
-	int resultado = pthread_join(threadComunicacionConElDMA, NULL);
+	pthread_join(threadComunicacionConElDMA, NULL);
 	log_info(LOGGER,"Hilo de la comunicacion con el DMA finalizado");
-	if(resultado==EXIT_FAILURE){
+	if(resultadoDeLaFinalizacionDeLaComunicacionConElDMA==EXIT_FAILURE){
 		log_info(LOGGER,"Hilo de la comunicacion con el DMA finalizado exitosamente");
 	}else{
 		log_error(LOGGER,"Hilo de la comunicacion con el DMA finalizado por error");
 	}
-	return resultado;
+	return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
 }
 
 int esperarAQueTermineLaConsola(){
-	int resultado = pthread_join( threadConsola, NULL);
+	pthread_join( threadConsola, NULL);
 	log_info(LOGGER,"Hilo de consola finalizado");
-	return resultado;
+	return EXIT_SUCCESS;
 }
 
 int finalizarTodoPorError(){
@@ -353,14 +357,17 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 				return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
 			}else{
 				log_error(LOGGER,"Error en el tipo de mensaje, no se si la memoria esta andando o no");
-				return (void *)EXIT_FAILURE;
+				resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
+				return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
 			}
 		}
 	}else{
 		log_error(LOGGER,"El proceso no es el esperado");
-		pthread_exit(EXIT_FAILURE);
+		resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
+		return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
 		}
-	pthread_exit(EXIT_SUCCESS);
+	resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_SUCCESS;
+	return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
 }
 
 int iniciarTrabajoConElDMA(){
