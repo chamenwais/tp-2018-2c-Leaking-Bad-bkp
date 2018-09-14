@@ -32,6 +32,10 @@ int main(int argc, char** argv){
 	/*Iniciar Consola
 	 * iniciarConsola();
 	 */
+	if(iniciarEscuchaConDiego()==EXIT_FAILURE) finalizarTodo();
+	if(iniciarEscuchaCPU()==EXIT_FAILURE) finalizarTodo();
+
+	if(esperarFinEscuchaDMA()==EXIT_FAILURE) finalizarTodo();
 
 
 

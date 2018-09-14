@@ -28,6 +28,9 @@ typedef struct defDTB {
 
 extern t_configuracionSAFA configSAFA;
 extern char estadoSAFA;
+extern pthread_t hiloComDMA;
+extern int fd_DMA;
+extern int resultadoComElDiego;
 
 
 #endif /* SAFA_VARIABLESGLOBALES_H_ */

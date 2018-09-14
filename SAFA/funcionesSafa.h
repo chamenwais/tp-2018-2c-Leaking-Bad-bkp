@@ -15,5 +15,8 @@ int inicializarLog();
 int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion);
 int inicializarVariablesSAFA();
 int finalizarTodo();
+int iniciarEscuchaConDiego();
+void *funcionHiloComDMA(void *arg);
+int esperarFinEscuchaDMA();
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */

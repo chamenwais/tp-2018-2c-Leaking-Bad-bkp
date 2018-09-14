@@ -53,7 +53,7 @@ int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 	configSAFA.puerto =
 			config_get_int_value(configuracion, "PUERTO");
 
-	configSAFA.algoritmo_planif = t_string_value(configuracion, "ALGORITMO_PLANIF"));
+	configSAFA.algoritmo_planif = config_get_string_value(configuracion, "ALGORITMO_PLANIF");
 
 	configSAFA.quantum = config_get_int_value(
 			configuracion, "QUANTUM");
@@ -71,6 +71,7 @@ int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 
 int inicializarVariablesSAFA(){
 	estadoSAFA = 'C'; //Se inicializa en estado CORRUPTO
+	resultadoComElDiego = EXIT_SUCCESS;
 
 	return EXIT_SUCCESS;
 }
@@ -83,4 +84,46 @@ int finalizarTodo(){
 
 	exit(1);
 	return EXIT_SUCCESS;
+}
+
+int iniciarEscuchaConDiego(){
+	log_info(LOG_SAFA,"Iniciando hilo para la comunicacion con el Diegote");
+	int resultadoDeCrearHilo = pthread_create(
+			&hiloComDMA, NULL, funcionHiloComDMA,
+			&configSAFA);
+	if(resultadoDeCrearHilo){
+		log_error(LOG_SAFA,"Error no se pudo crear el hilo para la comunicacion con el Diegote: %d",resultadoDeCrearHilo);
+		return EXIT_FAILURE;
+		}
+	else{
+		log_info(LOG_SAFA,"Se creo el hilo para la comunicacion con el Diegote");
+		return EXIT_SUCCESS;
+		}
+	return EXIT_SUCCESS;
+}
+
+void *funcionHiloComDMA(void *arg){
+	log_info(LOG_SAFA,"Esperando conexion entrante del Diego en puerto: %d", configSAFA.puerto);
+	int port = configSAFA.puerto;
+	int sockServer = escucharEn(port); //creo el servidor
+	fd_DMA = aceptarConexion(sockServer);
+	if(recibirHandshake(PLANIFICADOR,DMA,fd_DMA) > 0){
+		//Trabajar con el Diegote eeeehhhhhh
+		log_info(LOG_SAFA,"Handshake exitoso con el Diego");
+		t_cabecera cabecera = recibirCabecera(fd_DMA);
+
+	}
+	resultadoComElDiego=EXIT_SUCCESS;
+	return resultadoComElDiego;
+}
+
+int esperarFinEscuchaDMA(){
+	pthread_join(hiloComDMA, NULL);
+	log_info(LOG_SAFA,"Finalizando el hilo de comunicacion con DMA");
+	if(resultadoComElDiego==EXIT_FAILURE){
+		log_info(LOG_SAFA,"Hilo de comunicacion con el DMA finalizado exitosamente");
+	}else{
+		log_error(LOG_SAFA,"Hilo de comunicacion con el DMA finalizado por error");
+	}
+	return resultadoComElDiego;
 }

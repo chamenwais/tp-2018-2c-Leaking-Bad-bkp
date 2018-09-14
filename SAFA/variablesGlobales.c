@@ -9,3 +9,6 @@
 
 t_configuracionSAFA configSAFA;
 char estadoSAFA;
+pthread_t hiloComDMA;
+int fd_DMA;
+int resultadoComElDiego;
