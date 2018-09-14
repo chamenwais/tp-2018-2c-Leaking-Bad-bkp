@@ -27,6 +27,7 @@ enum PROCESO {
 };
 
 enum MENSAJES {
+	FinalizarTrabajoConElFS,
 	ValidarArchivo,
 	CrearArchivo,
 	ObtenerDatos,

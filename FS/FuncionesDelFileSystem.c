@@ -129,7 +129,7 @@ void *funcionHiloConsola(void *arg){
 			}else{
 		if(strcmp(instruccion[0],"ls")==0){
 			if(instruccion[1]==NULL){
-				printf("Listando directorio actual\n",instruccion[1]);
+				printf("Listando directorio actual, %s\n",instruccion[1]);
 				listarDirectorioActual();
 			}else{
 				printf("Listando directorio: %s\n",instruccion[1]);
@@ -266,13 +266,13 @@ int levantarMetadataBin(){
 }
 
 bool existeElArchivo(char *directorioDelArchivo){
-  int fd=fopen(directorioDelArchivo, "r");
+  FILE *fd=fopen(directorioDelArchivo, "r");
   if(fd<0){
 	  log_info(LOGGER,"No existe el archivo %s",directorioDelArchivo);
 	  return false;
   	  }
   log_info(LOGGER,"Si existe el archivo %s",directorioDelArchivo);
-  close(fd);
+  fclose(fd);
   return true;
 }
 
@@ -291,7 +291,7 @@ int levantarBitMap(){
 	}else{
 		log_info(LOGGER,"Generando el BITMAP con los datos de \"Bitmap.bin\"");
 		bitmap=bitarray_create(ubicacionDelArchivo,configuracionDeMetadata.cantidadBloques);
-		for(int i=0;i<configuracionDeMetadata.cantidadBloques<i;i++){
+		for(int i=0;i<configuracionDeMetadata.cantidadBloques;i++){
 			bitarray_clean_bit(bitmap,i);
 			}
 		bajarADiscoBitmap();
@@ -308,12 +308,12 @@ int bajarADiscoBitmap(){
 	string_append(&ubicacionDelArchivo, "/Metadata/Bitmap.bin");
 	archivoBitMap = fopen(ubicacionDelArchivo, "wb");
 
-	if(ubicacionDelArchivo==-1){
+	if(archivoBitMap==NULL){
 		log_error(LOGGER,"No se pudo abrir el archivo de bitmap en %s para bajar a disco",ubicacionDelArchivo);
 		return EXIT_FAILURE;
 	}else{
 		log_info(LOGGER,"Se pudo abrir el archivo de bitmap en %s para bajar a disco",ubicacionDelArchivo);
-		fwrite(bitmap,1,bitarray_get_max_bit(bitmap),ubicacionDelArchivo);
+		fwrite(bitmap,1,bitarray_get_max_bit(bitmap),archivoBitMap);
 		fclose(archivoBitMap);
 		log_info(LOGGER,"Bitmap bajado a disco");
 		return EXIT_SUCCESS;
@@ -371,6 +371,69 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 }
 
 int iniciarTrabajoConElDMA(){
+	t_cabecera cabecera;
+	while(1){
+		cabecera = recibirCabecera(FDDMA);
+		if(cabecera.tamanio>0){
+			log_info(LOGGER,"Cabecera recibida: %d, cantidad de bytes: %d",
+					cabecera.tipoDeMensaje, cabecera.tamanio);
+			switch(cabecera.tipoDeMensaje){
+				case ValidarArchivo:
+					log_info(LOGGER,"Pedido del DMA de \"ValidarArchivo\"");
+					validarArchivo();
+					break;
+				case CrearArchivo:
+					log_info(LOGGER,"Pedido del DMA de \"CrearArchivo\"");
+					crearArchivo();
+					break;
+				case ObtenerDatos:
+					log_info(LOGGER,"Pedido del DMA de \"ObtenerDatos\"");
+					obtenerDatos();
+					break;
+				case GuardarDatos:
+					log_info(LOGGER,"Pedido del DMA de \"GuardarDatos\"");
+					guardarDatos();
+					break;
+				case FinalizarTrabajoConElFS:
+					log_info(LOGGER,"Pedido del DMA de \"Finalizar el trabajo\"");
+					return EXIT_SUCCESS;
+					break;
+				default:
+					log_error(LOGGER,"Error, me llego un tipo de mensaje del DMA desconocido, %d",cabecera.tipoDeMensaje);
+					return EXIT_FAILURE;
+					break;
+			}//end swith
+		}else{
+			sleep(1);
+		}
+	}
+	return EXIT_SUCCESS;
+}
 
+int validarArchivo(){
+	/* Recibe del DMA los valores: path
+	 */
+	char*path=prot_recibir_DMA_FS_path(FDDMA);
+	log_info(LOGGER,"Recibiendo el path: %s, para validar el archivo",path);
+	return EXIT_SUCCESS;
+}
+
+int crearArchivo(){
+	/* Recibe del DMA los valores: path
+	 */
+	char*path=prot_recibir_DMA_FS_path(FDDMA);
+	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",path);
+	return EXIT_SUCCESS;
+}
+
+int obtenerDatos(){
+	/* Recibe del DMA los valores: path,offset,size
+	 */
+	return EXIT_SUCCESS;
+}
+
+int guardarDatos(){
+	/* Recibe del DMA los valores: path,offset,size,buffer
+	 */
 	return EXIT_SUCCESS;
 }

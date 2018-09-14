@@ -38,5 +38,9 @@ int bajarADiscoBitmap();
 int iniciarEscuchaConDMA();
 void *funcionHiloComunicacionConElDMA(void *arg);
 int iniciarTrabajoConElDMA();
+int validarArchivo();
+int crearArchivo();
+int obtenerDatos();
+int guardarDatos();
 
 #endif /* FUNCIONESDELFILESYSTEM_H_ */

@@ -119,6 +119,7 @@ int enviarCabecera(int sock, enum MENSAJES tipoDeMensaje,int tamanio){
 
 t_cabecera recibirCabecera(int sock){
 	t_cabecera cabecera;
-	recibir(sock,&cabecera,sizeof(cabecera));
+	int bytesRecibidos = recibir(sock,&cabecera,sizeof(cabecera));
+	cabecera.tamanio=bytesRecibidos;
 	return cabecera;
 }
