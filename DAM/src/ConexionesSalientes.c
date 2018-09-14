@@ -18,8 +18,6 @@ void * comunicarse_con_safa(){
 	int socket_safa=conectarseA(ip_safa, puerto_safa);
 	validar_comunicacion(socket_safa, SAFA);
 	realizar_handshake_con_safa(socket_safa);
-	//TODO ver en que condicion se cierra la conexion con SAFA y como comunicarse entre hilos para dar aviso de eventos
-	sleep(50);
 	cerrar_socket_y_terminar(socket_safa);
 }
 

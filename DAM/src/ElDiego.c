@@ -14,7 +14,7 @@ int main() {
 	//Va a hacer el handshake con MDJ
 	int socket_file_system=comunicarse_con_file_system();
 	//Va a hacer el handshake con FM9
-	int socket_memoria=comunicarse_con_memoria();
+	int socket_memoria=comunicarse_con_memoria_y_reportar_a_fs(socket_file_system);
 	//Va a quedarse escuchando al CPU
 	pthread_t hilo_conexiones_entrantes=crear_hilo_conexiones_entrantes(socket_memoria, socket_file_system);
 	//Va a comunicarse con S-AFA e interactuara con ese, FM9 y MDJ
@@ -38,9 +38,10 @@ void realizar_handshake_con_mdj(int socket_id){
 	recibir_handshake_de(socket_id, FS, MDJ);
 }
 
-int comunicarse_con_memoria(){
+int comunicarse_con_memoria_y_reportar_a_fs(int socket_fs){
 	log_info(logger, strcat(SE_INTENTARA_CONECTAR_LA_IP_Y_PUERTO, FM9), ip_fm9, puerto_fm9);
 	int socket_fm9=conectarseA(ip_fm9, puerto_fm9);
+	reportar_a_fs(socket_fs, socket_fm9);
 	validar_comunicacion(socket_fm9, FM9);
 	realizar_handshake_con_fm9(socket_fm9);
 	return socket_fm9;
@@ -49,4 +50,12 @@ int comunicarse_con_memoria(){
 void realizar_handshake_con_fm9(int socket_id){
 	mandar_handshake_a(socket_id, MEMORIA, FM9);
 	recibir_handshake_de(socket_id, MEMORIA, FM9);
+}
+
+void reportar_a_fs(int socket_fs, int socket_fm9){
+	if(socket_fm9<0){
+		enviarCabecera(socket_fs, MemoriaDown, 0);
+	}else{
+		enviarCabecera(socket_fs, MemoriaUp, 0);
+	}
 }
