@@ -67,14 +67,14 @@ void informar_handshake_erroneo_y_cerrar(int socket_id, const char * proceso){
 }
 
 void mandar_handshake_a(int socket_id, enum PROCESO enumProceso, const char * proceso){
-	log_info(logger, strcat("Se intentara mandar handshake a ",proceso));
+	log_info(logger, string_append("Se intentara mandar handshake a ",proceso));
 	if (enviarHandshake(DMA, enumProceso, socket_id) == 0) {
 		informar_handshake_erroneo_y_cerrar(socket_id, proceso);
 	}
 }
 
 void recibir_handshake_de(int socket_id, enum PROCESO enumProceso, const char * proceso){
-	log_info(logger, strcat("Se intentara recibir handshake de ", proceso));
+	log_info(logger, string_append("Se intentara recibir handshake de ", proceso));
 	if (recibirHandshake(enumProceso, DMA, socket_id) == 0) {
 		informar_handshake_erroneo_y_cerrar(socket_id, proceso);
 	}

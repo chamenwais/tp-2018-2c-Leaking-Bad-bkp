@@ -14,7 +14,7 @@ pthread_t crear_hilo_conexiones_salientes(int socket_fm9, int socket_mdj){
 }
 
 void * comunicarse_con_safa(){
-	log_info(logger, strcat(SE_INTENTARA_CONECTAR_LA_IP_Y_PUERTO, SAFA), ip_safa, puerto_safa);
+	log_info(logger, string_append(SE_INTENTARA_CONECTAR_LA_IP_Y_PUERTO, SAFA), ip_safa, puerto_safa);
 	int socket_safa=conectarseA(ip_safa, puerto_safa);
 	validar_comunicacion(socket_safa, SAFA);
 	realizar_handshake_con_safa(socket_safa);
