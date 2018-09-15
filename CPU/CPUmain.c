@@ -14,10 +14,23 @@ int main(){
 
 	configurar_logger();
 	levantarArchConfig();
-
-
+	connect_to_server(configuracion.IPSAFA, configuracion.PUERTOSAFA);
+	connect_to_server(configuracion.IPELDIEGO, configuracion.PUERTOELDIEGO);
 return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
