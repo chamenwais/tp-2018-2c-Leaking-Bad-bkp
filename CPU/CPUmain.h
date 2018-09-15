@@ -11,10 +11,17 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdlib.h> // Para malloc
+#include <sys/socket.h> // Para crear sockets, enviar, recibir, etc
+#include <netdb.h> // Para getaddrinfo
+#include <unistd.h> // Para close
+
 #include <commons/log.h>
 #include <commons/config.h>
+#include <commons/error.h>
 
 #include "funcionesCPU.h"
+#include "conexionesCPU.h"
 
 
 //Estructuras
