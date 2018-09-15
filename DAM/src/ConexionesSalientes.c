@@ -15,8 +15,8 @@ pthread_t crear_hilo_conexiones_salientes(int socket_fm9, int socket_mdj){
 
 void * comunicarse_con_safa(){
 	char* seIntentaraConectarLaIpSPuertoDDe = string_new();
-	string_append(seIntentaraConectarLaIpSPuertoDDe, "Se intentara conectar la ip %s , puerto %d de ");
-	string_append(seIntentaraConectarLaIpSPuertoDDe, "SAFA");
+	string_append(&seIntentaraConectarLaIpSPuertoDDe, "Se intentara conectar la ip %s , puerto %d de ");
+	string_append(&seIntentaraConectarLaIpSPuertoDDe, "SAFA");
 	log_info(logger, seIntentaraConectarLaIpSPuertoDDe, ip_safa, puerto_safa);
 	int socket_safa=conectarseA(ip_safa, puerto_safa);
 	validar_comunicacion(socket_safa, "SAFA");

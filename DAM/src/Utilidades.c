@@ -68,8 +68,8 @@ void informar_handshake_erroneo_y_cerrar(int socket_id, char * proceso){
 
 void mandar_handshake_a(int socket_id, enum PROCESO enumProceso, char * proceso){
 	char* seIntentaraMandarHandshakeA = string_new();
-	string_append(seIntentaraMandarHandshakeA, "Se intentara mandar handshake a ");;
-	string_append(seIntentaraMandarHandshakeA, proceso);
+	string_append(&seIntentaraMandarHandshakeA, "Se intentara mandar handshake a ");
+	string_append(&seIntentaraMandarHandshakeA, proceso);
 	log_info(logger,seIntentaraMandarHandshakeA);
 	if (enviarHandshake(DMA, enumProceso, socket_id) == 0) {
 		informar_handshake_erroneo_y_cerrar(socket_id, proceso);
@@ -78,9 +78,9 @@ void mandar_handshake_a(int socket_id, enum PROCESO enumProceso, char * proceso)
 
 void recibir_handshake_de(int socket_id, enum PROCESO enumProceso, char * proceso){
 	char* seIntentaraRecibirHandshakeDe= string_new();
-	string_append(seIntentaraRecibirHandshakeDe,
+	string_append(&seIntentaraRecibirHandshakeDe,
 			"Se intentara recibir handshake de ");
-	string_append(seIntentaraRecibirHandshakeDe, proceso);
+	string_append(&seIntentaraRecibirHandshakeDe, proceso);
 	log_info(logger, seIntentaraRecibirHandshakeDe);
 	if (recibirHandshake(enumProceso, DMA, socket_id) == 0) {
 		informar_handshake_erroneo_y_cerrar(socket_id, proceso);
