@@ -37,6 +37,13 @@ int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 
 	t_config* configuracion = config_create(ubicacionDelArchivoConfiguracion);
 
+	if(configuracion!=NULL){
+		log_info(LOG_SAFA,"El archivo de configuracion existe");
+	}else{
+		log_error(LOG_SAFA,"No existe el archivo de configuracion en: %s",ubicacionDelArchivoConfiguracion);
+		return EXIT_FAILURE;
+	}
+
 	log_info(LOG_SAFA, "Abriendo la configuracion de SAFA");
 
 	if (!config_has_property(configuracion, "PUERTO")) {
