@@ -411,10 +411,22 @@ int iniciarTrabajoConElDMA(){
 }
 
 int validarArchivo(){
-	/* Recibe del DMA los valores: path
+	/* Parámetros​: [Path]
+	 * Descripción​: Cuando el El Diego reciba la operación de abrir un archivo deberá validar
+	 * que el archivo exista.
 	 */
 	char*path=prot_recibir_DMA_FS_path(FDDMA);
 	log_info(LOGGER,"Recibiendo el path: %s, para validar el archivo",path);
+	char*ubicacionDelArchivo=string_new();
+	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
+	string_append(&ubicacionDelArchivo, "/Archivos/");
+	string_append(&ubicacionDelArchivo, path);
+	log_info(LOGGER,"Voy a ver si existe el archivo",ubicacionDelArchivo);
+	if(existeElArchivo(ubicacionDelArchivo)){
+		enviarCabecera(FDDMA, ElArchivoExiste, 1);
+	}else{
+		enviarCabecera(FDDMA, ElArchivoNoExiste, 1);
+		}
 	return EXIT_SUCCESS;
 }
 
