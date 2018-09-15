@@ -25,5 +25,4 @@ void * comunicarse_con_cpu(){
 
 void realizar_handshake_con_cpu(int socket_id){
 	recibir_handshake_de(socket_id, CPU, "CPU");
-	mandar_handshake_a(socket_id, CPU, "CPU");
 }

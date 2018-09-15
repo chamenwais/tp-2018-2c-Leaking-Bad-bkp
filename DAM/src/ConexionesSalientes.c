@@ -26,5 +26,4 @@ void * comunicarse_con_safa(){
 
 void realizar_handshake_con_safa(int socket_id){
 	mandar_handshake_a(socket_id, PLANIFICADOR, "SAFA");
-	recibir_handshake_de(socket_id, PLANIFICADOR, "SAFA");
 }

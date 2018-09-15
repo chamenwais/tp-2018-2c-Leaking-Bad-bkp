@@ -36,7 +36,6 @@ int comunicarse_con_file_system(){
 
 void realizar_handshake_con_mdj(int socket_id){
 	mandar_handshake_a(socket_id, FS, "MDJ");
-	recibir_handshake_de(socket_id, FS, "MDJ");
 }
 
 int comunicarse_con_memoria_y_reportar_a_fs(int socket_fs){
@@ -50,7 +49,6 @@ int comunicarse_con_memoria_y_reportar_a_fs(int socket_fs){
 
 void realizar_handshake_con_fm9(int socket_id){
 	mandar_handshake_a(socket_id, MEMORIA, "FM9");
-	recibir_handshake_de(socket_id, MEMORIA, "FM9");
 }
 
 void reportar_a_fs(int socket_fs, int socket_fm9){
