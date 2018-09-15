@@ -31,12 +31,4 @@ extern char * clave_puerto_mdj;
 extern int transfer_size;
 extern char * clave_transfer_size;
 
-static const char *FM9 = "FM9";
-static const char *MDJ = "MDJ";
-static const char *Cpu = "CPU";
-static const char *SAFA = "SAFA";
-
-static const char *SE_INTENTARA_CONECTAR_LA_IP_Y_PUERTO =
-		"Se intentara conectar la ip %s , puerto %d de ";
-
 #endif /* CONTEXTO_H_ */

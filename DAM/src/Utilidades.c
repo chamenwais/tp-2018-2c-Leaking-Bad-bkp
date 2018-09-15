@@ -54,27 +54,34 @@ void enlazar_hilos(pthread_t hilo1, pthread_t hilo2){
 	return;
 }
 
-void validar_comunicacion(int socket_id, const char * proceso){
+void validar_comunicacion(int socket_id, char * proceso){
 	if(socket_id<0){
 		log_error(logger, "No se pudo conectar con el proceso %s ", proceso);
 		cerrar_socket_y_terminar(socket_id);
 	}
 }
 
-void informar_handshake_erroneo_y_cerrar(int socket_id, const char * proceso){
+void informar_handshake_erroneo_y_cerrar(int socket_id, char * proceso){
 	log_error(logger, "No se pudo concluir handshake con el proceso %s ",proceso);
 	cerrar_socket_y_terminar(socket_id);
 }
 
-void mandar_handshake_a(int socket_id, enum PROCESO enumProceso, const char * proceso){
-	log_info(logger, string_append("Se intentara mandar handshake a ",proceso));
+void mandar_handshake_a(int socket_id, enum PROCESO enumProceso, char * proceso){
+	char* seIntentaraMandarHandshakeA = string_new();
+	string_append(seIntentaraMandarHandshakeA, "Se intentara mandar handshake a ");;
+	string_append(seIntentaraMandarHandshakeA, proceso);
+	log_info(logger,seIntentaraMandarHandshakeA);
 	if (enviarHandshake(DMA, enumProceso, socket_id) == 0) {
 		informar_handshake_erroneo_y_cerrar(socket_id, proceso);
 	}
 }
 
-void recibir_handshake_de(int socket_id, enum PROCESO enumProceso, const char * proceso){
-	log_info(logger, string_append("Se intentara recibir handshake de ", proceso));
+void recibir_handshake_de(int socket_id, enum PROCESO enumProceso, char * proceso){
+	char* seIntentaraRecibirHandshakeDe= string_new();
+	string_append(seIntentaraRecibirHandshakeDe,
+			"Se intentara recibir handshake de ");
+	string_append(seIntentaraRecibirHandshakeDe, proceso);
+	log_info(logger, seIntentaraRecibirHandshakeDe);
 	if (recibirHandshake(enumProceso, DMA, socket_id) == 0) {
 		informar_handshake_erroneo_y_cerrar(socket_id, proceso);
 	}

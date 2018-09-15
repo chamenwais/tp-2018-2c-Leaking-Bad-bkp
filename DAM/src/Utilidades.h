@@ -35,10 +35,10 @@ void leer_transfer_size();
 
 //Conexiones
 void cerrar_socket_y_terminar(int socket_id);
-void validar_comunicacion(int socket_id, const char * proceso);
-void informar_handshake_erroneo_y_cerrar(int socket_id, const char * proceso);
-void mandar_handshake_a(int socket_id, enum PROCESO enumProceso, const char * proceso);
-void recibir_handshake_de(int socket_id, enum PROCESO enumProceso, const char * proceso);
+void validar_comunicacion(int socket_id, char * proceso);
+void informar_handshake_erroneo_y_cerrar(int socket_id, char * proceso);
+void mandar_handshake_a(int socket_id, enum PROCESO enumProceso, char * proceso);
+void recibir_handshake_de(int socket_id, enum PROCESO enumProceso, char * proceso);
 void configurar_signals(void);
 void captura_sigpipe(int signo);
 
