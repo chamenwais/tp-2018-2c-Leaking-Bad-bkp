@@ -26,7 +26,7 @@ int main() {
 }
 
 int comunicarse_con_file_system(){
-	log_info(logger, "Se intentara conectar la ip %s , puerto %d de MDJ",
+	log_info(logger, mensaje_informativo_previa_conexion_con("MDJ"),
 			ip_mdj, puerto_mdj);
 	int socket_mdj=conectarseA(ip_mdj, puerto_mdj);
 	validar_comunicacion(socket_mdj, "MDJ");
@@ -39,10 +39,12 @@ void realizar_handshake_con_mdj(int socket_id){
 }
 
 int comunicarse_con_memoria_y_reportar_a_fs(int socket_fs){
-	log_info(logger, "Se intentara conectar la ip %s , puerto %d de FM9", ip_fm9, puerto_fm9);
+	char* const_name_fm9 = "FM9";
+	log_info(logger, mensaje_informativo_previa_conexion_con(const_name_fm9),
+			ip_fm9, puerto_fm9);
 	int socket_fm9=conectarseA(ip_fm9, puerto_fm9);
 	reportar_a_fs(socket_fs, socket_fm9);
-	validar_comunicacion(socket_fm9, "FM9");
+	validar_comunicacion(socket_fm9, const_name_fm9);
 	realizar_handshake_con_fm9(socket_fm9);
 	return socket_fm9;
 }

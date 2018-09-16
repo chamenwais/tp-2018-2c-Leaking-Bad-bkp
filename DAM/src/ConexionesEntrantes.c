@@ -13,12 +13,13 @@ pthread_t crear_hilo_conexiones_entrantes(int socket_fm9, int socket_mdj){
 }
 
 void * comunicarse_con_cpu(){
+	char* cpu_name = "CPU";
 	log_info(logger,"Se va a escuchar al CPU en el puerto %d", puerto_de_escucha);
 	int socket_escucha=escucharEn(puerto_de_escucha);
-	validar_comunicacion(socket_escucha, "CPU");
+	validar_comunicacion(socket_escucha, cpu_name);
 	log_info(logger, "Se va a esperar al CPU");
 	int socket_cpu=aceptarConexion(socket_escucha);
-	validar_comunicacion(socket_cpu, "CPU");
+	validar_comunicacion(socket_cpu, cpu_name);
 	realizar_handshake_con_cpu(socket_cpu);
 	cerrar_socket_y_terminar(socket_cpu);
 }

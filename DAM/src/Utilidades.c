@@ -43,7 +43,9 @@ void leer_transfer_size(){
 }
 
 void terminar_controladamente(int return_nr){
+	log_info(logger, "Se destruira estructura de archivo de configuracion");
 	config_destroy(configuracion);
+	log_info(logger, "Se destruira el logger");
 	log_destroy(logger);
 	exit(return_nr);
 }
@@ -66,22 +68,31 @@ void informar_handshake_erroneo_y_cerrar(int socket_id, char * proceso){
 	cerrar_socket_y_terminar(socket_id);
 }
 
-void mandar_handshake_a(int socket_id, enum PROCESO enumProceso, char * proceso){
+char* mensaje_informativo_envio_handshake(char* proceso) {
 	char* seIntentaraMandarHandshakeA = string_new();
-	string_append(&seIntentaraMandarHandshakeA, "Se intentara mandar handshake a ");
+	string_append(&seIntentaraMandarHandshakeA,
+			"Se intentara mandar handshake a ");
 	string_append(&seIntentaraMandarHandshakeA, proceso);
-	log_info(logger,seIntentaraMandarHandshakeA);
+	return seIntentaraMandarHandshakeA;
+}
+
+void mandar_handshake_a(int socket_id, enum PROCESO enumProceso, char * proceso){
+	log_info(logger,mensaje_informativo_envio_handshake(proceso));
 	if (enviarHandshake(DMA, enumProceso, socket_id) == 0) {
 		informar_handshake_erroneo_y_cerrar(socket_id, proceso);
 	}
 }
 
-void recibir_handshake_de(int socket_id, enum PROCESO enumProceso, char * proceso){
-	char* seIntentaraRecibirHandshakeDe= string_new();
+char* mensaje_informativo_recibir_handshake(char* proceso) {
+	char* seIntentaraRecibirHandshakeDe = string_new();
 	string_append(&seIntentaraRecibirHandshakeDe,
 			"Se intentara recibir handshake de ");
 	string_append(&seIntentaraRecibirHandshakeDe, proceso);
-	log_info(logger, seIntentaraRecibirHandshakeDe);
+	return seIntentaraRecibirHandshakeDe;
+}
+
+void recibir_handshake_de(int socket_id, enum PROCESO enumProceso, char * proceso){
+	log_info(logger, mensaje_informativo_recibir_handshake(proceso));
 	if (recibirHandshake(enumProceso, DMA, socket_id) == 0) {
 		informar_handshake_erroneo_y_cerrar(socket_id, proceso);
 	}
@@ -97,7 +108,7 @@ void captura_sigpipe(int signo){
 	if (signo == SIGINT) {
 		terminar_controladamente(EXIT_FAILURE);
 	} else if (signo == SIGPIPE) {
-		printf("Hubo otro problema");
+		log_error(logger,"Hubo otro problema");
 	}
 }
 
@@ -110,11 +121,19 @@ void configurar_signals(void){
 
 	sigaddset(&signal_struct.sa_mask, SIGPIPE);
 	if (sigaction(SIGPIPE, &signal_struct, NULL) < 0) {
-		printf("\n SIGACTION error \n");
+		log_error(logger,"\n SIGACTION error \n");
 	}
 
 	sigaddset(&signal_struct.sa_mask, SIGINT);
 	if (sigaction(SIGINT, &signal_struct, NULL) < 0) {
-		printf("\n SIGACTION error \n");
+		log_error(logger,"\n SIGACTION error \n");
 	}
+}
+
+char* mensaje_informativo_previa_conexion_con(char* proceso) {
+	char* se_intentara_conectar_con_ip_y_puerto = string_new();
+	string_append(&se_intentara_conectar_con_ip_y_puerto,
+			"Se intentara conectar a la ip %s , puerto %d de ");
+	string_append(&se_intentara_conectar_con_ip_y_puerto, proceso);
+	return se_intentara_conectar_con_ip_y_puerto;
 }

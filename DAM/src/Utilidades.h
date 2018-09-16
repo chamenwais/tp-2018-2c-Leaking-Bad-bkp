@@ -32,6 +32,8 @@ void leer_configuracion_safa();
 void leer_configuracion_fm9();
 void leer_configuracion_mdj();
 void leer_transfer_size();
+char* mensaje_informativo_recibir_handshake(char* proceso);
+char* mensaje_informativo_previa_conexion_con(char* proceso);
 
 //Conexiones
 void cerrar_socket_y_terminar(int socket_id);
