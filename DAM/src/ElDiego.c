@@ -25,23 +25,36 @@ int main() {
 	terminar_controladamente(EXIT_SUCCESS);
 }
 
+void mensaje_previa_conexion_con_mdj() {
+	char* mensaje_informativo_previa_conexion_con_mdj =
+			mensaje_informativo_previa_conexion_con(const_name_mdj);
+	log_info(logger, mensaje_informativo_previa_conexion_con_mdj, ip_mdj,
+			puerto_mdj);
+	free(mensaje_informativo_previa_conexion_con_mdj);
+}
+
 int comunicarse_con_file_system(){
-	log_info(logger, mensaje_informativo_previa_conexion_con("MDJ"),
-			ip_mdj, puerto_mdj);
+	mensaje_previa_conexion_con_mdj();
 	int socket_mdj=conectarseA(ip_mdj, puerto_mdj);
-	validar_comunicacion(socket_mdj, "MDJ");
+	validar_comunicacion(socket_mdj, const_name_mdj);
 	realizar_handshake_con_mdj(socket_mdj);
 	return socket_mdj;
 }
 
 void realizar_handshake_con_mdj(int socket_id){
-	mandar_handshake_a(socket_id, FS, "MDJ");
+	mandar_handshake_a(socket_id, FS, const_name_mdj);
+}
+
+void mostrar_mensaje_previa_conexion_con_fm9() {
+	char* mensaje_informativo_previa_conexion_con_fm9 =
+			mensaje_informativo_previa_conexion_con(const_name_fm9);
+	log_info(logger, mensaje_informativo_previa_conexion_con_fm9, ip_fm9,
+			puerto_fm9);
+	free(mensaje_informativo_previa_conexion_con_fm9);
 }
 
 int comunicarse_con_memoria_y_reportar_a_fs(int socket_fs){
-	char* const_name_fm9 = "FM9";
-	log_info(logger, mensaje_informativo_previa_conexion_con(const_name_fm9),
-			ip_fm9, puerto_fm9);
+	mostrar_mensaje_previa_conexion_con_fm9();
 	int socket_fm9=conectarseA(ip_fm9, puerto_fm9);
 	reportar_a_fs(socket_fs, socket_fm9);
 	validar_comunicacion(socket_fm9, const_name_fm9);
@@ -50,7 +63,7 @@ int comunicarse_con_memoria_y_reportar_a_fs(int socket_fs){
 }
 
 void realizar_handshake_con_fm9(int socket_id){
-	mandar_handshake_a(socket_id, MEMORIA, "FM9");
+	mandar_handshake_a(socket_id, MEMORIA, const_name_fm9);
 }
 
 void reportar_a_fs(int socket_fs, int socket_fm9){

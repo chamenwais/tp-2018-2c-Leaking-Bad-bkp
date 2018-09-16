@@ -30,5 +30,9 @@ extern int puerto_mdj;
 extern char * clave_puerto_mdj;
 extern int transfer_size;
 extern char * clave_transfer_size;
+extern char * const_name_fm9;
+extern char * const_name_mdj;
+extern char * const_name_safa;
+extern char * const_name_cpu;
 
 #endif /* CONTEXTO_H_ */

@@ -9,6 +9,7 @@
 #define CONEXIONESENTRANTES_H_
 #include "../../COM/lqvg/com.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <sys/socket.h>
@@ -17,6 +18,7 @@
 #include <commons/log.h>
 
 #include "Contexto.h"
+#include "Utilidades.h"
 
 pthread_t crear_hilo_conexiones_entrantes(int socket_fm9, int socket_mdj);
 void * comunicarse_con_cpu();

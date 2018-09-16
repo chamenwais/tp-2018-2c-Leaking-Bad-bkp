@@ -19,6 +19,10 @@ char * clave_puerto_fm9="PUERTO_FM9";
 char * clave_ip_mdj="IP_MDJ";
 char * clave_puerto_mdj="PUERTO_MDJ";
 char * clave_transfer_size="TRANSFER_SIZE";
+char * const_name_fm9 = "FM9";
+char * const_name_mdj = "MDJ";
+char * const_name_safa = "SAFA";
+char * const_name_cpu = "CPU";
 
 t_log * logger;
 t_config * configuracion;
