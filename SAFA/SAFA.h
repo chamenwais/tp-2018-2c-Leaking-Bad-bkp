@@ -18,8 +18,8 @@
 #include <commons/string.h>
 #include "variablesGlobales.h"
 #include "funcionesSafa.h"
-#include "lqvg/com.h"
-
+//#include "lqvg/com.h"
+#include "//usr/include/lqvg/com.h"
 extern t_log* LOG_SAFA;
 
 #endif /* SAFA_SAFA_H_ */

@@ -2,7 +2,10 @@
 # Automatically-generated file. Do not edit!
 ################################################################################
 
-USER_OBJS :=
+# Add inputs and outputs from these tool invocations to the build variables 
+O_SRCS += \
+../Debug/SAFA/SAFA.o 
 
-LIBS := -lcommons -llqvg -lpthread
+
+# Each subdirectory must supply rules for building sources it contributes
 
