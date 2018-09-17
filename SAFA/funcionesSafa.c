@@ -100,8 +100,7 @@ int inicializarSemaforosSAFA(){
 
 int iniciarEscuchaConDiego(){
 	log_info(LOG_SAFA,"Iniciando hilo para la comunicacion con el Diegote");
-	int resultadoHiloDMA = pthread_create(
-			&hiloComDMA, NULL, funcionHiloComDMA,
+	int resultadoHiloDMA = pthread_create(&hiloComDMA, NULL, funcionHiloComDMA,
 			&configSAFA);
 	if(resultadoHiloDMA){
 		log_error(LOG_SAFA,"Error no se pudo crear el hilo para la comunicacion con el Diegote: %d",resultadoHiloDMA);
