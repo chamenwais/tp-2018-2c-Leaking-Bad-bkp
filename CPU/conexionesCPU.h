@@ -10,8 +10,7 @@
 
 
 #include "CPUmain.h"
-
-
+#include "lqvg/com.h"
 
 
 

@@ -41,7 +41,7 @@ int connect_to_server(char * ip, int * puerto) {
 	    _exit_with_error(server_socket, "No me pude conectar al servidor", NULL);
 	  }
 	  // 4 Logeamos que pudimos conectar y retornamos el socket
-	  log_info(logger, "Conectado!");
+	  log_info(LOG_CPU, "Conectado!");
 
 return server_socket;
 }
@@ -51,7 +51,7 @@ void _exit_with_error(int socket, char* error_msg, void * buffer) {
   if (buffer != NULL) {
     free(buffer);
   }
-  log_error(logger, error_msg);
+  log_error(LOG_CPU, error_msg);
   close(socket);
   exit_gracefully(1);
 }
@@ -63,6 +63,6 @@ void exit_gracefully(int return_nr) {
           Asi solo necesitamos destruir el logger y usar la llamada al
           sistema exit() para terminar la ejecucion
   */
-  log_destroy(logger);
-  exit(return_nr);
+ 	log_destroy(LOG_CPU);
+ 	exit(return_nr);
 }

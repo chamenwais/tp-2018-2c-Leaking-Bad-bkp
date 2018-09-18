@@ -34,14 +34,19 @@ typedef struct dConfiguracion{
 	int PUERTOELDIEGO;
 }tConfiguracion;
 
- t_log * logger;
+ t_log * LOG_CPU;
  t_config * config;
  tConfiguracion configuracion;
 
 
 //Funciones
-void configurar_logger();
-int levantarArchConfig();
+
+
+
+
+
+
+
 
 
 #endif /* CPUmain_H_ */

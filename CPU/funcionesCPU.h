@@ -10,12 +10,15 @@
 
 
 #include <stdio.h>
+#include "CPUmain.h"
+
 
 
 void funciona();
 
-
-
+int configurar_LOG_CPU();
+int levantarArchConfig();
+int finalizarTodo();
 
 
 
