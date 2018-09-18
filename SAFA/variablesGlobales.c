@@ -13,10 +13,5 @@ pthread_t hiloComDMA;
 pthread_t hiloComCPU;
 int fd_DMA;
 int resultadoComElDiego;
-int fd_CPU;
-fd_set readset;
-fd_set auxReadSet;
-int maxfd;
-bool salir;
-pthread_mutex_t mutexSalir;
-pthread_mutex_t mutexSelect;
+bool safa_conectado;
+

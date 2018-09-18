@@ -69,8 +69,7 @@ int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 int inicializarVariablesSAFA(){
 	estadoSAFA = 'C'; //Se inicializa en estado CORRUPTO
 	resultadoComElDiego = EXIT_SUCCESS;
-	maxfd = 0;
-	salir=false;
+	safa_conectado = true;
 	return EXIT_SUCCESS;
 }
 
@@ -85,43 +84,14 @@ int finalizarTodo(){
 }
 
 int inicializarSemaforosSAFA(){
-	log_info(LOG_SAFA,"Inicializando semaforos");
-		if (pthread_mutex_init(&mutexSalir, NULL) != 0) {
-			log_error(LOG_SAFA,"No se pudo inicializar el semaforo para salir");
-			exit(1);
-		}
-		if (pthread_mutex_init(&mutexSelect, NULL) != 0) {
-			/*Para poder meter o sacar FD del select*/
-			log_error(LOG_SAFA,"No se pudo inicializar el semaforo del select");
-			exit(1);
-			}
+	//log_info(LOG_SAFA,"Inicializando semaforos");
 		return EXIT_SUCCESS;
  }
 
-int iniciarEscuchaConDiego(){
-	log_info(LOG_SAFA,"Iniciando hilo para la comunicacion con el Diegote");
-	int resultadoHiloDMA = pthread_create(&hiloComDMA, NULL, funcionHiloComDMA,
-			&configSAFA);
-	if(resultadoHiloDMA){
-		log_error(LOG_SAFA,"Error no se pudo crear el hilo para la comunicacion con el Diegote: %d",resultadoHiloDMA);
-		return EXIT_FAILURE;
-		}
-	else{
-		log_info(LOG_SAFA,"Se creo el hilo para la comunicacion con el Diegote");
-		return EXIT_SUCCESS;
-		}
-	return EXIT_SUCCESS;
-}
- void *funcionHiloComDMA(void *arg){
-	log_info(LOG_SAFA,"Esperando conexion entrante del Diego en puerto: %d", configSAFA.puerto);
-	int port = configSAFA.puerto;
-	int sockServer = escucharEn(port); //creo el servidor
-	fd_DMA = aceptarConexion(sockServer);
-	if(recibirHandshake(PLANIFICADOR,DMA,fd_DMA) > 0){
+ void *funcionHiloComDMA(void *arg){//TODO: ver que hace
 		//Trabajar con el Diegote eeeehhhhhh
 		log_info(LOG_SAFA,"Handshake exitoso con el Diego");
 		//t_cabecera cabecera = recibirCabecera(fd_DMA);
- 	}
 	resultadoComElDiego=EXIT_SUCCESS;
 	return resultadoComElDiego;
 }
@@ -148,94 +118,52 @@ int iniciarEscuchaConDiego(){
 			}
 		return EXIT_SUCCESS;
 }
- void *funcionHiloComCPU(void *arg){
-	char *ret="Cerrando hilo";
-		int IDCPU;
-		int client_fd;
-		struct timeval timeout;
-		timeout.tv_sec=3;
-		timeout.tv_usec=0;
-		int resultadoDelSelect,i;
-		t_cabecera header;
- 		int port = configSAFA.puerto;
-		int srvsock = escucharEn(port); //crea servidor
-		log_info(LOG_SAFA,"Esperando conexiones en el puerto: %d", port);
- 		FD_ZERO(&readset);
-		FD_SET(srvsock, &readset);
-		if (srvsock > maxfd) maxfd = srvsock;
- 		log_info(LOG_SAFA,"Se añadio el socket servidor al set del select");
- 		while(!tieneQueSalir()){
-			lockearSelect();
-			memcpy(&auxReadSet, &readset, sizeof(readset));
-			resultadoDelSelect = select(maxfd+1, &auxReadSet, NULL, NULL, &timeout);
-			log_info(LOG_SAFA, "Comienza el select");
-			if(resultadoDelSelect==0){
-				printf("timeout del select\n");
-			}else{
-				if(resultadoDelSelect<0){
-					log_error(LOG_SAFA, "Error en el select");
-					return EXIT_FAILURE;
-				}else{//si entra por aca es porque encontró algo
-					for (i = 0; i <= (obtenerMaxFD()); i++){
-						if(FD_ISSET(i, &auxReadSet)){
-							log_info(LOG_SAFA,"El FD %i tiene datos", i);
-							if(i==srvsock){//se me conecto un nuevo CPU
-								log_info(LOG_SAFA,"Recibi una nueva CPU");
-								client_fd = aceptarConexion(srvsock);
-								if(recibirHandshake(PLANIFICADOR,CPU,client_fd) > 0){
-									log_info(LOG_SAFA,"Handshake exitoso con una CPU, FD:%d",client_fd);
-									//TODO: ver que tiene que hacer la CPU
-									}
-								//TODO: crearDTBlock?
-								log_info(LOG_SAFA,"Ya termine de crear la nueva conexion");
-							}else{
-								log_info(LOG_SAFA,"Recibiendo mensaje de CPU existente");
-								header = recibirCabecera(i);
-								log_info(LOG_SAFA,"El ID del mensaje es:%d",header);
-								switch(header.tipoDeMensaje) { // TODO: Ver case dependiendo tipo mensaje
-									/*case
-										break;
-									default:
-										//log_error(LOG_SAFA,"Header invalido, tipo: %s", header.message_type);
-										break;*/
-										}//fin del switch
-								}
-							}
-						}
-					}
+ void *funcionHiloComCPU(void *arg){//TODO: ver que hace
+	return EXIT_SUCCESS;
+}
+
+int escuchar(){
+	log_info(LOG_SAFA,"Esperando conexiones entrantes en puerto: %d", configSAFA.puerto);
+	int port = configSAFA.puerto;
+	int sockServer = escucharEn(port); //creo el servidor
+	while(safa_conectado){
+		//Acepto la conexion con el cliente
+		int client_fd = aceptarConexion(sockServer);
+		log_info(LOG_SAFA, "Conexion recibida");
+		if(recibirHandshake(PLANIFICADOR, DMA, client_fd) > 0){
+			log_info(LOG_SAFA, "Conexion realizada con El Diego");
+			fd_DMA = client_fd;
+			log_info(LOG_SAFA,"Iniciando hilo para la comunicacion con el Diegote");
+			int resultadoHiloDMA = pthread_create(&hiloComDMA, NULL, funcionHiloComDMA,
+					&configSAFA);
+			if(resultadoHiloDMA){
+				log_error(LOG_SAFA,"Error no se pudo crear el hilo para la comunicacion con el Diegote: %d",resultadoHiloDMA);
+				return EXIT_FAILURE;
 				}
-			deslockearSelect();
-			}//fin del while(1)
-		pthread_exit(ret);
-		return EXIT_SUCCESS;
-}
- bool tieneQueSalir(){
-	bool estadoActual;
-	lockearSalir();
-	estadoActual=salir;
-	deslockearSalir();
-	return estadoActual;
-}
- int deslockearSalir(){
-	pthread_mutex_unlock(&mutexSalir);
+			else{
+				log_info(LOG_SAFA,"Se creo el hilo para la comunicacion con el Diegote");
+				pthread_detach(resultadoHiloDMA);
+				return EXIT_SUCCESS;
+				}
+		}else if(recibirHandshake(PLANIFICADOR, CPU, client_fd) > 0){
+				log_info(LOG_SAFA, "Conexion realizada con CPU");
+				int fd_CPU = client_fd;
+				log_info(LOG_SAFA, "Iniciando hilo para la comuniacion con el CPU");
+				int resultadoHiloCPU = pthread_create(
+						&hiloComCPU, NULL, funcionHiloComCPU, &configSAFA);
+				if(resultadoHiloCPU){
+					log_error(LOG_SAFA,"Error no se pudo crear el hilo para la comunicacion con la CPUr: %d\n",resultadoHiloCPU);
+					exit(EXIT_FAILURE);
+					}
+				else{
+					log_info(LOG_SAFA,"Se creo el hilo para la comunicacion con la CPU");
+					pthread_detach(resultadoHiloCPU);
+					return EXIT_SUCCESS;
+					}
+				return EXIT_SUCCESS;
+		}
+	}
 	return EXIT_SUCCESS;
 }
- int lockearSalir(){
-	pthread_mutex_lock(&mutexSalir);
-	return EXIT_SUCCESS;
-}
- int deslockearSelect(){
-	//log_info(LOG_SAFA,"Deslockeando semaforo del select");
-	pthread_mutex_unlock(&mutexSelect);
-	return EXIT_SUCCESS;
-}
- int lockearSelect(){
-	//log_info(LOG_SAFA,"Lockeando semaforo del select");
-	pthread_mutex_lock(&mutexSelect);
-	return EXIT_SUCCESS;
-}
- int obtenerMaxFD() {
-    int m;
-    m = maxfd;;
-    return m;
-}
+
+
