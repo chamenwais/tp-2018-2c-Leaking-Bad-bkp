@@ -161,14 +161,21 @@ void *funcionHiloConsola(void *arg){
 		if(strcmp(instruccion[0],"ValidarArchivo")==0){
 			if(instruccion[1]!=NULL){
 				printf("Voy a validar el archivo: %s\n",instruccion[1]);
-				validarArchivo();
+				validarArchivoDeConsola(instruccion[1]);
 			}else{
 				printf("Faltan parametros para poder validar el archivo\n");
 			}
 		}else{
-
+		if(strcmp(instruccion[0],"CrearArchivo")==0){
+			if(instruccion[1]!=NULL){
+				printf("Voy a crear el archivo: %s\n",instruccion[1]);
+				crearArchivoDeConsola(instruccion[1]);
+			}else{
+				printf("Faltan parametros para poder crear el archivo\n");
+				}
+		}else{
 		printf("Comando desconocido\n");
-		}}}}}}}
+		}}}}}}}}
 		free(linea);
 		for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
 		free(instruccion);
@@ -277,7 +284,7 @@ int levantarMetadataBin(){
 
 bool existeElArchivo(char *directorioDelArchivo){
   FILE *fd=fopen(directorioDelArchivo, "r");
-  if(fd<0){
+  if(fd==NULL){
 	  log_info(LOGGER,"No existe el archivo %s",directorioDelArchivo);
 	  return false;
   	  }
@@ -383,26 +390,30 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 int iniciarTrabajoConElDMA(){
 	t_cabecera cabecera;
 	while(1){
-		cabecera = recibirCabecera(FDDMA);
+		//todolo de abajo tiene q ir en un hilo
+		int port = configuracionDelFS.puerto;
+		int sockDelServer = escucharEn(port); //crea servidor
+		int fileDescriptorActual = aceptarConexion(sockDelServer);
+		cabecera = recibirCabecera(fileDescriptorActual);
 		if(cabecera.tamanio>0){
 			log_info(LOGGER,"Cabecera recibida: %d, cantidad de bytes: %d",
 					cabecera.tipoDeMensaje, cabecera.tamanio);
 			switch(cabecera.tipoDeMensaje){
 				case ValidarArchivo:
 					log_info(LOGGER,"Pedido del DMA de \"ValidarArchivo\"");
-					validarArchivo();
+					validarArchivoDeDMA();
 					break;
 				case CrearArchivo:
 					log_info(LOGGER,"Pedido del DMA de \"CrearArchivo\"");
-					crearArchivo();
+					crearArchivoDeDMA();
 					break;
 				case ObtenerDatos:
 					log_info(LOGGER,"Pedido del DMA de \"ObtenerDatos\"");
-					obtenerDatos();
+					obtenerDatosDeDMA();
 					break;
 				case GuardarDatos:
 					log_info(LOGGER,"Pedido del DMA de \"GuardarDatos\"");
-					guardarDatos();
+					guardarDatosDeDMA();
 					break;
 				case FinalizarTrabajoConElFS:
 					log_info(LOGGER,"Pedido del DMA de \"Finalizar el trabajo\"");
@@ -420,52 +431,136 @@ int iniciarTrabajoConElDMA(){
 	return EXIT_SUCCESS;
 }
 
-int validarArchivoDeConsola(){
-
+int validarArchivoDeConsola(char *path){
+	log_info(LOGGER,"Recibiendo el path: %s, para validar el archivo",path);
+	char*ubicacionDelArchivo=string_new();
+	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
+	string_append(&ubicacionDelArchivo, "/Archivos/");
+	string_append(&ubicacionDelArchivo, path);
+	validarArchivo(ubicacionDelArchivo);
 	return EXIT_SUCCESS;
 }
 
 int validarArchivoDeDMA(){
-
-	return EXIT_SUCCESS;
-}
-
-int validarArchivo(){
-	/* Parámetros​: [Path]
-	 * Descripción​: Cuando el El Diego reciba la operación de abrir un archivo deberá validar
-	 * que el archivo exista.
-	 */
 	char*path=prot_recibir_DMA_FS_path(FDDMA);
 	log_info(LOGGER,"Recibiendo el path: %s, para validar el archivo",path);
 	char*ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Archivos/");
 	string_append(&ubicacionDelArchivo, path);
-	log_info(LOGGER,"Voy a ver si existe el archivo",ubicacionDelArchivo);
-	if(existeElArchivo(ubicacionDelArchivo)){
-		enviarCabecera(FDDMA, ElArchivoExiste, 1);
-	}else{
-		enviarCabecera(FDDMA, ElArchivoNoExiste, 1);
-		}
+	enviarCabecera(FDDMA, validarArchivo(ubicacionDelArchivo), 1);
 	return EXIT_SUCCESS;
 }
 
-int crearArchivo(){
+int validarArchivo(char *path){
+	/* Parámetros​: [Path]
+	 * Descripción​: Cuando el El Diego reciba la operación de abrir un archivo deberá validar
+	 * que el archivo exista.
+	 */
+	log_info(LOGGER,"Voy a ver si existe el archivo: %s",path);
+	if(existeElArchivo(path)){
+		return ElArchivoExiste;
+	}else{
+		return ElArchivoNoExiste;
+		}
+}
+
+int crearArchivoDeConsola(char *path){
+	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",path);
+	char*ubicacionDelArchivo=string_new();
+	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
+	string_append(&ubicacionDelArchivo, "/Archivos/");
+	string_append(&ubicacionDelArchivo, path);
+	if(crearArchivo(ubicacionDelArchivo,path)==ArchivoCreado)
+		return EXIT_SUCCESS;
+	else
+		return EXIT_FAILURE;
+}
+
+int crearArchivoDeDMA(){
 	/* Recibe del DMA los valores: path
 	 */
 	char*path=prot_recibir_DMA_FS_path(FDDMA);
 	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",path);
+	char*ubicacionDelArchivo=string_new();
+	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
+	string_append(&ubicacionDelArchivo, "/Archivos/");
+	string_append(&ubicacionDelArchivo, path);
+	int resultadoDeCrearElArchivo=crearArchivo(ubicacionDelArchivo,path);
+	enviarCabecera(FDDMA, resultadoDeCrearElArchivo, 1);
+	return resultadoDeCrearElArchivo;
+}
+
+int crearCarpetas(char *carpetasACrear){
+	//Recibe una lista de carpetas y si no existen las crea, el ultimo de la lista
+	//es la ubicacion del archivo por lo q con eso no hace nada
+	int i;
+	char** carpetas = string_split(carpetasACrear, "/");
+	for(i=0;carpetas[i]!=NULL;i++);
+	char*directorio=string_new();
+	string_append(&directorio,configuracionDelFS.punto_montaje);
+	string_append(&directorio,"/Archivos/");
+	for(int j=0;(j<(i-1))&&(carpetas[j]!=NULL);j++){
+		string_append(&directorio,carpetas[j]);
+		mkdir(directorio,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+		if(j<i-2)
+			string_append(&directorio,"/");
+	}
+	mkdir(directorio,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	log_info(LOGGER,"Directorio %s creado",directorio);
 	return EXIT_SUCCESS;
 }
 
-int obtenerDatos(){
-	/* Recibe del DMA los valores: path,offset,size
+int crearArchivo(char *ubicacionDelArchivo, char *path){
+	/* Parámetros​: [Path]
+	 * Descripción​: Cuando el El Diego reciba la operación de crear un archivo deberá llamar a esta
+	 * operación que creará el archivo dentro del path solicitado. El archivo creado deberá tener la
+	 * cantidad de bloques necesarios para guardar las líneas indicadas por la operación crear con su
+	 * contenido vacío.
+	 * Ejemplo del contenido del archivo [Punto_Montaje]/Archivos/[PathDelArchivo] :
+	 * TAMANIO=250
+	 * BLOQUES=[40,21,82,3]
+	 * */
+	log_info(LOGGER,"Voy a crear el archivo en: %s",ubicacionDelArchivo);
+	crearCarpetas(path);
+	FILE *archivo=fopen(ubicacionDelArchivo, "w");
+	if(archivo!=NULL){
+		fprintf(archivo,"%s","TAMANIO=0\n");
+		fprintf(archivo,"%s","BLOQUES=[]\n");
+		fclose(archivo);
+		log_info(LOGGER,"Archivo %s creado",ubicacionDelArchivo);
+		return ArchivoCreado;
+	}else{
+		log_info(LOGGER,"No se pudo crear el archivo %s",ubicacionDelArchivo);
+		return ArchivoNoCreado;
+		}
+}
+
+int obtenerDatosDeDMA(){
+
+	return EXIT_SUCCESS;
+}
+
+int obtenerDatos(char *path, int offset, int Size){
+	/* Parámetros​: [Path, Offset, Size]
+	 * Descripción​: Ante un pedido de datos File System devolverá del path enviado por parámetro,
+	 * la cantidad de bytes definidos por el Size a partir del offset solicitado.
 	 */
+
 	return EXIT_SUCCESS;
 }
 
-int guardarDatos(){
-	/* Recibe del DMA los valores: path,offset,size,buffer
+int guardarDatosDeDMA(){
+
+	return EXIT_SUCCESS;
+}
+
+int guardarDatos(char *path, int offset, int size, char *Buffer){
+	/* Parámetros​: [Path, Offset, Size, Buffer]
+	 * Descripción​: Ante un pedido de escritura MDJ almacenará en el path enviado por parámetro,
+ 	 * los bytes del buffer, definidos por el valor del Size y a partir del offset solicitado. En caso de
+	 * que se soliciten datos o se intenten guardar datos en un archivo inexistente el File System
+	 * deberá retornar un error de Archivo no encontrado.
 	 */
 	return EXIT_SUCCESS;
 }

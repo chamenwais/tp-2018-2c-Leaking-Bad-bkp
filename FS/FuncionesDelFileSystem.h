@@ -38,9 +38,16 @@ int bajarADiscoBitmap();
 int iniciarEscuchaConDMA();
 void *funcionHiloComunicacionConElDMA(void *arg);
 int iniciarTrabajoConElDMA();
-int validarArchivo();
-int crearArchivo();
-int obtenerDatos();
-int guardarDatos();
+int validarArchivoDeConsola(char *ubicacionDelArchivo);
+int validarArchivoDeDMA();
+int validarArchivo(char *path);
+int crearArchivoDeConsola(char *path);
+int crearArchivoDeDMA();
+int crearCarpetas(char *carpetasACrear);
+int crearArchivo(char *ubicacionDelArchivo, char *path);
+int obtenerDatosDeDMA();
+int obtenerDatos(char *path, int offset, int Size);
+int guardarDatosDeDMA();
+int guardarDatos(char *path, int offset, int size, char *Buffer);
 
 #endif /* FUNCIONESDELFILESYSTEM_H_ */
