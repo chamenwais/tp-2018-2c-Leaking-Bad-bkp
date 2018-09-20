@@ -21,8 +21,8 @@ void funciona(){
 
 int levantarArchConfig(){
 
-
-	config = config_create("CPUConfig.cfg");
+	funciona();
+	config = config_create("/CPUConfig.cfg");
 	if (!config_has_property(config, "IP_SAFA")) {
 		printf("No se encuentra el parametro IP_SAFA en el archivo de configuracion\n");
 		log_error(LOG_CPU,"No se encuentra el parametro IP_SAFA en el archivo de configuracion");
