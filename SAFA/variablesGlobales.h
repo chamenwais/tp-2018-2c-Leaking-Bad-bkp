@@ -32,13 +32,7 @@ extern pthread_t hiloComDMA;
 extern pthread_t hiloComCPU;
 extern int fd_DMA;
 extern int resultadoComElDiego;
-extern int fd_CPU;
-extern fd_set readset;
-extern fd_set auxReadSet;
-extern int maxfd;
-extern bool salir;
-extern pthread_mutex_t mutexSalir;
-extern pthread_mutex_t mutexSelect;
+extern bool safa_conectado;
 
 
 #endif /* SAFA_VARIABLESGLOBALES_H_ */
