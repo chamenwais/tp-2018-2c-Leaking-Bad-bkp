@@ -104,7 +104,6 @@ void cerrar_socket_y_terminar(int socket_id){
 }
 
 void captura_sigpipe(int signo){
-	int i;
 	if (signo == SIGINT) {
 		terminar_controladamente(EXIT_FAILURE);
 	} else if (signo == SIGPIPE) {
