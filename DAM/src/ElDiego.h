@@ -19,11 +19,10 @@
 #include "Contexto.h"
 #include "Utilidades.h"
 
-int comunicarse_con_memoria_y_reportar_a_fs(int socket_fs);
+int comunicarse_con_memoria();
 int comunicarse_con_file_system();
 void realizar_handshake_con_mdj(int socket_id);
 void realizar_handshake_con_fm9(int socket_id);
-void reportar_a_fs(int socket_fs, int socket_fm9);
 void mostrar_mensaje_previa_conexion_con_fm9();
 void mensaje_previa_conexion_con_mdj();
 

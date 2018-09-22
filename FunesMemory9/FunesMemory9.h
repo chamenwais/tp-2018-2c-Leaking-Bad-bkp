@@ -21,7 +21,7 @@
 #include <commons/string.h> // Para manejo de strings
 #include <commons/config.h> // Para Archivo de configuración
 #include <signal.h>			// Para manejo de señales
-
+#include <lqvg/com.h>		// Para manejo de comunicaciones
 
 /*** Defines ***/
 #define MAX_CLIENTES_CPU 20
@@ -68,5 +68,6 @@ void captura_sigpipe(int signo);
 void crear_hilo_conexion(int socket, void*funcion_a_ejecutar(int));
 void finalizar_funesMemory9();
 struct addrinfo* crear_addrinfo();
+int comunicarse_con_dam(int socket_escucha);
 
 #endif /* FUNESMEMORY9_FUNESMEMORY9_H_ */

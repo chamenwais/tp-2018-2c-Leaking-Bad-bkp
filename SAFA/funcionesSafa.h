@@ -17,16 +17,10 @@ int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion);
 int inicializarVariablesSAFA();
 int inicializarSemaforosSAFA();
 int finalizarTodo();
-int iniciarEscuchaConDiego();
 void *funcionHiloComDMA(void *arg);
 int esperarFinEscuchaDMA();
 int iniciarEscuchaCPU();
 void *funcionHiloComCPU(void *arg);
-bool tieneQueSalir();
-int deslockearSalir();
-int lockearSalir();
-int deslockearSelect();
-int lockearSelect();
-int obtenerMaxFD();
+int escuchar();
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */

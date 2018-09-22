@@ -14,8 +14,11 @@ int main(){
 
 	configurar_LOG_CPU();
 	levantarArchConfig();
-	connect_to_server(configuracion.IPSAFA, configuracion.PUERTOSAFA);
-	connect_to_server(configuracion.IPELDIEGO, configuracion.PUERTOELDIEGO);
+
+	conectarseA(configuracion.IPSAFA, configuracion.PUERTOSAFA);
+	conectarseA(configuracion.IPELDIEGO, configuracion.PUERTOELDIEGO);
+
+
 
 return 0;
 }

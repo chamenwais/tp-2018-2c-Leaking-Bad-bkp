@@ -86,7 +86,7 @@ struct addrinfo* crear_addrinfo(){
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;		// No importa si uso IPv4 o IPv6
 	hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
-	getaddrinfo(IP, PUERTO_ESCUCHA, &hints, &serverInfo);
+	getaddrinfo("127.0.0.1", PUERTO_ESCUCHA, &hints, &serverInfo);
 	return serverInfo;
 }
 
@@ -222,7 +222,6 @@ void finalizar_funesMemory9(){
 }
 
 void captura_sigpipe(int signo){
-    int i;
 
     if(signo == SIGINT)
     {
@@ -273,14 +272,30 @@ void iniciar_funes_memory_9(char * path){
 	configurar_signals();
 }
 
+int comunicarse_con_dam(int socket_escucha){
+	logger_funesMemory9(escribir_loguear, l_trace,"\nVoy a esperar al Diego \n");
+	int socket_dam=aceptarConexion(socket_escucha);
+	logger_funesMemory9(escribir_loguear, l_trace,"\nVoy a realizar un handshake con el Diego \n");
+	if(socket_dam>0 && (recibirHandshake(MEMORIA, DMA, socket_dam) != 0)){
+		logger_funesMemory9(escribir_loguear, l_trace,"\nHandshake con el Diego hecho! \n");
+		return socket_dam;
+	}
+	logger_funesMemory9(escribir_loguear, l_error,"\n No se pudo realizar handshake con el Diego \n");
+	close(socket_escucha);
+	finalizar_funesMemory9();
+	return -1;
+}
+
 int main(int argc, char **argv){
 
 	iniciar_funes_memory_9(argv[1]);
 
 	int server_FM9 = iniciar_servidor(PUERTO_ESCUCHA);
 
+	int cliente_DAM = comunicarse_con_dam(server_FM9);
+
 	//Entra en un loop consecutivo hasta un ctrl+c...
-	while (GLOBAL_SEGUIR){
+	while (GLOBAL_SEGUIR && cliente_DAM>0){
 
 		int socket_cliente = atender_nuevo_cpu(server_FM9);
 
