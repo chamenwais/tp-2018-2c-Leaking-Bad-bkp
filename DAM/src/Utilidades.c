@@ -12,6 +12,13 @@ void configurar_logger() {
 
 void levantar_configuracion(){
 	configuracion = config_create(path_archivo_configuracion);
+
+	if(configuracion==NULL){
+		log_info(logger, "NO encontre el arch de config");
+		//finalizar bien el dam
+		exit(EXIT_FAILURE);
+	}
+
 	leer_puerto_de_escucha();
 	leer_configuracion_safa();
 	leer_configuracion_fm9();

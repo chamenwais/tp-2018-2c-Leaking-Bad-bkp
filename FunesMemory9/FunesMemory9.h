@@ -24,7 +24,7 @@
 #include <lqvg/com.h>		// Para manejo de comunicaciones
 
 /*** Defines ***/
-#define MAX_CLIENTES_CPU 20
+#define MAX_CLIENTES 20
 
 
 /*** Nombres claves de archivo de configuración ***/
