@@ -4,17 +4,29 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../FunesMemory9.c 
+../DAM/src/ConexionesEntrantes.c \
+../DAM/src/ConexionesSalientes.c \
+../DAM/src/Contexto.c \
+../DAM/src/ElDiego.c \
+../DAM/src/Utilidades.c 
 
 OBJS += \
-./FunesMemory9.o 
+./DAM/src/ConexionesEntrantes.o \
+./DAM/src/ConexionesSalientes.o \
+./DAM/src/Contexto.o \
+./DAM/src/ElDiego.o \
+./DAM/src/Utilidades.o 
 
 C_DEPS += \
-./FunesMemory9.d 
+./DAM/src/ConexionesEntrantes.d \
+./DAM/src/ConexionesSalientes.d \
+./DAM/src/Contexto.d \
+./DAM/src/ElDiego.d \
+./DAM/src/Utilidades.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
-%.o: ../%.c
+DAM/src/%.o: ../DAM/src/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C Compiler'
 	gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"

@@ -64,7 +64,7 @@ void cargar_archivo_de_configuracion(char * path){
 }
 
 int iniciar_servidor(char * port){
-	int server_socket = crear_listen_socket(port,MAX_CLIENTES_CPU);
+	int server_socket = crear_listen_socket(port,MAX_CLIENTES);
 
 	if(server_socket < 0)
 	{
@@ -173,7 +173,7 @@ void logger_funesMemory9(int tipo_esc, int tipo_log, const char* mensaje, ...){
 	return;
 }
 
-int atender_nuevo_cpu(int serv_socket){
+int atender_nuevo_cliente(int serv_socket){
 	struct sockaddr_in client_addr;
 
 	//Setea la direccion en 0
@@ -184,11 +184,11 @@ int atender_nuevo_cpu(int serv_socket){
 	int new_client_sock = accept(serv_socket, (struct sockaddr *)&client_addr, &client_len);
 
 	if (new_client_sock < 0) {
-		logger_funesMemory9(escribir_loguear,l_error,"Error al aceptar un nuevo CPU :(\n");
+		logger_funesMemory9(escribir_loguear,l_error,"Error al aceptar un nuevo cliente :(\n");
 	  return -1;
 	}
 
-	logger_funesMemory9(escribir_loguear,l_trace,"\nSe aceptó un nuevo CPU, conexión (%d)", new_client_sock);
+	logger_funesMemory9(escribir_loguear,l_trace,"\nSe aceptó un nuevo cliente, conexión (%d)", new_client_sock);
 
 	close(new_client_sock);
 
@@ -205,10 +205,6 @@ void *escuchar_mensajes_entrantes(int socket_cliente){
     logger_funesMemory9(escribir_loguear,l_info, "Esperando mensajes... \n");
 
     total_hilos++;
-
-    //interpretar_header(header, socket_cliente);
-
-    sleep(10);
 
     //Si no recibo nada...
     logger_funesMemory9(escribir_loguear, l_info, "\nCerrada la conexión con socket cliente\n");
@@ -274,15 +270,22 @@ void iniciar_funes_memory_9(char * path){
 
 int comunicarse_con_dam(int socket_escucha){
 	logger_funesMemory9(escribir_loguear, l_trace,"\nVoy a esperar al Diego \n");
+
 	int socket_dam=aceptarConexion(socket_escucha);
+
 	logger_funesMemory9(escribir_loguear, l_trace,"\nVoy a realizar un handshake con el Diego \n");
-	if(socket_dam>0 && (recibirHandshake(MEMORIA, DMA, socket_dam) != 0)){
+
+	if(socket_dam > 0 && (recibirHandshake(MEMORIA, DMA, socket_dam) != 0)){
 		logger_funesMemory9(escribir_loguear, l_trace,"\nHandshake con el Diego hecho! \n");
 		return socket_dam;
 	}
+
 	logger_funesMemory9(escribir_loguear, l_error,"\n No se pudo realizar handshake con el Diego \n");
+
 	close(socket_escucha);
+
 	finalizar_funesMemory9();
+
 	return -1;
 }
 
@@ -297,7 +300,7 @@ int main(int argc, char **argv){
 	//Entra en un loop consecutivo hasta un ctrl+c...
 	while (GLOBAL_SEGUIR && cliente_DAM>0){
 
-		int socket_cliente = atender_nuevo_cpu(server_FM9);
+		int socket_cliente = atender_nuevo_cliente(server_FM9);
 
 		crear_hilo_conexion(socket_cliente, escuchar_mensajes_entrantes);
 	}

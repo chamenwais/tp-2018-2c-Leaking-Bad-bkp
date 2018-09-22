@@ -13,5 +13,11 @@ C_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
-. \
+COM/lqvg \
+CPU \
+DAM/src \
+FS \
+FunesMemory9/src \
+SAFA \
+FunesMemory9 \
 
