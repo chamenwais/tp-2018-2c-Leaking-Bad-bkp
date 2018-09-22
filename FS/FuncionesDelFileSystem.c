@@ -169,7 +169,7 @@ void *funcionHiloConsola(void *arg){
 		if(strcmp(instruccion[0],"CrearArchivo")==0){
 			if(instruccion[1]!=NULL){
 				printf("Voy a crear el archivo: %s\n",instruccion[1]);
-				crearArchivoDeConsola(instruccion[1]);
+				//crearArchivoDeConsola(instruccion[1]);
 			}else{
 				printf("Faltan parametros para poder crear el archivo\n");
 				}
@@ -363,21 +363,6 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 	if(recibirHandshake(FS,DMA,FDDMA) > 0){
 		//Inicio trabajo con el DMA
 		log_info(LOGGER,"Handshake exitoso con el DMA :)");
-		t_cabecera cabecera = recibirCabecera(FDDMA);
-		if(cabecera.tipoDeMensaje==MemoriaUp){
-			log_info(LOGGER,"El proceso memoria esta levantado, me aviso el DMA");
-			iniciarTrabajoConElDMA();
-		}else{
-			if(cabecera.tipoDeMensaje==MemoriaDown){
-				log_error(LOGGER,"El proceso memoria esta caido, me aviso el DMA");
-				resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
-				return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
-			}else{
-				log_error(LOGGER,"Error en el tipo de mensaje, no se si la memoria esta andando o no");
-				resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
-				return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
-			}
-		}
 	}else{
 		log_error(LOGGER,"El proceso no es el esperado");
 		resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
@@ -467,14 +452,14 @@ int validarArchivo(char *path){
 
 int crearArchivoDeConsola(char *path){
 	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",path);
-	char*ubicacionDelArchivo=string_new();
+	/*char*ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Archivos/");
 	string_append(&ubicacionDelArchivo, path);
-	if(crearArchivo(ubicacionDelArchivo,path)==ArchivoCreado)
+	if(crearArchivo(ubicacionDelArchivo,path)==ArchivoCreado)*/
 		return EXIT_SUCCESS;
-	else
-		return EXIT_FAILURE;
+	/*else
+		return EXIT_FAILURE;*/
 }
 
 int crearArchivoDeDMA(){
@@ -521,7 +506,7 @@ int crearArchivo(char *ubicacionDelArchivo, char *path){
 	 * TAMANIO=250
 	 * BLOQUES=[40,21,82,3]
 	 * */
-	log_info(LOGGER,"Voy a crear el archivo en: %s",ubicacionDelArchivo);
+	/*log_info(LOGGER,"Voy a crear el archivo en: %s",ubicacionDelArchivo);
 	crearCarpetas(path);
 	FILE *archivo=fopen(ubicacionDelArchivo, "w");
 	if(archivo!=NULL){
@@ -529,11 +514,11 @@ int crearArchivo(char *ubicacionDelArchivo, char *path){
 		fprintf(archivo,"%s","BLOQUES=[]\n");
 		fclose(archivo);
 		log_info(LOGGER,"Archivo %s creado",ubicacionDelArchivo);
-		return ArchivoCreado;
+		*/return 1;/*ArchivoCreado;
 	}else{
 		log_info(LOGGER,"No se pudo crear el archivo %s",ubicacionDelArchivo);
 		return ArchivoNoCreado;
-		}
+		}*/
 }
 
 int obtenerDatosDeDMA(){

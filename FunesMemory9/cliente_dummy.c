@@ -12,7 +12,7 @@
 #include <netdb.h>
 #include <unistd.h>
 
-struct addrinfo* crear_addrinfo(char * ip, char * puerto){
+struct addrinfo* crear_address_info(char * ip, char * puerto){
 	struct addrinfo hints;
 	struct addrinfo *serverInfo;
 
@@ -27,7 +27,7 @@ struct addrinfo* crear_addrinfo(char * ip, char * puerto){
 
 int conectar_fm9(char * ip, char * puerto){
 
-	struct addrinfo *serverInfo = crear_addrinfo(ip, puerto);
+	struct addrinfo *serverInfo = crear_address_info(ip, puerto);
 
 	int serverfm9 = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
 
@@ -54,10 +54,10 @@ int conectar_fm9(char * ip, char * puerto){
 
 	return serverfm9;
 }
-
+/* TODO Descomentar cuando se quiera utilizar este cliente de prueba y compilar por linea de comandos
 int main(){
 	int server = conectar_fm9("127.0.0.1", "8000");
 	sleep(6);
 	printf("\nChau, ya viste que me puedo conectar \n");
 	return(0);
-}
+}*/
