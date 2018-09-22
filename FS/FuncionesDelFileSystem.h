@@ -8,6 +8,7 @@
 #ifndef FUNCIONESDELFILESYSTEM_H_
 #define FUNCIONESDELFILESYSTEM_H_
 
+#include "VariablesGlobales.h"
 #include "FileSystem.h"
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -17,6 +18,13 @@
 //#include "../../../../utnso/rep/tp-2018-2c-Leaking-Bad/COM/lqvg/com.h"
 //#include "../COM/lqvg/com.h"
 #include "//usr/include/lqvg/com.h"
+#include "//usr/include/lqvg/protocolo.h"
+
+typedef struct defMetadata {
+	int tamanio;
+	t_list * bloques;
+} t_metadata;
+typedef t_metadata* tp_metadata;
 
 int inicializarLog();
 int inicializarVariables();
@@ -25,6 +33,7 @@ int levantarArchivoDeConfiguracion(int argc,char** argv);
 int iniciarConsola();
 char** parser_instruccion(char* linea);
 void *funcionHiloConsola(void *arg);
+int man();
 int esperarAQueTermineLaEscuchaConElDMA();
 int esperarAQueTermineLaConsola();
 int finalizarTodoPorError();
@@ -33,6 +42,8 @@ int listarDirectorioActual();
 int listarDirectorio(char* directorio);
 int levantarMetadataBin();
 bool existeElArchivo(char *directorioDelArchivo);
+int reservarBloqueYCrearEstructuras(int numeroDeBloqueLibre);
+int obtenerBloqueLibreDelBitMap();
 int levantarBitMap();
 int bajarADiscoBitmap();
 int iniciarEscuchaConDMA();
@@ -45,9 +56,12 @@ int crearArchivoDeConsola(char *path);
 int crearArchivoDeDMA();
 int crearCarpetas(char *carpetasACrear);
 int crearArchivo(char *ubicacionDelArchivo, char *path);
+int obtenerDatosDeConsola(char *path, int offset, int Size);
 int obtenerDatosDeDMA();
 int obtenerDatos(char *path, int offset, int Size);
+int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer);
 int guardarDatosDeDMA();
 int guardarDatos(char *path, int offset, int size, char *Buffer);
+tp_metadata recuperarMetaData(char *ubicacionDelArchivoDeMetadata);
 
 #endif /* FUNCIONESDELFILESYSTEM_H_ */

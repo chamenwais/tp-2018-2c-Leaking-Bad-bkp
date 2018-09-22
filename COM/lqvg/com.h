@@ -37,7 +37,10 @@ enum MENSAJES {
 	ElArchivoNoExiste,
 	ElArchivoExiste,
 	ArchivoCreado,
-	ArchivoNoCreado
+	ArchivoNoCreado,
+	DatosGuardados,
+	ArchivoNoEncontrado,
+	DatosObtenidos
 };
 
 typedef struct {

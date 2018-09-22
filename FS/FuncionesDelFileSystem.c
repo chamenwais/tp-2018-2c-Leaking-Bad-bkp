@@ -174,15 +174,57 @@ void *funcionHiloConsola(void *arg){
 				printf("Faltan parametros para poder crear el archivo\n");
 				}
 		}else{
+		if(strcmp(instruccion[0],"ObtenerDatos")==0){
+			if((instruccion[1]!=NULL)&&(instruccion[2]!=NULL)&&(instruccion[3]!=NULL)){
+				printf("Voy a obtener datos del archivo: %s\n",instruccion[1]);
+				obtenerDatosDeConsola(instruccion[1],instruccion[2],instruccion[3]);
+			}else{
+				printf("Faltan parametros para obtener el archivo\n");
+				}
+		}else{
+		if(strcmp(instruccion[0],"GuardarDatos")==0){
+			if((instruccion[1]!=NULL)&&(instruccion[2]!=NULL)&&(instruccion[3]!=NULL)){
+				printf("Voy a guardar datos de consola del archivo: %s\n",instruccion[1]);
+				guardarDatosDeConsola(instruccion[1],instruccion[2],instruccion[3],instruccion[4]);
+			}else{
+				printf("Faltan parametros para guardar datos del archivo\n");
+				}
+		}else{
+		if(strcmp(instruccion[0],"man")==0){
+			printf("Voy a listar todas las instrucciones posibles:\n");
+			man();
+		}else{
 		printf("Comando desconocido\n");
-		}}}}}}}}
+		}}}}}}}}}}}
 		free(linea);
-		for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
-		free(instruccion);
+		//for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
+		//free(instruccion);
 	}//Cierre del while(1)
 	resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
 	return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
 	//pthread_exit(ret);
+}
+
+int man(){
+	printf("1) \"exit\" cierra la consola\n");
+	printf("2) \"ls\" [path del directorio(opcional)] Lista los directorios y archivos dentro del directorio pasado por parametro\n");
+	printf("   Si no se pasa ningún parámetro, se usa el directorio actual\n");
+	printf("3) \"cd\" [path del directorio] Se cambia el directorio actual al pasado por parámetro\n");
+	printf("   El directorio “.” indica el directorio actual y “..” indica el directorio anterior\n");
+	printf("4) \"md5\" [path del archivo] Genera el md5 del archivo y lo muestra por pantalla\n");
+	printf("5) \"cat\" [path del archivo] Muestra el contenido de un archivo por pantalla, como una cadena\n");
+	printf("Comandos propios:\n");
+	printf("6) \"ValidarArchivo\" [Path] deberá validar que el archivo exista\n");
+	printf("7) \"CrearArchivo\" [Path] creará el archivo dentro del path solicitado\n");
+	printf("   El archivo creado deberá tener la cantidad de bloques necesarios para guardar las\n");
+	printf("   líneas indicadas por la operación crear con su contenido vacío\n");
+	printf("8) \"ObtenetDatos\" [Path, Offset, Size]  devolverá del path enviado por parámetro,\n");
+	printf("   la cantidad de bytes definidos por el Size a partir del offset solicitado.\n");
+	printf("9) \"GuardarDatos\" [Path, Offset, Size, Buffer] almacenará en el path enviado por parámetro,\n");
+	printf("   los bytes del buffer, definidos por el valor del Size y a partir del offset solicitado. En caso de\n");
+	printf("   que se soliciten datos o se intenten guardar datos en un archivo inexistente el File System\n");
+	printf("   deberá retornar un error de Archivo no encontrado\n");
+	return EXIT_SUCCESS;
 }
 
 int esperarAQueTermineLaEscuchaConElDMA(){
@@ -293,6 +335,22 @@ bool existeElArchivo(char *directorioDelArchivo){
   return true;
 }
 
+int obtenerBloqueLibreDelBitMap(){
+	/* Retorna un numero de bloque libre en el bitmap
+	 * Si no hay mas bloques libre retorna -1 */
+	int i;
+	for(i=0;i<configuracionDeMetadata.cantidadBloques;i++){
+		if(bitarray_test_bit(bitmap,i)){
+			log_info(LOGGER,"El bloque %d esta libre", i);
+			return i;
+			}
+		}
+	log_info(LOGGER,"No hay mas bloques libres");
+	return -1;
+}
+
+int reservarBloqueYCrearEstructuras(int numeroDeBloqueLibre){}
+
 int levantarBitMap(){
 	FILE *archivoBitmap;
 	char* ubicacionDelArchivo;
@@ -358,7 +416,6 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 	log_info(LOGGER,"Esperando conexion entrante del DMA por el puerto: %d", configuracionDelFS.puerto);
 	int port = configuracionDelFS.puerto;
 	int sockDelServer = escucharEn(port); //crea servidor
-	log_info(LOGGER,"Esperando conexion entrante del DMA por el puerto: %d", configuracionDelFS.puerto);
 	FDDMA = aceptarConexion(sockDelServer);
 	if(recibirHandshake(FS,DMA,FDDMA) > 0){
 		//Inicio trabajo con el DMA
@@ -536,7 +593,13 @@ int crearArchivo(char *ubicacionDelArchivo, char *path){
 		}
 }
 
+int obtenerDatosDeConsola(char *path, int offset, int Size){
+
+	return EXIT_SUCCESS;
+}
+
 int obtenerDatosDeDMA(){
+	tp_obtenerDatos parametrosDeObtenerDatos = prot_recibir_DMA_FS_obtenerDatos(FDDMA);
 
 	return EXIT_SUCCESS;
 }
@@ -546,7 +609,18 @@ int obtenerDatos(char *path, int offset, int Size){
 	 * Descripción​: Ante un pedido de datos File System devolverá del path enviado por parámetro,
 	 * la cantidad de bytes definidos por el Size a partir del offset solicitado.
 	 */
+	if(existeElArchivo(path)){
 
+		return DatosObtenidos;
+	}else{
+		return ArchivoNoEncontrado;
+	}
+	return EXIT_SUCCESS;
+}
+
+
+int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer){
+	guardarDatos(path, offset, size, Buffer);
 	return EXIT_SUCCESS;
 }
 
@@ -562,5 +636,101 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 	 * que se soliciten datos o se intenten guardar datos en un archivo inexistente el File System
 	 * deberá retornar un error de Archivo no encontrado.
 	 */
-	return EXIT_SUCCESS;
+	char *ubicacionDelArchivoDeMetadata=string_new();
+	string_append(&ubicacionDelArchivoDeMetadata,configuracionDelFS.punto_montaje);
+	string_append(&ubicacionDelArchivoDeMetadata, "/Archivos/");
+	string_append(&ubicacionDelArchivoDeMetadata,path);
+	if(existeElArchivo(ubicacionDelArchivoDeMetadata)){
+		tp_metadata metadata = recuperarMetaData(ubicacionDelArchivoDeMetadata);
+		int numeroDeBloqueDeInicioDeEscritura=offset/configuracionDeMetadata.tamanioBloques;
+		int numeroDeBloqueDeFinDeEscritura=(offset+size)/configuracionDeMetadata.tamanioBloques;
+		int escribirEnPrimerArchivoDesde=offset%configuracionDeMetadata.tamanioBloques;
+		int bytesAEscribir;
+		int bytesEscritos=0;
+		int cantidadTotalDeBloquesCreados=list_size(metadata->bloques);
+		int bloqueActual=numeroDeBloqueDeInicioDeEscritura;
+		for(int i=numeroDeBloqueDeInicioDeEscritura;i<=numeroDeBloqueDeFinDeEscritura;i++){
+			int numeroDeBloque;
+			char *archivoDeBloque=string_new();
+			string_append(&archivoDeBloque,configuracionDelFS.punto_montaje);
+			string_append(&archivoDeBloque, "/Bloques/");
+			if(bloqueActual<cantidadTotalDeBloquesCreados){
+				numeroDeBloque =list_get(metadata->bloques,i);
+				string_append(&archivoDeBloque, string_itoa(numeroDeBloque));
+			}else{
+
+				//El bloque no existe tengo que tomar uno vacio, crearlo y ademas actualizar la metadata
+				int numeroDeBloqueLibre=obtenerBloqueLibreDelBitMap();
+				if(numeroDeBloqueLibre!=-1){
+					log_info(LOGGER,"El bloque %d esta libre",numeroDeBloque);
+				}else{
+					log_error(LOGGER,"No hay mas bloques libres");
+					return EXIT_FAILURE;///no hay mas bloques libres
+					}
+				reservarBloqueYCrearEstructuras(numeroDeBloqueLibre);
+
+			}
+			log_info(LOGGER,"Abriendo el bloque %s para escribir",archivoDeBloque);
+			FILE * archivo = fopen(archivoDeBloque,"wb");
+			//fwrite recibe: puntero a los datos, el tamaño de los registros, numero de registros, archivo
+
+			if(i!=numeroDeBloqueDeFinDeEscritura){
+				bytesAEscribir=configuracionDeMetadata.tamanioBloques;
+			}else{
+				bytesAEscribir=configuracionDeMetadata.tamanioBloques-escribirEnPrimerArchivoDesde;
+				fseek(archivo, escribirEnPrimerArchivoDesde, SEEK_SET);
+				}
+			log_info(LOGGER,"Escribiendo");
+			fwrite(Buffer[bytesEscritos],sizeof(char),bytesAEscribir,archivo);
+			bytesEscritos=bytesAEscribir+bytesEscritos;
+			bloqueActual++;
+			log_info(LOGGER,"Flusheando");
+			fflush(archivo);
+			fclose(archivo);
+			}
+		return DatosGuardados;
+	}else{
+		return ArchivoNoEncontrado;
+	}
 }
+
+tp_metadata recuperarMetaData(char *ubicacionDelArchivoDeMetadata){
+	tp_metadata metadata=malloc(sizeof(t_metadata));;
+	metadata->tamanio=-1;
+	metadata->bloques=NULL;
+	t_config* configuracion = config_create(ubicacionDelArchivoDeMetadata);
+	if(configuracion!=NULL){
+		log_info(LOGGER,"Abriendo el archivo de metadata %s",ubicacionDelArchivoDeMetadata);
+	}else{
+		log_error(LOGGER,"No existe el archivo de metadata en: %s",ubicacionDelArchivoDeMetadata);
+		return EXIT_FAILURE;
+		}
+	//Recupero el tamanio
+	if(!config_has_property(configuracion,"TAMANIO")) {
+		log_error(LOGGER,"No esta el TAMANIO en el archivo de metadata");
+		config_destroy(configuracion);
+		return EXIT_FAILURE;
+		}
+	metadata->tamanio = config_get_int_value(configuracion,"TAMANIO");
+	log_info(LOGGER,"TAMANIO del archivo de metadata recuperado: %d", metadata->tamanio);
+
+	//Recupero los BLOQUES
+	if(!config_has_property(configuracion,"BLOQUES")) {
+		log_error(LOGGER,"No estan los bloques en el archivo de metadata");
+		config_destroy(configuracion);
+		return EXIT_FAILURE;
+		}
+	char* bloques = config_get_string_value(configuracion,"BLOQUES");
+	//tengo que volarle a la mierda al string q levante los []
+	char *aux= string_substring_from(bloques,1);
+	bloques= string_substring_until(aux,strlen(aux)-1);
+	log_info(LOGGER,"Bloques recuperados: %s", bloques);
+	char** instruccion = string_split(bloques, ",");
+	metadata->bloques=list_create();
+	for(int i=0;instruccion[i]!=NULL;i++){
+		list_add(metadata->bloques,atoi(instruccion[i]));
+		log_info(LOGGER,"Agregando el valor %d a la lista",atoi(instruccion[i]));
+		}
+	return metadata;
+}
+

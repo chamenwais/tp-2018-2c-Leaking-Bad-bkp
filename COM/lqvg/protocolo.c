@@ -30,7 +30,7 @@ void prot_enviar_DMA_FS_obtenerDatos(char *path, int offset, int size, int sock)
 	return;
 }
 
-tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos(char *path, int offset, int size, int sock){
+tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos(int sock){
 	int tam;
 	tp_obtenerDatos recibido = malloc(sizeof(t_obtenerDatos));
 	recibir(sock,&tam,sizeof(tam));
