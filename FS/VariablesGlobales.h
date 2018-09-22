@@ -28,6 +28,5 @@ extern pthread_t threadConsola;
 extern t_bitarray *bitmap;
 extern pthread_t threadComunicacionConElDMA;
 extern int resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
-extern int FDDMA;
 
 #endif /* VARIABLESGLOBALES_H_ */

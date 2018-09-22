@@ -14,7 +14,6 @@ int inicializarLog(){
 }
 
 int inicializarVariables(){
-	FDDMA=0;
 	resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_SUCCESS;
 	return EXIT_SUCCESS;
 }
@@ -169,7 +168,7 @@ void *funcionHiloConsola(void *arg){
 		if(strcmp(instruccion[0],"CrearArchivo")==0){
 			if(instruccion[1]!=NULL){
 				printf("Voy a crear el archivo: %s\n",instruccion[1]);
-				//crearArchivoDeConsola(instruccion[1]);
+				crearArchivoDeConsola(instruccion[1]);
 			}else{
 				printf("Faltan parametros para poder crear el archivo\n");
 				}
@@ -349,7 +348,9 @@ int obtenerBloqueLibreDelBitMap(){
 	return -1;
 }
 
-int reservarBloqueYCrearEstructuras(int numeroDeBloqueLibre){}
+int reservarBloqueYCrearEstructuras(int numeroDeBloqueLibre){
+	return EXIT_SUCCESS;
+}
 
 int levantarBitMap(){
 	FILE *archivoBitmap;
@@ -412,63 +413,74 @@ int iniciarEscuchaConDMA(){
 	return EXIT_SUCCESS;
 }
 
+void *hiloDePedidoDeDMA(void* arg){
+	int FD = (int)arg;
+	int resultadoDelTrabajoConElDMA;
+	if(recibirHandshake(FS,DMA,FD) > 0){
+		//Inicio trabajo con el DMA
+		log_info(LOGGER,"Handshake exitoso con el DMA :), por el FD %d",FD);
+		iniciarTrabajoConElDMA(FD);
+		resultadoDelTrabajoConElDMA=EXIT_SUCCESS;
+	}else{
+		log_error(LOGGER,"El proceso no es el esperado por el FD %d",FD);
+		resultadoDelTrabajoConElDMA=EXIT_FAILURE;
+
+		}
+	log_info(LOGGER,"Finalizando pedido del DMA");
+	return resultadoDelTrabajoConElDMA;
+}
+
 void *funcionHiloComunicacionConElDMA(void *arg){
+	int FDDMA;
+	pthread_attr_t attr;
+	pthread_t thread;
 	log_info(LOGGER,"Esperando conexion entrante del DMA por el puerto: %d", configuracionDelFS.puerto);
 	int port = configuracionDelFS.puerto;
 	int sockDelServer = escucharEn(port); //crea servidor
-	FDDMA = aceptarConexion(sockDelServer);
-	if(recibirHandshake(FS,DMA,FDDMA) > 0){
-		//Inicio trabajo con el DMA
-		log_info(LOGGER,"Handshake exitoso con el DMA :)");
-	}else{
-		log_error(LOGGER,"El proceso no es el esperado");
-		resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
-		return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
-		}
-	resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_SUCCESS;
-	return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
+	while(1){
+		//FDDMA=malloc(sizeof(int));
+		FDDMA = aceptarConexion(sockDelServer);
+		log_info(LOGGER,"Voy a atender una conexion por el FD: %d", FDDMA);
+		pthread_attr_init(&attr);
+		pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
+		pthread_create(&thread, &attr,&hiloDePedidoDeDMA, FDDMA);
+		pthread_attr_destroy(&attr);
+	}
+	return EXIT_SUCCESS;
 }
 
-int iniciarTrabajoConElDMA(){
+int iniciarTrabajoConElDMA(int fileDescriptorActual){
 	t_cabecera cabecera;
-	while(1){
-		//todolo de abajo tiene q ir en un hilo
-		int port = configuracionDelFS.puerto;
-		int sockDelServer = escucharEn(port); //crea servidor
-		int fileDescriptorActual = aceptarConexion(sockDelServer);
-		cabecera = recibirCabecera(fileDescriptorActual);
-		if(cabecera.tamanio>0){
-			log_info(LOGGER,"Cabecera recibida: %d, cantidad de bytes: %d",
-					cabecera.tipoDeMensaje, cabecera.tamanio);
-			switch(cabecera.tipoDeMensaje){
-				case ValidarArchivo:
-					log_info(LOGGER,"Pedido del DMA de \"ValidarArchivo\"");
-					validarArchivoDeDMA();
-					break;
-				case CrearArchivo:
-					log_info(LOGGER,"Pedido del DMA de \"CrearArchivo\"");
-					crearArchivoDeDMA();
-					break;
-				case ObtenerDatos:
-					log_info(LOGGER,"Pedido del DMA de \"ObtenerDatos\"");
-					obtenerDatosDeDMA();
-					break;
-				case GuardarDatos:
-					log_info(LOGGER,"Pedido del DMA de \"GuardarDatos\"");
-					guardarDatosDeDMA();
-					break;
-				case FinalizarTrabajoConElFS:
-					log_info(LOGGER,"Pedido del DMA de \"Finalizar el trabajo\"");
-					return EXIT_SUCCESS;
-					break;
-				default:
-					log_error(LOGGER,"Error, me llego un tipo de mensaje del DMA desconocido, %d",cabecera.tipoDeMensaje);
-					return EXIT_FAILURE;
-					break;
-			}//end swith
-		}else{
-			sleep(1);
-		}
+	cabecera = recibirCabecera(fileDescriptorActual);
+	if(cabecera.tamanio>0){
+		log_info(LOGGER,"Cabecera recibida: %d, cantidad de bytes: %d",
+				cabecera.tipoDeMensaje, cabecera.tamanio);
+		switch(cabecera.tipoDeMensaje){
+			case ValidarArchivo:
+				log_info(LOGGER,"Pedido del DMA de \"ValidarArchivo\"");
+				validarArchivoDeDMA(fileDescriptorActual);
+				break;
+			case CrearArchivo:
+				log_info(LOGGER,"Pedido del DMA de \"CrearArchivo\"");
+				crearArchivoDeDMA(fileDescriptorActual);
+				break;
+			case ObtenerDatos:
+				log_info(LOGGER,"Pedido del DMA de \"ObtenerDatos\"");
+				obtenerDatosDeDMA(fileDescriptorActual);
+				break;
+			case GuardarDatos:
+				log_info(LOGGER,"Pedido del DMA de \"GuardarDatos\"");
+				guardarDatosDeDMA();
+				break;
+			case FinalizarTrabajoConElFS:
+				log_info(LOGGER,"Pedido del DMA de \"Finalizar el trabajo\"");
+				return EXIT_SUCCESS;
+				break;
+			default:
+				log_error(LOGGER,"Error, me llego un tipo de mensaje del DMA desconocido, %d",cabecera.tipoDeMensaje);
+				return EXIT_FAILURE;
+				break;
+		}//end swith
 	}
 	return EXIT_SUCCESS;
 }
@@ -483,7 +495,7 @@ int validarArchivoDeConsola(char *path){
 	return EXIT_SUCCESS;
 }
 
-int validarArchivoDeDMA(){
+int validarArchivoDeDMA(int FDDMA){
 	char*path=prot_recibir_DMA_FS_path(FDDMA);
 	log_info(LOGGER,"Recibiendo el path: %s, para validar el archivo",path);
 	char*ubicacionDelArchivo=string_new();
@@ -509,17 +521,17 @@ int validarArchivo(char *path){
 
 int crearArchivoDeConsola(char *path){
 	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",path);
-	/*char*ubicacionDelArchivo=string_new();
+	char*ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Archivos/");
 	string_append(&ubicacionDelArchivo, path);
-	if(crearArchivo(ubicacionDelArchivo,path)==ArchivoCreado)*/
+	if(crearArchivo(ubicacionDelArchivo,path)==ArchivoCreado)
 		return EXIT_SUCCESS;
-	/*else
-		return EXIT_FAILURE;*/
+	else
+		return EXIT_FAILURE;
 }
 
-int crearArchivoDeDMA(){
+int crearArchivoDeDMA(int FDDMA){
 	/* Recibe del DMA los valores: path
 	 */
 	char*path=prot_recibir_DMA_FS_path(FDDMA);
@@ -563,7 +575,7 @@ int crearArchivo(char *ubicacionDelArchivo, char *path){
 	 * TAMANIO=250
 	 * BLOQUES=[40,21,82,3]
 	 * */
-	/*log_info(LOGGER,"Voy a crear el archivo en: %s",ubicacionDelArchivo);
+	log_info(LOGGER,"Voy a crear el archivo en: %s",ubicacionDelArchivo);
 	crearCarpetas(path);
 	FILE *archivo=fopen(ubicacionDelArchivo, "w");
 	if(archivo!=NULL){
@@ -571,11 +583,11 @@ int crearArchivo(char *ubicacionDelArchivo, char *path){
 		fprintf(archivo,"%s","BLOQUES=[]\n");
 		fclose(archivo);
 		log_info(LOGGER,"Archivo %s creado",ubicacionDelArchivo);
-		*/return 1;/*ArchivoCreado;
+		return 1;//ArchivoCreado;
 	}else{
 		log_info(LOGGER,"No se pudo crear el archivo %s",ubicacionDelArchivo);
 		return ArchivoNoCreado;
-		}*/
+		}
 }
 
 int obtenerDatosDeConsola(char *path, int offset, int Size){
@@ -583,7 +595,7 @@ int obtenerDatosDeConsola(char *path, int offset, int Size){
 	return EXIT_SUCCESS;
 }
 
-int obtenerDatosDeDMA(){
+int obtenerDatosDeDMA(int FDDMA){
 	tp_obtenerDatos parametrosDeObtenerDatos = prot_recibir_DMA_FS_obtenerDatos(FDDMA);
 
 	return EXIT_SUCCESS;

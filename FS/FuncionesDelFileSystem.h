@@ -26,6 +26,14 @@ typedef struct defMetadata {
 } t_metadata;
 typedef t_metadata* tp_metadata;
 
+typedef struct defHiloDMA {
+	pthread_attr_t attr;
+	pthread_t thread;
+	int fd;
+} t_hiloDMA;
+typedef t_hiloDMA* tp_hiloDMA;
+
+
 int inicializarLog();
 int inicializarVariables();
 int levantarLineasDelArchivoDeConfiguracion(char* ubicacionDelArchivoConfiguracion);
@@ -50,14 +58,14 @@ int iniciarEscuchaConDMA();
 void *funcionHiloComunicacionConElDMA(void *arg);
 int iniciarTrabajoConElDMA();
 int validarArchivoDeConsola(char *ubicacionDelArchivo);
-int validarArchivoDeDMA();
+int validarArchivoDeDMA(int FDDMA);
 int validarArchivo(char *path);
 int crearArchivoDeConsola(char *path);
-int crearArchivoDeDMA();
+int crearArchivoDeDMA(int FDDMA);
 int crearCarpetas(char *carpetasACrear);
 int crearArchivo(char *ubicacionDelArchivo, char *path);
 int obtenerDatosDeConsola(char *path, int offset, int Size);
-int obtenerDatosDeDMA();
+int obtenerDatosDeDMA(int FDDMA);
 int obtenerDatos(char *path, int offset, int Size);
 int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer);
 int guardarDatosDeDMA();
