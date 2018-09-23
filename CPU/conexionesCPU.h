@@ -14,9 +14,20 @@
 
 
 
-int connect_to_server(char * ip, int * puerto);
-void _exit_with_error(int socket, char* error_msg, void * buffer);
-void exit_gracefully(int return_nr);
+void * comunicarse_con_DAM();
+void * comunicarse_con_SAFA();
+int validar_comunicacion(int socket_id, char * proceso);
+int cerrar_socket_y_terminar(int socket_id);
+int terminar_controladamente(int return_nr);
+
+
+
+
+
+
+
+/*void _exit_with_error(int socket, char* error_msg, void * buffer);
+void exit_gracefully(int return_nr);*/
 
 
 

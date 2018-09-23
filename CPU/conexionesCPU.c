@@ -12,57 +12,83 @@
 
 
 
+void * comunicarse_con_DAM()
+{
+	log_info(LOG_CPU,"Conectando con ELDIEGO/DAM por el puerto %d", configuracion.PUERTOELDIEGO);
+	int socket_conecta_DAM = conectarseA(configuracion.IPELDIEGO, configuracion.PUERTOELDIEGO);
+	if(validar_comunicacion(socket_conecta_DAM, "DAM"))
+	{
+		if(enviarHandshake(CPU, DMA , socket_conecta_DAM))
+			log_info(LOG_CPU,"Handshake exitoso con DAM");
+		else
+			log_error(LOG_CPU,"Handshake incorrecto, no era el DAM");
+	}
+}
 
-int connect_to_server(char * ip, int * puerto) {
-	  struct addrinfo hints;
-	  struct addrinfo *server_info;
-
-	  memset(&hints, 0, sizeof(hints));
-	  hints.ai_family = AF_UNSPEC;    // Permite que la maquina se encargue de verificar si usamos IPv4 o IPv6
-	  hints.ai_socktype = SOCK_STREAM;  // Indica que usaremos el protocolo TCP
-
-	  getaddrinfo(ip, puerto, &hints, &server_info);  // Carga en server_info los datos de la conexion
-
-	  // 2. Creemos el socket con el nombre "server_socket" usando la "server_info" que creamos anteriormente
-	  int server_socket = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
-
-	  // 3. Conectemosnos al server a traves del socket!
-	  int res = connect(server_socket, server_info->ai_addr, server_info->ai_addrlen);
-
-	  freeaddrinfo(server_info);  // No lo necesitamos mas
-
-	  /*
-	    3.1 Recuerden chequear por si no se pudo contectar.
-	        Si hubo un error, lo loggeamos y podemos terminar el programa con la funcioncita
-	        exit_gracefully pasandole 1 como parametro para indicar error ;).
-	        Pss, revisen los niveles de log de las commons.
-	  */
-	  if (res < 0) {
-	    _exit_with_error(server_socket, "No me pude conectar al servidor", NULL);
-	  }
-	  // 4 Logeamos que pudimos conectar y retornamos el socket
-	  log_info(LOG_CPU, "Conectado!");
-
-return server_socket;
+void * comunicarse_con_SAFA()
+{
+	log_info(LOG_CPU,"Conectando con SAFA por el puerto %d", configuracion.PUERTOSAFA);
+	int socket_conecta_SAFA = conectarseA(configuracion.IPSAFA, configuracion.PUERTOSAFA);
+	if(validar_comunicacion(socket_conecta_SAFA, "SAFA"))
+		if(enviarHandshake(CPU, DMA , socket_conecta_SAFA))
+			log_info(LOG_CPU,"Handshake exitoso con SAFA");
+		else
+			log_error(LOG_CPU,"Handshake incorrecto, no era el SAFA");
 }
 
 
-void _exit_with_error(int socket, char* error_msg, void * buffer) {
-  if (buffer != NULL) {
-    free(buffer);
-  }
-  log_error(LOG_CPU, error_msg);
+int validar_comunicacion(int socket_id, char * proceso)
+{
+	if(socket_id<0)
+	{
+		log_error(LOG_CPU, "No se pudo conectar con el proceso %s ", proceso);
+		cerrar_socket_y_terminar(socket_id);
+	}
+	else
+	{
+		log_info(LOG_CPU, "Conexion realizada con %s", proceso);
+		return EXIT_SUCCESS;
+	}
+
+}
+
+
+int cerrar_socket_y_terminar(int socket_id)
+{
+	close(socket_id);
+	terminar_controladamente(EXIT_FAILURE);
+}
+
+int terminar_controladamente(int return_nr){
+	log_info(LOG_CPU, "Se destruira estructura de archivo de configuracion");
+	config_destroy(config);
+	log_info(LOG_CPU, "Se destruira el logger");
+	log_destroy(LOG_CPU);
+	exit(return_nr);
+}
+
+
+
+
+/*
+ void _exit_with_error(int socket, char* error_msg, void * buffer) {
+ if (buffer != NULL) {
+ free(buffer);
+ }
+ log_error(LOG_CPU, error_msg);
   close(socket);
   exit_gracefully(1);
 }
 
 
 void exit_gracefully(int return_nr) {
-  /*
+
     20.   Siempre llamamos a esta funcion para cerrar el programa.
           Asi solo necesitamos destruir el logger y usar la llamada al
           sistema exit() para terminar la ejecucion
-  */
+
  	log_destroy(LOG_CPU);
  	exit(return_nr);
 }
+*/
+

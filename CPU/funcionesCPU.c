@@ -12,15 +12,15 @@
 
 
 
-void funciona(){
 
+void funciona()
+{
 	printf("Anda hasta aca\n");
-
 }
 
 
-int levantarArchConfig(){
-
+int levantarArchConfig()
+{
 	funciona();
 	config = config_create("/CPUConfig.cfg");
 	if (!config_has_property(config, "IP_SAFA")) {
@@ -75,12 +75,44 @@ int configurar_LOG_CPU()
 	return EXIT_SUCCESS;
 }
 
-int finalizarTodo(){
-	log_info(LOG_CPU, "Finalizando SAFA");
+int finalizarTodo()
+{
+	log_info(LOG_CPU, "Finalizando CPU");
 	log_info(LOG_CPU, "Liberando estructuras");
 	log_info(LOG_CPU, "Chau CPULog");
 	log_destroy(LOG_CPU);
 
 	exit(1);
 	return EXIT_SUCCESS;
+}
+
+void captura_sigpipe(int signo)
+{
+    if(signo == SIGINT)
+    {
+    	log_trace(LOG_CPU,"\nFinalizando proceso... Gracias vuelva prontos.\n");
+    	terminar_controladamente(EXIT_FAILURE);
+    }
+    else if(signo == SIGPIPE)
+    {
+    	log_error(LOG_CPU,"\n Se desconectó un proceso al que se quizo enviar.\n");
+    }
+
+}
+
+void configurar_signals(void){
+	struct sigaction signal_struct;
+	signal_struct.sa_handler = captura_sigpipe;
+	signal_struct.sa_flags   = 0;
+
+	sigemptyset(&signal_struct.sa_mask);
+
+	sigaddset(&signal_struct.sa_mask, SIGPIPE);
+    if (sigaction(SIGPIPE, &signal_struct, NULL) < 0)
+    	log_error(LOG_CPU,"\n SIGACTION error \n");
+
+    sigaddset(&signal_struct.sa_mask, SIGINT);
+    if (sigaction(SIGINT, &signal_struct, NULL) < 0)
+    	log_error(LOG_CPU,"\n SIGACTION error \n");
+
 }
