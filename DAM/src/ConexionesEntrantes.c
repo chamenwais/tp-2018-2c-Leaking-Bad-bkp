@@ -6,7 +6,7 @@
  */
 #include "ConexionesEntrantes.h"
 
-pthread_t crear_hilo_conexiones_entrantes(int socket_fm9, int socket_mdj){
+pthread_t crear_hilo_conexiones_entrantes(int socket_fm9, int socket_mdj, int socket_safa){
 	pthread_t conexiones_entrantes;
 	pthread_create(&conexiones_entrantes, NULL, comunicarse_con_cpu, NULL);
 	return conexiones_entrantes;

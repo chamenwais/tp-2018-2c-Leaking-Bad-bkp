@@ -34,6 +34,8 @@ void leer_configuracion_mdj();
 void leer_transfer_size();
 char* mensaje_informativo_recibir_handshake(char* proceso);
 char* mensaje_informativo_previa_conexion_con(char* proceso);
+void destruir_logger();
+void validar_apertura_archivo_configuracion();
 
 //Conexiones
 void cerrar_socket_y_terminar(int socket_id);

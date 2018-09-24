@@ -7,7 +7,7 @@
 
 #ifndef CONEXIONESENTRANTES_H_
 #define CONEXIONESENTRANTES_H_
-#include "../../COM/lqvg/com.h"
+#include <lqvg/com.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
@@ -20,7 +20,7 @@
 #include "Contexto.h"
 #include "Utilidades.h"
 
-pthread_t crear_hilo_conexiones_entrantes(int socket_fm9, int socket_mdj);
+pthread_t crear_hilo_conexiones_entrantes(int socket_fm9, int socket_mdj, int socket_safa);
 void * comunicarse_con_cpu();
 void realizar_handshake_con_cpu(int socket_id);
 

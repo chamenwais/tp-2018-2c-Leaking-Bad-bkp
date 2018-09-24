@@ -10,15 +10,17 @@ void configurar_logger() {
 	logger = log_create(path_archivo_log, "DAM", 1, LOG_LEVEL_INFO);
 }
 
-void levantar_configuracion(){
-	configuracion = config_create(path_archivo_configuracion);
-
-	if(configuracion==NULL){
-		log_info(logger, "NO encontre el arch de config");
-		//finalizar bien el dam
+void validar_apertura_archivo_configuracion() {
+	if (configuracion == NULL) {
+		log_info(logger, "No encontre el arch de config");
+		destruir_logger();
 		exit(EXIT_FAILURE);
 	}
+}
 
+void levantar_configuracion(){
+	configuracion = config_create(path_archivo_configuracion);
+	validar_apertura_archivo_configuracion();
 	leer_puerto_de_escucha();
 	leer_configuracion_safa();
 	leer_configuracion_fm9();
@@ -49,11 +51,15 @@ void leer_transfer_size(){
 	transfer_size = config_get_int_value(configuracion, clave_transfer_size);
 }
 
+void destruir_logger() {
+	log_info(logger, "Se destruira el logger");
+	log_destroy(logger);
+}
+
 void terminar_controladamente(int return_nr){
 	log_info(logger, "Se destruira estructura de archivo de configuracion");
 	config_destroy(configuracion);
-	log_info(logger, "Se destruira el logger");
-	log_destroy(logger);
+	destruir_logger();
 	exit(return_nr);
 }
 

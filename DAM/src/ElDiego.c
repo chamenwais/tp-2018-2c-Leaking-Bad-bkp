@@ -14,18 +14,18 @@ int main() {
 	//Va a hacer el handshake con MDJ
 	int socket_file_system=comunicarse_con_file_system();
 	//Va a hacer el handshake con FM9
-	int socket_memoria=comunicarse_con_memoria(socket_file_system);
+	int socket_memoria=comunicarse_con_memoria();
+	//Va a comunicarse con S-AFA
+	int socket_safa=comunicarse_con_safa();
 	//Va a quedarse escuchando al CPU
-	pthread_t hilo_conexiones_entrantes=crear_hilo_conexiones_entrantes(socket_memoria, socket_file_system);
-	//Va a comunicarse con S-AFA e interactuara con ese, FM9 y MDJ
-	pthread_t hilo_conexiones_salientes=crear_hilo_conexiones_salientes(socket_memoria, socket_file_system);
-	enlazar_hilos(hilo_conexiones_entrantes, hilo_conexiones_salientes);
-	cerrar_socket_y_terminar(socket_file_system);
-	cerrar_socket_y_terminar(socket_memoria);
+	pthread_t hilo_conexiones_entrantes=crear_hilo_conexiones_entrantes(socket_memoria, socket_file_system, socket_safa);
+	close(socket_file_system);
+	close(socket_memoria);
+	close(socket_safa);
 	terminar_controladamente(EXIT_SUCCESS);
 }
 
-void mensaje_previa_conexion_con_mdj() {
+void mostrar_mensaje_previa_conexion_con_mdj() {
 	char* mensaje_informativo_previa_conexion_con_mdj =
 			mensaje_informativo_previa_conexion_con(const_name_mdj);
 	log_info(logger, mensaje_informativo_previa_conexion_con_mdj, ip_mdj,
@@ -34,7 +34,7 @@ void mensaje_previa_conexion_con_mdj() {
 }
 
 int comunicarse_con_file_system(){
-	mensaje_previa_conexion_con_mdj();
+	mostrar_mensaje_previa_conexion_con_mdj();
 	int socket_mdj=conectarseA(ip_mdj, puerto_mdj);
 	validar_comunicacion(socket_mdj, const_name_mdj);
 	realizar_handshake_con_mdj(socket_mdj);
@@ -63,4 +63,24 @@ int comunicarse_con_memoria(){
 
 void realizar_handshake_con_fm9(int socket_id){
 	mandar_handshake_a(socket_id, MEMORIA, const_name_fm9);
+}
+
+void mostrar_mensaje_previa_conexion_con_safa() {
+	char* mensaje_informativo_previa_conexion_con_safa =
+			mensaje_informativo_previa_conexion_con(const_name_safa);
+	log_info(logger, mensaje_informativo_previa_conexion_con_safa, ip_safa,
+			puerto_safa);
+	free(mensaje_informativo_previa_conexion_con_safa);
+}
+
+int comunicarse_con_safa(){
+	mostrar_mensaje_previa_conexion_con_safa();
+	int socket_safa=conectarseA(ip_safa, puerto_safa);
+	validar_comunicacion(socket_safa, const_name_safa);
+	realizar_handshake_con_safa(socket_safa);
+	return socket_safa;
+}
+
+void realizar_handshake_con_safa(int socket_id){
+	mandar_handshake_a(socket_id, PLANIFICADOR, const_name_safa);
 }
