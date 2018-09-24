@@ -5,21 +5,18 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../src/ConexionesEntrantes.c \
-../src/ConexionesSalientes.c \
 ../src/Contexto.c \
 ../src/ElDiego.c \
 ../src/Utilidades.c 
 
 OBJS += \
 ./src/ConexionesEntrantes.o \
-./src/ConexionesSalientes.o \
 ./src/Contexto.o \
 ./src/ElDiego.o \
 ./src/Utilidades.o 
 
 C_DEPS += \
 ./src/ConexionesEntrantes.d \
-./src/ConexionesSalientes.d \
 ./src/Contexto.d \
 ./src/ElDiego.d \
 ./src/Utilidades.d 

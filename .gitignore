@@ -54,3 +54,8 @@ dkms.conf
 *.gitignore
 *.project
 *.settings/
+
+# Archivos binarios del codigo
+ElDiego
+FM9
+cliente
