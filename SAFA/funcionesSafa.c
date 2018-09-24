@@ -166,4 +166,88 @@ int escuchar(){
 	return EXIT_SUCCESS;
 }
 
+int iniciarConsola(){
+
+	int resultadoDeCrearHilo = pthread_create( &hiloConsola, NULL, funcionHiloConsola, "Hilo consola");
+
+	if(resultadoDeCrearHilo){
+		log_error(LOG_SAFA,"Error al crear el hilo, return code: %d",resultadoDeCrearHilo);
+		exit(EXIT_FAILURE);
+		}
+	else{
+		log_info(LOG_SAFA,"La consola se creo exitosamente");
+		return EXIT_SUCCESS;
+		}
+
+}
+
+void *funcionHiloConsola(void *arg){
+	char * linea;
+	char *ret="Cerrando hilo";
+	char** instruccion;
+
+	printf("> Consola lista\n");
+
+	while(1){
+		linea = readline(">");
+		if(strlen(linea)>0){
+			add_history(linea);
+
+		instruccion = parser_instruccion(linea);
+		if(instruccion[0] == NULL) continue;
+		if(strcmp(instruccion[0],"exit")==0){//Mata al hilo de la consola
+			//salir_true();
+			for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
+			free(instruccion);
+			free(linea);
+			log_info(LOG_SAFA,"Cerrando consola");
+			//pthread_mutex_unlock(&mutexDePausaDePlanificacion);
+			pthread_exit(ret);
+			}else{
+		if(strcmp(instruccion[0],"ejecutar")==0){//TODO
+			/* Permitirá el ingreso de un nuevo programa G.DT al sistema.
+			 * Pasada la ruta del script Escriptorio, el planificador creará su DTB asociado
+			 * y colocará el proceso en la cola de NEW para que el PLP lo administre cuando lo permita
+			 * el grado de multiprogramación. Cuando suceda esto, el PLP se comunicará con este submódulo
+			 * para comenzar la ejecución del DTB dummy de Iniciar Escriptorio definida en el Proceso CPU
+			 * El DTB dummy a enviar contendrá el archivo Escriptorio que se desea ejecutar y
+			 * el flag de inicialización en 0, siendo el único DTB que contenga este flag con dicho valor
+			 * (cualquier otro DTB lo tendrá en 1). */
+			//ejecutarConsola();
+			}else{
+		if(strcmp(instruccion[0],"status")==0){
+			/*Se deberá mostrar el estado de cada cola, así como la información complementaria a las mismas.
+			 *En caso de tener un parámetro, deberá informar todos los datos almacenados en el DT Block
+			 *En (tanto mínimos como agregados por el grupo).
+			 */
+			//statusConsola();
+			}else{
+		if(strcmp(instruccion[0],"finalizar")==0){
+			/* Obligará a un DTB a pasar a la cola de EXIT para poder destrabar la ejecución y
+			 * dar lugar a otro G.DT a operar sobre dicho equipo. Si el G.DT se encuentra en la cola
+			 * EXEC se deberá esperar a terminar la operación actual, para luego moverlo a la cola EXIT*/
+
+			}else{
+		if(strcmp(instruccion[0],"metricas")==0){
+			/* Detalla las siguientes métricas:
+			 *	Cant. de sentencias ejecutadas que esperó un DTB en la cola NEW
+			 * Cant.de sentencias ejecutadas prom. del sistema que usaron a “El Diego”
+			 * Cant. de sentencias ejecutadas prom. del sistema para que un DTB termine en la cola EXIT
+			 * Porcentaje de las sentencias ejecutadas promedio que fueron a “El Diego”
+			 * Tiempo de Respuesta promedio del Sistema
+			 */
+			}else{
+		printf("Comando desconocido\n");
+		}}}}}}
+		free(linea);
+		for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
+		free(instruccion);
+	}//Cierre del while(1)
+	pthread_exit(ret);
+}
+
+char** parser_instruccion(char* linea) {
+	char** instruccion = string_split(linea, " ");
+	return instruccion;
+}
 

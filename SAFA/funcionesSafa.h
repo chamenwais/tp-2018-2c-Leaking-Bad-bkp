@@ -22,5 +22,8 @@ int esperarFinEscuchaDMA();
 int iniciarEscuchaCPU();
 void *funcionHiloComCPU(void *arg);
 int escuchar();
+int iniciarConsola();
+void *funcionHiloConsola(void *arg);
+char** parser_instruccion(char* linea);
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */

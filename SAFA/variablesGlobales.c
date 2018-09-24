@@ -11,6 +11,7 @@ t_configuracionSAFA configSAFA;
 char estadoSAFA;
 pthread_t hiloComDMA;
 pthread_t hiloComCPU;
+pthread_t hiloConsola;
 int fd_DMA;
 int resultadoComElDiego;
 bool safa_conectado;

@@ -30,6 +30,7 @@ extern t_configuracionSAFA configSAFA;
 extern char estadoSAFA;
 extern pthread_t hiloComDMA;
 extern pthread_t hiloComCPU;
+extern pthread_t hiloConsola;
 extern int fd_DMA;
 extern int resultadoComElDiego;
 extern bool safa_conectado;
