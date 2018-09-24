@@ -19,7 +19,7 @@
 
 void funciona();
 int configurar_LOG_CPU();
-int levantarArchConfig();
+void levantarArchConfig();
 int finalizarTodo();
 void captura_sigpipe(int signo);
 void configurar_signals(void);

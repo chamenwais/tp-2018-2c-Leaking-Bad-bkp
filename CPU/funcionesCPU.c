@@ -19,11 +19,12 @@ void funciona()
 }
 
 
-int levantarArchConfig()
+void levantarArchConfig()
 {
-	funciona();
-	config = config_create("/CPUConfig.cfg");
-	if (!config_has_property(config, "IP_SAFA")) {
+	config = config_create("CPUConfig.cfg");
+
+	if (!config_has_property(config, "IP_SAFA"))
+	{
 		printf("No se encuentra el parametro IP_SAFA en el archivo de configuracion\n");
 		log_error(LOG_CPU,"No se encuentra el parametro IP_SAFA en el archivo de configuracion");
 		config_destroy(config);
@@ -33,7 +34,8 @@ int levantarArchConfig()
 	else
 		configuracion.IPSAFA = config_get_string_value(config, "IP_SAFA");
 
-	if(!config_has_property(config, "PUERTO_SAFA")) {
+	if(!config_has_property(config, "PUERTO_SAFA"))
+	{
 		printf("No se encuentra el parametro PUERTO_SAFA en el archivo de configuracion\n");
 		log_error(LOG_CPU,"No se encuentra el parametro PUERTO_SAFA en el archivo de configuracion");
 		config_destroy(config);
@@ -43,7 +45,8 @@ int levantarArchConfig()
 	else
 		configuracion.PUERTOSAFA = config_get_int_value(config, "PUERTO_SAFA");
 
-	if (!config_has_property(config, "IP_DIEGO")) {
+	if (!config_has_property(config, "IP_DIEGO"))
+	{
 		printf("No se encuentra el parametro IP_ELDIEGO en el archivo de configuracion\n");
 		log_error(LOG_CPU,"No se encuentra el parametro IP_ELDIEGO en el archivo de configuracion");
 		config_destroy(config);
@@ -53,7 +56,8 @@ int levantarArchConfig()
 	else
 		configuracion.IPELDIEGO = config_get_string_value(config, "IP_DIEGO");
 
-	if(!config_has_property(config, "PUERTO_DIEGO")) {
+	if(!config_has_property(config, "PUERTO_DIEGO"))
+	{
 		printf("No se encuentra el parametro PUERTO_ELDIEGO en el archivo de configuracion\n");
 		log_error(LOG_CPU,"No se encuentra el parametro PUERTO_ELDIEGO en el archivo de configuracion");
 		config_destroy(config);
@@ -63,8 +67,7 @@ int levantarArchConfig()
 	else
 		configuracion.PUERTOELDIEGO = config_get_int_value(config, "PUERTO_DIEGO");
 
-
-return 0;
+	log_info(LOG_CPU,"Se levanto con exito el archivo de configuracion");
 }
 
 
