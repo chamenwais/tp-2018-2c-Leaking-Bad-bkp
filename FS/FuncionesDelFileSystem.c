@@ -478,17 +478,14 @@ int iniciarTrabajoConElDMA(int fileDescriptorActual){
 				break;
 			case GuardarDatos:
 				log_info(LOGGER,"Pedido del DMA de \"GuardarDatos\"");
-				guardarDatosDeDMA();
-				break;
-			case FinalizarTrabajoConElFS:
-				log_info(LOGGER,"Pedido del DMA de \"Finalizar el trabajo\"");
-				return EXIT_SUCCESS;
+				guardarDatosDeDMA(fileDescriptorActual);
 				break;
 			default:
 				log_error(LOGGER,"Error, me llego un tipo de mensaje del DMA desconocido, %d",cabecera.tipoDeMensaje);
 				return EXIT_FAILURE;
 				break;
 		}//end swith
+		cerrarConexion(fileDescriptorActual);
 	}
 	return EXIT_SUCCESS;
 }
@@ -591,7 +588,7 @@ int crearArchivo(char *ubicacionDelArchivo, char *path){
 		fprintf(archivo,"%s","BLOQUES=[]\n");
 		fclose(archivo);
 		log_info(LOGGER,"Archivo %s creado",ubicacionDelArchivo);
-		return 1;//ArchivoCreado;
+		return ArchivoCreado;
 	}else{
 		log_info(LOGGER,"No se pudo crear el archivo %s",ubicacionDelArchivo);
 		return ArchivoNoCreado;
@@ -629,7 +626,7 @@ int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer){
 	return EXIT_SUCCESS;
 }
 
-int guardarDatosDeDMA(){
+int guardarDatosDeDMA(int fileDescriptorActual){
 
 	return EXIT_SUCCESS;
 }

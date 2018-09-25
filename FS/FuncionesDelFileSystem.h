@@ -68,7 +68,7 @@ int obtenerDatosDeConsola(char *path, int offset, int Size);
 int obtenerDatosDeDMA(int FDDMA);
 int obtenerDatos(char *path, int offset, int Size);
 int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer);
-int guardarDatosDeDMA();
+int guardarDatosDeDMA(int fileDescriptorActual);
 int guardarDatos(char *path, int offset, int size, char *Buffer);
 int actualizarMetaData(char* ubicacionDelArchivoDeMetadata,tp_metadata metadata);
 tp_metadata recuperarMetaData(char *ubicacionDelArchivoDeMetadata);
