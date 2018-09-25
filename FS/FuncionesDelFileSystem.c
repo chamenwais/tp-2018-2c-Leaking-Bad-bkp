@@ -176,7 +176,7 @@ void *funcionHiloConsola(void *arg){
 		if(strcmp(instruccion[0],"ObtenerDatos")==0){
 			if((instruccion[1]!=NULL)&&(instruccion[2]!=NULL)&&(instruccion[3]!=NULL)){
 				printf("Voy a obtener datos del archivo: %s\n",instruccion[1]);
-				obtenerDatosDeConsola(instruccion[1],instruccion[2],instruccion[3]);
+				obtenerDatosDeConsola(instruccion[1],atoi(instruccion[2]),atoi(instruccion[3]));
 			}else{
 				printf("Faltan parametros para obtener el archivo\n");
 				}
@@ -184,7 +184,7 @@ void *funcionHiloConsola(void *arg){
 		if(strcmp(instruccion[0],"GuardarDatos")==0){
 			if((instruccion[1]!=NULL)&&(instruccion[2]!=NULL)&&(instruccion[3]!=NULL)){
 				printf("Voy a guardar datos de consola del archivo: %s\n",instruccion[1]);
-				guardarDatosDeConsola(instruccion[1],instruccion[2],instruccion[3],instruccion[4]);
+				guardarDatosDeConsola(instruccion[1],atoi(instruccion[2]),atoi(instruccion[3]),instruccion[4]);
 			}else{
 				printf("Faltan parametros para guardar datos del archivo\n");
 				}
@@ -437,15 +437,23 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 	log_info(LOGGER,"Esperando conexion entrante del DMA por el puerto: %d", configuracionDelFS.puerto);
 	int port = configuracionDelFS.puerto;
 	int sockDelServer = escucharEn(port); //crea servidor
+	if (pthread_attr_init(&attr)!=0){
+		log_error(LOGGER, "Fallo la creacion de attr del hilo");
+		exit(EXIT_FAILURE);
+		}
+	if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED)!=0){
+		log_error(LOGGER, "No se pudo setear dettached state");
+		exit(EXIT_FAILURE);
+		}
 	while(1){
 		//FDDMA=malloc(sizeof(int));
 		FDDMA = aceptarConexion(sockDelServer);
 		log_info(LOGGER,"Voy a atender una conexion por el FD: %d", FDDMA);
-		pthread_attr_init(&attr);
-		pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
+
 		pthread_create(&thread, &attr,&hiloDePedidoDeDMA, FDDMA);
-		pthread_attr_destroy(&attr);
+
 	}
+	pthread_attr_destroy(&attr);
 	return EXIT_SUCCESS;
 }
 
@@ -634,11 +642,14 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 	 * deberá retornar un error de Archivo no encontrado.
 	 */
 	char *ubicacionDelArchivoDeMetadata=string_new();
+	bool hayQueActualziarMetadataDelArchivo=false;
 	string_append(&ubicacionDelArchivoDeMetadata,configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivoDeMetadata, "/Archivos/");
 	string_append(&ubicacionDelArchivoDeMetadata,path);
 	if(existeElArchivo(ubicacionDelArchivoDeMetadata)){
 		tp_metadata metadata = recuperarMetaData(ubicacionDelArchivoDeMetadata);
+		log_info(LOGGER,"Offset: %d, tamaño de bloques %d, size %d",offset, configuracionDeMetadata.tamanioBloques,size);
+
 		int numeroDeBloqueDeInicioDeEscritura=offset/configuracionDeMetadata.tamanioBloques;
 		int numeroDeBloqueDeFinDeEscritura=(offset+size)/configuracionDeMetadata.tamanioBloques;
 		int escribirEnPrimerArchivoDesde=offset%configuracionDeMetadata.tamanioBloques;
@@ -646,6 +657,9 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 		int bytesEscritos=0;
 		int cantidadTotalDeBloquesCreados=list_size(metadata->bloques);
 		int bloqueActual=numeroDeBloqueDeInicioDeEscritura;
+		log_info(LOGGER,"Voy a escribir en el primer bloque desde: %d",escribirEnPrimerArchivoDesde);
+		log_info(LOGGER,"El numero de bloque de inicio de escritura es: %d",numeroDeBloqueDeInicioDeEscritura);
+		log_info(LOGGER,"El numero de bloque de fin de escritura es: %d",numeroDeBloqueDeFinDeEscritura);
 		for(int i=numeroDeBloqueDeInicioDeEscritura;i<=numeroDeBloqueDeFinDeEscritura;i++){
 			int numeroDeBloque;
 			char *archivoDeBloque=string_new();
@@ -654,12 +668,22 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 			if(bloqueActual<cantidadTotalDeBloquesCreados){
 				numeroDeBloque =list_get(metadata->bloques,i);
 				string_append(&archivoDeBloque, string_itoa(numeroDeBloque));
+				log_info(LOGGER,"Voy a escribir en el bloque %s que ya esta creado",archivoDeBloque);
 			}else{
-
+				log_info(LOGGER,"El bloque para escribir no existe, lo tengo que crear");
 				//El bloque no existe tengo que tomar uno vacio, crearlo y ademas actualizar la metadata
 				int numeroDeBloqueLibre=obtenerBloqueLibreDelBitMap();
 				if(numeroDeBloqueLibre!=-1){
 					log_info(LOGGER,"El bloque %d esta libre",numeroDeBloque);
+					//actualizo el bitarray
+					bitarray_set_bit(bitmap,numeroDeBloqueLibre);
+					string_append(&archivoDeBloque, string_itoa(numeroDeBloque));
+					//actualizo la lista y activo la bandera para actualizar mi archivo de metadata de ese archivo
+					hayQueActualziarMetadataDelArchivo=true;
+					list_add(metadata->bloques,numeroDeBloque);
+					log_info(LOGGER,"Creando el archivo de bloque%s",archivoDeBloque);
+					FILE * archivoTemp = fopen(archivoDeBloque,"wb");
+					fclose(archivoTemp);
 				}else{
 					log_error(LOGGER,"No hay mas bloques libres");
 					return EXIT_FAILURE;///no hay mas bloques libres
@@ -668,7 +692,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 
 			}
 			log_info(LOGGER,"Abriendo el bloque %s para escribir",archivoDeBloque);
-			FILE * archivo = fopen(archivoDeBloque,"wb");
+			FILE * archivo = fopen(archivoDeBloque,"rb+");
 			//fwrite recibe: puntero a los datos, el tamaño de los registros, numero de registros, archivo
 
 			if(i!=numeroDeBloqueDeFinDeEscritura){
@@ -677,7 +701,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 				bytesAEscribir=configuracionDeMetadata.tamanioBloques-escribirEnPrimerArchivoDesde;
 				fseek(archivo, escribirEnPrimerArchivoDesde, SEEK_SET);
 				}
-			log_info(LOGGER,"Escribiendo");
+			log_info(LOGGER,"Escribiendo en el archivo %s",archivoDeBloque);
 			fwrite(Buffer[bytesEscritos],sizeof(char),bytesAEscribir,archivo);
 			bytesEscritos=bytesAEscribir+bytesEscritos;
 			bloqueActual++;
@@ -685,10 +709,27 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 			fflush(archivo);
 			fclose(archivo);
 			}
+		if(hayQueActualziarMetadataDelArchivo){
+			actualizarMetaData(ubicacionDelArchivoDeMetadata,&metadata);
+			}
 		return DatosGuardados;
 	}else{
 		return ArchivoNoEncontrado;
 	}
+}
+
+int actualizarMetaData(char* ubicacionDelArchivoDeMetadata,tp_metadata metadata){
+	int i;
+	FILE * archivoTemp = fopen(ubicacionDelArchivoDeMetadata,"w");
+	fprintf(archivoTemp,"TAMANIO=%d\n",metadata->tamanio);
+	fprintf(archivoTemp,"BLOQUES=[");
+	for(i=0;i<(list_size(metadata->bloques)-1);i++){
+		fprintf(archivoTemp,"%d,",list_get(metadata->bloques,i));
+	}
+	fprintf(archivoTemp,"%d,",list_get(metadata->bloques,i));
+	fprintf(archivoTemp,"]");
+	fclose(archivoTemp);
+	return EXIT_SUCCESS;
 }
 
 tp_metadata recuperarMetaData(char *ubicacionDelArchivoDeMetadata){

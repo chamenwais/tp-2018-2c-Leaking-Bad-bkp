@@ -70,6 +70,7 @@ int obtenerDatos(char *path, int offset, int Size);
 int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer);
 int guardarDatosDeDMA();
 int guardarDatos(char *path, int offset, int size, char *Buffer);
+int actualizarMetaData(char* ubicacionDelArchivoDeMetadata,tp_metadata metadata);
 tp_metadata recuperarMetaData(char *ubicacionDelArchivoDeMetadata);
 
 #endif /* FUNCIONESDELFILESYSTEM_H_ */
