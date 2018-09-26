@@ -16,6 +16,7 @@
 #include <sys/socket.h> // Para crear sockets, enviar, recibir, etc
 #include <netdb.h> // Para getaddrinfo
 #include <unistd.h> // Para close
+#include <pthread.h>
 
 #include <commons/log.h>
 #include <commons/config.h>
@@ -31,7 +32,7 @@
 typedef struct dConfiguracion{
 	char *IPSAFA;
 	int PUERTOSAFA;
-	char * IPELDIEGO;
+	char *IPELDIEGO;
 	int PUERTOELDIEGO;
 }tConfiguracion;
 

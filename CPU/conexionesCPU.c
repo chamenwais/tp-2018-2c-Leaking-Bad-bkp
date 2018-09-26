@@ -10,6 +10,25 @@
 
 
 
+pthread_t conexionHiloSAFA()
+{
+	pthread_t conexionSAFA;
+	if(pthread_create(&conexionSAFA, NULL, comunicarse_con_SAFA(), NULL))
+		log_error(LOG_CPU, "Fallo creacion hilo comunicador a SAFA");
+	else
+		log_info(LOG_CPU, "Se creo hilo comunicador a SAFA");
+	return conexionSAFA;
+}
+
+pthread_t conexionHiloDAM()
+{
+	pthread_t conexionDAM;
+	if(pthread_create(&conexionDAM, NULL, comunicarse_con_DAM(), NULL))
+		log_error(LOG_CPU, "Fallo creacion hilo comunicador a DAM");
+	else
+		log_error(LOG_CPU, "Se creo hilo comunicador a DAM");
+	return conexionDAM;
+}
 
 
 void * comunicarse_con_DAM()
@@ -28,9 +47,9 @@ void * comunicarse_con_DAM()
 void * comunicarse_con_SAFA()
 {
 	log_info(LOG_CPU,"Conectando con SAFA por el puerto %d", configuracion.PUERTOSAFA);
-	int socket_conecta_SAFA = conectarseA(configuracion.IPSAFA, configuracion.PUERTOSAFA);
+	int socket_conecta_SAFA = conectarseA("127.0.0.1", configuracion.PUERTOSAFA);
 	if(validar_comunicacion(socket_conecta_SAFA, "SAFA"))
-		if(enviarHandshake(CPU, DMA , socket_conecta_SAFA))
+		if(enviarHandshake(CPU, PLANIFICADOR , socket_conecta_SAFA))
 			log_info(LOG_CPU,"Handshake exitoso con SAFA");
 		else
 			log_error(LOG_CPU,"Handshake incorrecto, no era el SAFA");

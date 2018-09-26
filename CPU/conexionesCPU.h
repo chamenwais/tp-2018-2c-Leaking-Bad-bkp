@@ -16,6 +16,10 @@
 
 void * comunicarse_con_DAM();
 void * comunicarse_con_SAFA();
+
+pthread_t conexionHiloSAFA();
+pthread_t conexionHiloDAM();
+
 int validar_comunicacion(int socket_id, char * proceso);
 int cerrar_socket_y_terminar(int socket_id);
 int terminar_controladamente(int return_nr);

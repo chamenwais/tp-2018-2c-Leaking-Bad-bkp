@@ -1,6 +1,97 @@
-[INFO] 21:40:41:872 CPU/(16630:16630): Creando Archivo de LOG CPU.log
-[INFO] 21:41:09:737 CPU/(16674:16674): Creando Archivo de LOG CPU.log
-[INFO] 21:41:55:550 CPU/(16711:16711): Creando Archivo de LOG CPU.log
-[INFO] 01:18:18:165 CPU/(19758:19758): Creando Archivo de LOG CPU.log
-[INFO] 01:20:00:571 CPU/(19823:19823): Creando Archivo de LOG CPU.log
-[INFO] 01:20:00:574 CPU/(19823:19823): Se levanto con exito el archivo de configuracion
+[INFO] 08:51:49:511 CPU/(9683:9683): Creando Archivo de LOG CPU.log
+[INFO] 08:51:49:523 CPU/(9683:9683): Se levanto con exito el archivo de configuracion
+[INFO] 08:59:13:288 CPU/(9724:9724): Creando Archivo de LOG CPU.log
+[INFO] 08:59:13:288 CPU/(9724:9724): Se levanto con exito el archivo de configuracion
+[INFO] 09:04:30:945 CPU/(9770:9770): Creando Archivo de LOG CPU.log
+[INFO] 09:04:30:953 CPU/(9770:9770): Se levanto con exito el archivo de configuracion
+[INFO] 09:04:49:361 CPU/(9788:9788): Creando Archivo de LOG CPU.log
+[INFO] 09:04:49:363 CPU/(9788:9788): Se levanto con exito el archivo de configuracion
+[INFO] 09:05:00:874 CPU/(9800:9800): Creando Archivo de LOG CPU.log
+[INFO] 09:05:00:878 CPU/(9800:9800): Se levanto con exito el archivo de configuracion
+[INFO] 18:27:36:914 CPU/(14348:14348): Creando Archivo de LOG CPU.log
+[INFO] 18:27:36:917 CPU/(14348:14348): Se levanto con exito el archivo de configuracion
+[INFO] 18:30:15:675 CPU/(14380:14380): Creando Archivo de LOG CPU.log
+[INFO] 18:30:15:676 CPU/(14380:14380): Se levanto con exito el archivo de configuracion
+[INFO] 20:30:50:454 CPU/(15533:15533): Creando Archivo de LOG CPU.log
+[INFO] 20:30:50:463 CPU/(15533:15533): Se levanto con exito el archivo de configuracion
+[INFO] 20:31:50:52 CPU/(15959:15959): Creando Archivo de LOG CPU.log
+[INFO] 20:31:50:52 CPU/(15959:15959): Se levanto con exito el archivo de configuracion
+[INFO] 20:32:24:309 CPU/(16078:16078): Creando Archivo de LOG CPU.log
+[INFO] 20:32:24:309 CPU/(16078:16078): Se levanto con exito el archivo de configuracion
+[INFO] 20:32:43:212 CPU/(16160:16160): Creando Archivo de LOG CPU.log
+[INFO] 20:32:43:212 CPU/(16160:16160): Se levanto con exito el archivo de configuracion
+[INFO] 20:33:12:337 CPU/(16253:16253): Creando Archivo de LOG CPU.log
+[INFO] 20:33:12:337 CPU/(16253:16253): Se levanto con exito el archivo de configuracion
+[INFO] 20:34:10:657 CPU/(16477:16477): Creando Archivo de LOG CPU.log
+[INFO] 20:34:10:658 CPU/(16477:16477): Se levanto con exito el archivo de configuracion
+[INFO] 21:18:30:191 CPU/(24841:24841): Creando Archivo de LOG CPU.log
+[INFO] 21:18:30:192 CPU/(24841:24841): Se levanto con exito el archivo de configuracion
+[INFO] 21:22:10:119 CPU/(25655:25655): Creando Archivo de LOG CPU.log
+[INFO] 21:24:35:461 CPU/(26208:26208): Creando Archivo de LOG CPU.log
+[INFO] 21:24:35:461 CPU/(26208:26208): Se levanto con exito el archivo de configuracion
+[INFO] 21:24:44:321 CPU/(26255:26255): Creando Archivo de LOG CPU.log
+[INFO] 21:24:44:322 CPU/(26255:26255): Se levanto con exito el archivo de configuracion
+[INFO] 21:25:17:43 CPU/(26386:26386): Creando Archivo de LOG CPU.log
+[INFO] 21:25:17:44 CPU/(26386:26386): Se levanto con exito el archivo de configuracion
+[INFO] 21:40:07:626 CPU/(29116:29116): Creando Archivo de LOG CPU.log
+[INFO] 21:40:07:627 CPU/(29116:29116): Se levanto con exito el archivo de configuracion
+[INFO] 21:44:53:444 CPU/(30075:30075): Creando Archivo de LOG CPU.log
+[INFO] 21:44:53:449 CPU/(30075:30075): Se levanto con exito el archivo de configuracion
+[INFO] 21:45:01:956 CPU/(30106:30106): Creando Archivo de LOG CPU.log
+[INFO] 21:51:22:13 CPU/(30183:30183): Creando Archivo de LOG CPU.log
+[INFO] 21:51:22:13 CPU/(30183:30183): Se levanto con exito el archivo de configuracion
+[INFO] 21:51:33:81 CPU/(30194:30194): Creando Archivo de LOG CPU.log
+[INFO] 21:51:33:81 CPU/(30194:30194): Se levanto con exito el archivo de configuracion
+[INFO] 21:51:48:580 CPU/(30216:30216): Creando Archivo de LOG CPU.log
+[INFO] 21:51:48:581 CPU/(30216:30216): Se levanto con exito el archivo de configuracion
+[INFO] 21:52:39:426 CPU/(30270:30270): Creando Archivo de LOG CPU.log
+[INFO] 21:52:39:426 CPU/(30270:30270): Se levanto con exito el archivo de configuracion
+[INFO] 21:56:06:617 CPU/(30364:30364): Creando Archivo de LOG CPU.log
+[INFO] 21:57:20:990 CPU/(30429:30429): Creando Archivo de LOG CPU.log
+[INFO] 21:58:33:306 CPU/(30489:30489): Creando Archivo de LOG CPU.log
+[INFO] 21:59:13:396 CPU/(30538:30538): Creando Archivo de LOG CPU.log
+[INFO] 21:59:13:397 CPU/(30538:30538): Se levanto con exito el archivo de configuracion
+[INFO] 22:20:31:833 CPU/(31159:31159): Creando Archivo de LOG CPU.log
+[INFO] 22:20:31:843 CPU/(31159:31159): Se levanto con exito el archivo de configuracion
+[INFO] 22:23:37:986 CPU/(31282:31282): Creando Archivo de LOG CPU.log
+[INFO] 22:25:24:144 CPU/(31353:31353): Creando Archivo de LOG CPU.log
+[INFO] 22:25:24:144 CPU/(31353:31353): Se levanto con exito el archivo de configuracion
+[INFO] 22:31:53:735 CPU/(31419:31419): Creando Archivo de LOG CPU.log
+[INFO] 22:31:53:745 CPU/(31419:31419): Se levanto con exito el archivo de configuracion
+[INFO] 22:36:31:598 CPU/(31509:31509): Creando Archivo de LOG CPU.log
+[INFO] 22:36:31:599 CPU/(31509:31509): Se levanto con exito el archivo de configuracion
+[INFO] 22:52:21:530 CPU/(32385:32385): Creando Archivo de LOG CPU.log
+[INFO] 22:52:21:531 CPU/(32385:32385): Se levanto con exito el archivo de configuracion
+[INFO] 22:55:52:40 CPU/(32547:32547): Creando Archivo de LOG CPU.log
+[INFO] 22:55:52:47 CPU/(32547:32547): Se levanto con exito el archivo de configuracion
+[INFO] 23:06:45:959 CPU/(32704:32704): Creando Archivo de LOG CPU.log
+[INFO] 23:06:45:960 CPU/(32704:32704): Se levanto con exito el archivo de configuracion
+[INFO] 23:07:48:566 CPU/(32747:32747): Creando Archivo de LOG CPU.log
+[INFO] 23:07:48:567 CPU/(32747:32747): Se levanto con exito el archivo de configuracion
+[INFO] 23:11:27:50 CPU/(337:337): Creando Archivo de LOG CPU.log
+[INFO] 23:13:37:574 CPU/(398:398): Creando Archivo de LOG CPU.log
+[ERROR] 23:13:37:578 CPU/(398:398): No se encuentra el parametro IP_SAFA en el archivo de configuracion
+[INFO] 23:14:00:852 CPU/(439:439): Creando Archivo de LOG CPU.log
+[INFO] 23:14:00:852 CPU/(439:439): Se levanto con exito el archivo de configuracion
+[INFO] 00:15:51:107 CPU/(1721:1721): Creando Archivo de LOG CPU.log
+[INFO] 00:15:51:124 CPU/(1721:1721): Se levanto con exito el archivo de configuracion
+[INFO] 00:15:51:125 CPU/(1721:1721): Conectando con SAFA por el puerto 2009
+[INFO] 00:15:51:125 CPU/(1721:1721): Conexion realizada con SAFA
+[INFO] 01:03:11:990 CPU/(2998:2998): Creando Archivo de LOG CPU.log
+[INFO] 01:03:11:997 CPU/(2998:2998): Se levanto con exito el archivo de configuracion
+[ERROR] 01:03:11:997 CPU/(2998:2998): Fallo creacion hilo comunicador a SAFA
+[INFO] 01:03:49:938 CPU/(3043:3043): Creando Archivo de LOG CPU.log
+[INFO] 01:03:49:939 CPU/(3043:3043): Se levanto con exito el archivo de configuracion
+[INFO] 01:03:49:939 CPU/(3043:3043): Conectando con SAFA por el puerto 2009
+[INFO] 01:03:49:939 CPU/(3043:3043): Conexion realizada con SAFA
+[ERROR] 01:03:49:939 CPU/(3043:3043): Fallo creacion hilo comunicador a SAFA
+[INFO] 01:04:44:81 CPU/(3086:3086): Creando Archivo de LOG CPU.log
+[INFO] 01:04:44:86 CPU/(3086:3086): Se levanto con exito el archivo de configuracion
+[INFO] 01:04:44:86 CPU/(3086:3086): Conectando con SAFA por el puerto 2009
+[INFO] 01:04:44:87 CPU/(3086:3086): Conexion realizada con SAFA
+[ERROR] 01:04:44:87 CPU/(3086:3086): Fallo creacion hilo comunicador a SAFA
+[INFO] 01:06:30:717 CPU/(3162:3162): Creando Archivo de LOG CPU.log
+[INFO] 01:06:30:722 CPU/(3162:3162): Se levanto con exito el archivo de configuracion
+[INFO] 01:06:30:723 CPU/(3162:3162): Conectando con SAFA por el puerto 2009
+[INFO] 01:06:30:723 CPU/(3162:3162): Conexion realizada con SAFA
+[INFO] 01:06:30:723 CPU/(3162:3162): Se creo hilo comunicador a SAFA

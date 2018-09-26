@@ -31,9 +31,11 @@ void levantarArchConfig()
 		//liberarMemoria();
 		exit(-1);
 	}
-	else
-		configuracion.IPSAFA = config_get_string_value(config, "IP_SAFA");
-
+	else{
+		char * ipsafa = config_get_string_value(config,"IP_SAFA");
+		configuracion.IPSAFA = malloc(strlen(ipsafa)+1);
+		strcpy(configuracion.IPSAFA,ipsafa);
+	}
 	if(!config_has_property(config, "PUERTO_SAFA"))
 	{
 		printf("No se encuentra el parametro PUERTO_SAFA en el archivo de configuracion\n");
