@@ -59,8 +59,8 @@ dkms.conf
 *.autotools
 
 # Archivos binarios del codigo
-*/ElDiego
-*/FM9
-*/cliente
-*/SAFA
-*/FS
+DAM/Debug/ElDiego
+FM9/Debug/FM9
+FM9/Debug/cliente
+SAFA/Debug/SAFA
+FS/Debug/FS
