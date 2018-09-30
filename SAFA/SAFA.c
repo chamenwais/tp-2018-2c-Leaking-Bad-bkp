@@ -15,6 +15,7 @@ int main(int argc, char** argv){
 	inicializarLog();
 	inicializarSemaforosSAFA();
 	inicializarVariablesSAFA(); // estado = CORRUPTO
+	inicializarListas(); //inicializo listas planificacion
 	/*Levanto archivo de configuracion*/
 	char* ubicacionDelArchivoDeConfiguracion;
 		if(argc > 1){
@@ -30,9 +31,10 @@ int main(int argc, char** argv){
 				log_error(LOG_SAFA,"No se pudo levantar la configuracion de SAFA, abortando");
 				finalizarTodo();
 			}
-	/*Iniciar Consola
-	 * iniciarConsola();
-	 */
+	//Iniciar Consola//
+	 iniciarConsola();
+
+	//Iniciar escucha//
 	if(escuchar()==EXIT_FAILURE) finalizarTodo();
 	/*if(iniciarEscuchaCPU()==EXIT_FAILURE) finalizarTodo();
 	if(esperarFinEscuchaDMA()==EXIT_FAILURE) finalizarTodo();*/

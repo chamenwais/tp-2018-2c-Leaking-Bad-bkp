@@ -9,6 +9,7 @@
 #define SAFA_VARIABLESGLOBALES_H_
 
 #include "SAFA.h"
+#include <commons/collections/list.h>
 
 typedef struct defConfiguracionSAFA {
 	int puerto;
@@ -23,7 +24,7 @@ typedef struct defDTB {
 	char* escriptorio; // ver si esto realmente es un char*
 	int program_counter;
 	int iniGDT; // 0 o 1
-	//tabla_dir_archivos;
+	t_list* tabla_dir_archivos; //tabla_dir_archivos;
 } t_DTB;
 
 extern t_configuracionSAFA configSAFA;
@@ -34,6 +35,12 @@ extern pthread_t hiloConsola;
 extern int fd_DMA;
 extern int resultadoComElDiego;
 extern bool safa_conectado;
+extern int id;
+extern t_list* nuevos;
+extern t_list* listos;
+extern t_list* ejecutando;
+extern t_list* bloqueados;
+extern t_list* exit_status;
 
 
 #endif /* SAFA_VARIABLESGLOBALES_H_ */

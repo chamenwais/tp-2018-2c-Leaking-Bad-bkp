@@ -8,6 +8,7 @@
 #ifndef SAFA_SAFA_H_
 #define SAFA_SAFA_H_
 
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -21,6 +22,9 @@
 //#include "lqvg/com.h"
 //#include "//usr/include/lqvg/com.h"
 #include "../COM/lqvg/com.h"
+#include <commons/collections/list.h>
+
+
 extern t_log* LOG_SAFA;
 
 #endif /* SAFA_SAFA_H_ */

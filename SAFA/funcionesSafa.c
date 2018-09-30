@@ -70,6 +70,7 @@ int inicializarVariablesSAFA(){
 	estadoSAFA = 'C'; //Se inicializa en estado CORRUPTO
 	resultadoComElDiego = EXIT_SUCCESS;
 	safa_conectado = true;
+	id = 1;
 	return EXIT_SUCCESS;
 }
 
@@ -87,6 +88,16 @@ int inicializarSemaforosSAFA(){
 	//log_info(LOG_SAFA,"Inicializando semaforos");
 		return EXIT_SUCCESS;
  }
+
+int inicializarListas(){
+	log_info(LOG_SAFA, "inicializando listas");
+	listos = list_create();
+	nuevos = list_create();
+	ejecutando = list_create();
+	bloqueados = list_create();
+	exit_status = list_create();
+	return EXIT_SUCCESS;
+}
 
  void *funcionHiloComDMA(void *arg){//TODO: ver que hace
 		//Trabajar con el Diegote eeeehhhhhh
@@ -213,7 +224,15 @@ void *funcionHiloConsola(void *arg){
 			 * El DTB dummy a enviar contendrá el archivo Escriptorio que se desea ejecutar y
 			 * el flag de inicialización en 0, siendo el único DTB que contenga este flag con dicho valor
 			 * (cualquier otro DTB lo tendrá en 1). */
-			//ejecutarConsola();
+			if(instruccion[1]!=NULL){
+					printf("Creando DTB para escriptorio: %s/n", instruccion[1]);
+					t_DTB* nuevo_DTB = crear_DTB(instruccion[1]);
+					list_add(nuevos, nuevo_DTB);//agregar DTB a cola de NEW
+					log_info(LOG_SAFA, "Se agrega el nuevo DTB a la lista de Nuevos");
+				}else{
+					printf("Falta el path del escriptorio, pediselo a Donofrio y reintenta/n");
+					}
+
 			}else{
 		if(strcmp(instruccion[0],"status")==0){
 			/*Se deberá mostrar el estado de cada cola, así como la información complementaria a las mismas.
@@ -251,3 +270,15 @@ char** parser_instruccion(char* linea) {
 	return instruccion;
 }
 
+t_DTB* crear_DTB(char* path){
+	t_DTB* new_DTB = calloc(1,sizeof(t_DTB));
+	log_info(LOG_SAFA, "Creando nuevo DTB");
+	new_DTB->id_GDT = id;
+	log_info(LOG_SAFA, "DTB %i creado", id);
+	id++;
+	strcpy(new_DTB->escriptorio, path);
+	new_DTB->iniGDT = 0;
+	new_DTB->program_counter = 0;
+	new_DTB->tabla_dir_archivos = list_create();
+	return new_DTB;
+}
