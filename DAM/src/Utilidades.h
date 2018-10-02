@@ -23,7 +23,10 @@
 
 #include "Contexto.h"
 
+enum tipo_logueo { escribir, loguear, escribir_loguear, l_trace, l_debug, l_info, l_warning, l_error};
+
 void configurar_logger();
+void logger_DAM(int tipo_esc, int tipo_log, const char* mensaje, ...);
 void leer_puerto_de_escucha();
 void levantar_configuracion();
 void terminar_controladamente(int return_nr);
@@ -34,6 +37,10 @@ void leer_configuracion_mdj();
 void leer_transfer_size();
 char* mensaje_informativo_recibir_handshake(char* proceso);
 char* mensaje_informativo_previa_conexion_con(char* proceso);
+char* mensaje_handshake_exitoso(char* proceso, int socket_id);
+void informar_envio_handshake(char* proceso);
+void informar_handksake_exitoso(int socket_id, char* proceso);
+void informar_recibimiento_handshake(char* proceso);
 void destruir_logger();
 void validar_apertura_archivo_configuracion();
 
