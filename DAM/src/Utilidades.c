@@ -7,12 +7,12 @@
 #include "Utilidades.h"
 
 void configurar_logger() {
-	logger = log_create(path_archivo_log, "DAM", 1, LOG_LEVEL_INFO);
+	logger = log_create(path_archivo_log, "DAM", false, LOG_LEVEL_TRACE);
 }
 
 void validar_apertura_archivo_configuracion() {
 	if (configuracion == NULL) {
-		log_info(logger, "No encontre el arch de config");
+		logger_DAM(escribir_loguear,l_error, "No encontre el arch de config");
 		destruir_logger();
 		exit(EXIT_FAILURE);
 	}
@@ -52,12 +52,12 @@ void leer_transfer_size(){
 }
 
 void destruir_logger() {
-	log_info(logger, "Se destruira el logger");
+	logger_DAM(escribir_loguear,l_info, "Se destruira el logger");
 	log_destroy(logger);
 }
 
 void terminar_controladamente(int return_nr){
-	log_info(logger, "Se destruira estructura de archivo de configuracion");
+	logger_DAM(escribir_loguear,l_info, "Se destruira estructura de archivo de configuracion");
 	config_destroy(configuracion);
 	destruir_logger();
 	exit(return_nr);
@@ -71,13 +71,13 @@ void enlazar_hilos(pthread_t hilo1, pthread_t hilo2){
 
 void validar_comunicacion(int socket_id, char * proceso){
 	if(socket_id<0){
-		log_error(logger, "No se pudo conectar con el proceso %s ", proceso);
+		logger_DAM(escribir_loguear,l_error, "No se pudo conectar con el proceso %s ", proceso);
 		cerrar_socket_y_terminar(socket_id);
 	}
 }
 
 void informar_handshake_erroneo_y_cerrar(int socket_id, char * proceso){
-	log_error(logger, "No se pudo concluir handshake con el proceso %s ",proceso);
+	logger_DAM(escribir_loguear,l_error, "No se pudo concluir handshake con el proceso %s ",proceso);
 	cerrar_socket_y_terminar(socket_id);
 }
 
@@ -89,11 +89,36 @@ char* mensaje_informativo_envio_handshake(char* proceso) {
 	return seIntentaraMandarHandshakeA;
 }
 
+char* mensaje_handshake_exitoso(char* proceso, int socket_id) {
+	char* seRealizoHandshakeCon = string_new();
+	string_append(&seRealizoHandshakeCon,
+			"Se realizo el handshake con ");
+	string_append(&seRealizoHandshakeCon, proceso);
+	string_append(&seRealizoHandshakeCon, " en el sockfd: ");
+	string_append(&seRealizoHandshakeCon, string_itoa(socket_id));
+	return seRealizoHandshakeCon;
+}
+
+void informar_envio_handshake(char* proceso) {
+	char* mensajeInformativoEnvioHandshake =
+			mensaje_informativo_envio_handshake(proceso);
+	logger_DAM(escribir_loguear, l_info, mensajeInformativoEnvioHandshake);
+	free(mensajeInformativoEnvioHandshake);
+}
+
+void informar_handksake_exitoso(int socket_id, char* proceso) {
+	char* mensajeHandshakeExitoso = mensaje_handshake_exitoso(proceso,
+			socket_id);
+	logger_DAM(escribir_loguear, l_trace, mensajeHandshakeExitoso);
+	free(mensajeHandshakeExitoso);
+}
+
 void mandar_handshake_a(int socket_id, enum PROCESO enumProceso, char * proceso){
-	log_info(logger,mensaje_informativo_envio_handshake(proceso));
+	informar_envio_handshake(proceso);
 	if (enviarHandshake(DMA, enumProceso, socket_id) == 0) {
 		informar_handshake_erroneo_y_cerrar(socket_id, proceso);
 	}
+	informar_handksake_exitoso(socket_id, proceso);
 }
 
 char* mensaje_informativo_recibir_handshake(char* proceso) {
@@ -104,11 +129,19 @@ char* mensaje_informativo_recibir_handshake(char* proceso) {
 	return seIntentaraRecibirHandshakeDe;
 }
 
+void informar_recibimiento_handshake(char* proceso) {
+	char* mensajeInformativoRecibirHandshake =
+			mensaje_informativo_recibir_handshake(proceso);
+	logger_DAM(escribir_loguear, l_info, mensajeInformativoRecibirHandshake);
+	free(mensajeInformativoRecibirHandshake);
+}
+
 void recibir_handshake_de(int socket_id, enum PROCESO enumProceso, char * proceso){
-	log_info(logger, mensaje_informativo_recibir_handshake(proceso));
+	informar_recibimiento_handshake(proceso);
 	if (recibirHandshake(enumProceso, DMA, socket_id) == 0) {
 		informar_handshake_erroneo_y_cerrar(socket_id, proceso);
 	}
+	informar_handksake_exitoso(socket_id, proceso);
 }
 
 void cerrar_socket_y_terminar(int socket_id){
@@ -120,7 +153,7 @@ void captura_sigpipe(int signo){
 	if (signo == SIGINT) {
 		terminar_controladamente(EXIT_FAILURE);
 	} else if (signo == SIGPIPE) {
-		log_error(logger,"Hubo otro problema");
+		logger_DAM(escribir_loguear,l_error,"Hubo otro problema");
 	}
 }
 
@@ -133,12 +166,12 @@ void configurar_signals(void){
 
 	sigaddset(&signal_struct.sa_mask, SIGPIPE);
 	if (sigaction(SIGPIPE, &signal_struct, NULL) < 0) {
-		log_error(logger,"\n SIGACTION error \n");
+		logger_DAM(escribir_loguear,l_error,"\n SIGACTION error \n");
 	}
 
 	sigaddset(&signal_struct.sa_mask, SIGINT);
 	if (sigaction(SIGINT, &signal_struct, NULL) < 0) {
-		log_error(logger,"\n SIGACTION error \n");
+		logger_DAM(escribir_loguear,l_error,"\n SIGACTION error \n");
 	}
 }
 
@@ -148,4 +181,57 @@ char* mensaje_informativo_previa_conexion_con(char* proceso) {
 			"Se intentara conectar a la ip %s , puerto %d de ");
 	string_append(&se_intentara_conectar_con_ip_y_puerto, proceso);
 	return se_intentara_conectar_con_ip_y_puerto;
+}
+
+void logger_DAM(int tipo_esc, int tipo_log, const char* mensaje, ...){
+
+	//Colores (reset,vacio,vacio,cian,verde,vacio,amarillo,rojo)
+	static char *log_colors[8] = {"\x1b[0m","","","\x1b[36m", "\x1b[32m", "", "\x1b[33m", "\x1b[31m" };
+	char *console_buffer=NULL;
+
+	char *msj_salida = malloc(sizeof(char) * 256);
+
+	//Captura los argumentos en una lista
+	va_list args;
+	va_start(args, mensaje);
+
+	//Arma el mensaje formateado con sus argumentos en msj_salida.
+	vsprintf(msj_salida, mensaje, args);
+
+	//ESCRIBE POR PANTALLA
+	if((tipo_esc == escribir) || (tipo_esc == escribir_loguear)){
+		//printf("%s",msj_salida);
+		//printf("\n");
+
+		console_buffer = string_from_format("%s%s%s",log_colors[tipo_log],msj_salida, log_colors[0]);
+		printf("%s",console_buffer);
+		printf("\n");
+		fflush(stdout);
+		free(console_buffer);
+	}
+
+	//LOGUEA
+	if((tipo_esc == loguear) || (tipo_esc == escribir_loguear)){
+
+		if(tipo_log == l_info){
+			log_info(logger, msj_salida);
+		}
+		else if(tipo_log == l_warning){
+			log_warning(logger, msj_salida);
+		}
+		else if(tipo_log == l_error){
+			log_error(logger, msj_salida);
+		}
+		else if(tipo_log == l_debug){
+			log_debug(logger, msj_salida);
+		}
+		else if(tipo_log == l_trace){
+			log_trace(logger, msj_salida);
+		}
+	}
+
+	va_end(args);
+	free(msj_salida);
+
+	return;
 }
