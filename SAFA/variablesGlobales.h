@@ -8,8 +8,9 @@
 #ifndef SAFA_VARIABLESGLOBALES_H_
 #define SAFA_VARIABLESGLOBALES_H_
 
-#include "SAFA.h"
+//#include "SAFA.h"
 #include <commons/collections/list.h>
+#include "pthread.h"
 
 typedef struct defConfiguracionSAFA {
 	int puerto;

@@ -154,7 +154,7 @@ int escuchar(){
 			else{
 				log_info(LOG_SAFA,"Se creo el hilo para la comunicacion con el Diegote");
 				pthread_detach(resultadoHiloDMA);
-				return EXIT_SUCCESS;
+				continue;
 				}
 		}else if(recibirHandshake(PLANIFICADOR, CPU, client_fd) > 0){
 				log_info(LOG_SAFA, "Conexion realizada con CPU");
@@ -169,11 +169,15 @@ int escuchar(){
 				else{
 					log_info(LOG_SAFA,"Se creo el hilo para la comunicacion con la CPU");
 					pthread_detach(resultadoHiloCPU);
-					return EXIT_SUCCESS;
+					continue;
 					}
-				return EXIT_SUCCESS;
+
+		} else {
+					log_info(LOG_SAFA, "Wrong client connected");
+					//client_fd = -1;
+				}
+				continue;
 		}
-	}
 	return EXIT_SUCCESS;
 }
 

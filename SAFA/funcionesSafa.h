@@ -28,7 +28,7 @@ int escuchar();
 int iniciarConsola();
 void *funcionHiloConsola(void *arg);
 char** parser_instruccion(char* linea);
-t_DTB* crear_DTB(char* path);
+t_DTB * crear_DTB(char* path);
 int inicializarListas();
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */
