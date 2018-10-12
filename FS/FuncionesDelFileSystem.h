@@ -41,6 +41,7 @@ int levantarArchivoDeConfiguracion(int argc,char** argv);
 int iniciarConsola();
 char** parser_instruccion(char* linea);
 void *funcionHiloConsola(void *arg);
+int mostrarConfiguracion();
 int man();
 int esperarAQueTermineLaEscuchaConElDMA();
 int esperarAQueTermineLaConsola();

@@ -193,8 +193,11 @@ void *funcionHiloConsola(void *arg){
 			printf("Voy a listar todas las instrucciones posibles:\n");
 			man();
 		}else{
+		if(strcmp(instruccion[0],"config")==0){
+			mostrarConfiguracion();
+		}else{
 		printf("Comando desconocido\n");
-		}}}}}}}}}}}
+		}}}}}}}}}}}}
 		free(linea);
 		//for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
 		//free(instruccion);
@@ -202,6 +205,17 @@ void *funcionHiloConsola(void *arg){
 	resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
 	return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
 	//pthread_exit(ret);
+}
+
+int mostrarConfiguracion(){
+	printf("Mostrando configuracion\n");
+	printf("Puerto: %d\n", configuracionDelFS.puerto);
+	printf("Punto de montaje: %s\n", configuracionDelFS.punto_montaje);
+	printf("Retardo: %d\n", configuracionDelFS.retardo);
+	printf("Cantidad de : %d\n", configuracionDeMetadata.cantidadBloques);
+	printf("Magic number: %s\n", configuracionDeMetadata.magicNumber);
+	printf("Tamaño de bloques: %d\n", configuracionDeMetadata.tamanioBloques);
+	return EXIT_SUCCESS;
 }
 
 int man(){
@@ -223,6 +237,7 @@ int man(){
 	printf("   los bytes del buffer, definidos por el valor del Size y a partir del offset solicitado. En caso de\n");
 	printf("   que se soliciten datos o se intenten guardar datos en un archivo inexistente el File System\n");
 	printf("   deberá retornar un error de Archivo no encontrado\n");
+	printf("10) \"config\", me muestra la data que levante de la configracion\n");
 	return EXIT_SUCCESS;
 }
 
@@ -338,6 +353,7 @@ int obtenerBloqueLibreDelBitMap(){
 	/* Retorna un numero de bloque libre en el bitmap
 	 * Si no hay mas bloques libre retorna -1 */
 	int i;
+	log_info(LOGGER,"Obteniendo bloque libre");
 	for(i=0;i<configuracionDeMetadata.cantidadBloques;i++){
 		if(bitarray_test_bit(bitmap,i)){
 			log_info(LOGGER,"El bloque %d esta libre", i);
@@ -355,6 +371,7 @@ int reservarBloqueYCrearEstructuras(int numeroDeBloqueLibre){
 int levantarBitMap(){
 	FILE *archivoBitmap;
 	char* ubicacionDelArchivo;
+	char *bufferDelArchivo;
 	ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo,configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Metadata/Bitmap.bin");
@@ -365,11 +382,16 @@ int levantarBitMap(){
 		fread(bitmap,configuracionDeMetadata.cantidadBloques,1,archivoBitmap);
 		fclose(archivoBitmap);
 	}else{
-		log_info(LOGGER,"Generando el BITMAP con los datos de \"Bitmap.bin\"");
-		bitmap=bitarray_create(ubicacionDelArchivo,configuracionDeMetadata.cantidadBloques);
+		char* bitarray = malloc(configuracionDeMetadata.cantidadBloques * sizeof(char));
+		//Pongo todos los bites en 0
+		bzero(bitarray,configuracionDeMetadata.cantidadBloques);
+		bitmap=bitarray_create_with_mode(bitarray,configuracionDeMetadata.cantidadBloques,MSB_FIRST);
 		for(int i=0;i<configuracionDeMetadata.cantidadBloques;i++){
 			bitarray_clean_bit(bitmap,i);
 			}
+		log_info(LOGGER,"Generando el BITMAP con los datos de \"Bitmap.bin\" en: %s",ubicacionDelArchivo);
+		archivoBitmap=fopen(ubicacionDelArchivo, "wb");
+		fclose(archivoBitmap);
 		bajarADiscoBitmap();
 	}
 	return EXIT_SUCCESS;
@@ -562,6 +584,7 @@ int crearCarpetas(char *carpetasACrear){
 	for(int j=0;(j<(i-1))&&(carpetas[j]!=NULL);j++){
 		string_append(&directorio,carpetas[j]);
 		mkdir(directorio,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+		log_info(LOGGER,"Creando directorio: %s",directorio);
 		if(j<i-2)
 			string_append(&directorio,"/");
 	}
@@ -580,19 +603,25 @@ int crearArchivo(char *ubicacionDelArchivo, char *path){
 	 * TAMANIO=250
 	 * BLOQUES=[40,21,82,3]
 	 * */
-	log_info(LOGGER,"Voy a crear el archivo en: %s",ubicacionDelArchivo);
-	crearCarpetas(path);
-	FILE *archivo=fopen(ubicacionDelArchivo, "w");
-	if(archivo!=NULL){
-		fprintf(archivo,"%s","TAMANIO=0\n");
-		fprintf(archivo,"%s","BLOQUES=[]\n");
-		fclose(archivo);
-		log_info(LOGGER,"Archivo %s creado",ubicacionDelArchivo);
-		return ArchivoCreado;
+	log_info(LOGGER,"Voy a crear el archivo en: %s, path:%s",ubicacionDelArchivo,path);
+
+	if(!existeElArchivo(ubicacionDelArchivo)){
+		crearCarpetas(ubicacionDelArchivo);
+		FILE *archivo=fopen(ubicacionDelArchivo, "w");
+		if(archivo!=NULL){
+			fprintf(archivo,"%s","TAMANIO=0\n");
+			fprintf(archivo,"%s","BLOQUES=[]\n");
+			fclose(archivo);
+			log_info(LOGGER,"Archivo %s creado",ubicacionDelArchivo);
+			return ArchivoCreado;
+		}else{
+			log_info(LOGGER,"No se pudo crear el archivo %s",ubicacionDelArchivo);
+			return ArchivoNoCreado;
+			}
 	}else{
-		log_info(LOGGER,"No se pudo crear el archivo %s",ubicacionDelArchivo);
+		log_info(LOGGER,"El archivo ya existe");
 		return ArchivoNoCreado;
-		}
+	}
 }
 
 int obtenerDatosDeConsola(char *path, int offset, int Size){
@@ -643,75 +672,79 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 	string_append(&ubicacionDelArchivoDeMetadata,configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivoDeMetadata, "/Archivos/");
 	string_append(&ubicacionDelArchivoDeMetadata,path);
-	if(existeElArchivo(ubicacionDelArchivoDeMetadata)){
-		tp_metadata metadata = recuperarMetaData(ubicacionDelArchivoDeMetadata);
-		log_info(LOGGER,"Offset: %d, tamaño de bloques %d, size %d",offset, configuracionDeMetadata.tamanioBloques,size);
+	if(size>0){
+		if(existeElArchivo(ubicacionDelArchivoDeMetadata)){
+			tp_metadata metadata = recuperarMetaData(ubicacionDelArchivoDeMetadata);
+			log_info(LOGGER,"Offset: %d, tamaño de bloques %d, size %d",offset, configuracionDeMetadata.tamanioBloques,size);
 
-		int numeroDeBloqueDeInicioDeEscritura=offset/configuracionDeMetadata.tamanioBloques;
-		int numeroDeBloqueDeFinDeEscritura=(offset+size)/configuracionDeMetadata.tamanioBloques;
-		int escribirEnPrimerArchivoDesde=offset%configuracionDeMetadata.tamanioBloques;
-		int bytesAEscribir;
-		int bytesEscritos=0;
-		int cantidadTotalDeBloquesCreados=list_size(metadata->bloques);
-		int bloqueActual=numeroDeBloqueDeInicioDeEscritura;
-		log_info(LOGGER,"Voy a escribir en el primer bloque desde: %d",escribirEnPrimerArchivoDesde);
-		log_info(LOGGER,"El numero de bloque de inicio de escritura es: %d",numeroDeBloqueDeInicioDeEscritura);
-		log_info(LOGGER,"El numero de bloque de fin de escritura es: %d",numeroDeBloqueDeFinDeEscritura);
-		for(int i=numeroDeBloqueDeInicioDeEscritura;i<=numeroDeBloqueDeFinDeEscritura;i++){
-			int numeroDeBloque;
-			char *archivoDeBloque=string_new();
-			string_append(&archivoDeBloque,configuracionDelFS.punto_montaje);
-			string_append(&archivoDeBloque, "/Bloques/");
-			if(bloqueActual<cantidadTotalDeBloquesCreados){
-				numeroDeBloque =list_get(metadata->bloques,i);
-				string_append(&archivoDeBloque, string_itoa(numeroDeBloque));
-				log_info(LOGGER,"Voy a escribir en el bloque %s que ya esta creado",archivoDeBloque);
-			}else{
-				log_info(LOGGER,"El bloque para escribir no existe, lo tengo que crear");
-				//El bloque no existe tengo que tomar uno vacio, crearlo y ademas actualizar la metadata
-				int numeroDeBloqueLibre=obtenerBloqueLibreDelBitMap();
-				if(numeroDeBloqueLibre!=-1){
-					log_info(LOGGER,"El bloque %d esta libre",numeroDeBloque);
-					//actualizo el bitarray
-					bitarray_set_bit(bitmap,numeroDeBloqueLibre);
+			int numeroDeBloqueDeInicioDeEscritura=offset/configuracionDeMetadata.tamanioBloques;
+			int numeroDeBloqueDeFinDeEscritura=(offset+size)/configuracionDeMetadata.tamanioBloques;
+			int escribirEnPrimerArchivoDesde=offset%configuracionDeMetadata.tamanioBloques;
+			int bytesAEscribir;
+			int bytesEscritos=0;
+			int cantidadTotalDeBloquesCreados=list_size(metadata->bloques);
+			int bloqueActual=numeroDeBloqueDeInicioDeEscritura;
+			log_info(LOGGER,"Voy a escribir en el primer bloque desde: %d",escribirEnPrimerArchivoDesde);
+			log_info(LOGGER,"El numero de bloque de inicio de escritura es: %d",numeroDeBloqueDeInicioDeEscritura);
+			log_info(LOGGER,"El numero de bloque de fin de escritura es: %d",numeroDeBloqueDeFinDeEscritura);
+			for(int i=numeroDeBloqueDeInicioDeEscritura;i<=numeroDeBloqueDeFinDeEscritura;i++){
+				int numeroDeBloque;
+				char *archivoDeBloque=string_new();
+				string_append(&archivoDeBloque,configuracionDelFS.punto_montaje);
+				string_append(&archivoDeBloque, "/Bloques/");
+				if(bloqueActual<cantidadTotalDeBloquesCreados){
+					numeroDeBloque =list_get(metadata->bloques,i);
 					string_append(&archivoDeBloque, string_itoa(numeroDeBloque));
-					//actualizo la lista y activo la bandera para actualizar mi archivo de metadata de ese archivo
-					hayQueActualziarMetadataDelArchivo=true;
-					list_add(metadata->bloques,numeroDeBloque);
-					log_info(LOGGER,"Creando el archivo de bloque%s",archivoDeBloque);
-					FILE * archivoTemp = fopen(archivoDeBloque,"wb");
-					fclose(archivoTemp);
+					log_info(LOGGER,"Voy a escribir en el bloque %s que ya esta creado",archivoDeBloque);
 				}else{
-					log_error(LOGGER,"No hay mas bloques libres");
-					return EXIT_FAILURE;///no hay mas bloques libres
-					}
-				reservarBloqueYCrearEstructuras(numeroDeBloqueLibre);
+					log_info(LOGGER,"El bloque para escribir no existe, lo tengo que crear");
+					//El bloque no existe tengo que tomar uno vacio, crearlo y ademas actualizar la metadata
+					int numeroDeBloqueLibre=obtenerBloqueLibreDelBitMap();
+					if(numeroDeBloqueLibre!=-1){
+						log_info(LOGGER,"El bloque %d esta libre",numeroDeBloque);
+						//actualizo el bitarray
+						bitarray_set_bit(bitmap,numeroDeBloqueLibre);
+						string_append(&archivoDeBloque, string_itoa(numeroDeBloque));
+						//actualizo la lista y activo la bandera para actualizar mi archivo de metadata de ese archivo
+						hayQueActualziarMetadataDelArchivo=true;
+						list_add(metadata->bloques,numeroDeBloque);
+						log_info(LOGGER,"Creando el archivo de bloque%s",archivoDeBloque);
+						FILE * archivoTemp = fopen(archivoDeBloque,"wb");
+						fclose(archivoTemp);
+					}else{
+						log_error(LOGGER,"No hay mas bloques libres");
+						return EXIT_FAILURE;///no hay mas bloques libres
+						}
+					reservarBloqueYCrearEstructuras(numeroDeBloqueLibre);
 
-			}
-			log_info(LOGGER,"Abriendo el bloque %s para escribir",archivoDeBloque);
-			FILE * archivo = fopen(archivoDeBloque,"rb+");
-			//fwrite recibe: puntero a los datos, el tamaño de los registros, numero de registros, archivo
-
-			if(i!=numeroDeBloqueDeFinDeEscritura){
-				bytesAEscribir=configuracionDeMetadata.tamanioBloques;
-			}else{
-				bytesAEscribir=configuracionDeMetadata.tamanioBloques-escribirEnPrimerArchivoDesde;
-				fseek(archivo, escribirEnPrimerArchivoDesde, SEEK_SET);
 				}
-			log_info(LOGGER,"Escribiendo en el archivo %s",archivoDeBloque);
-			fwrite(Buffer[bytesEscritos],sizeof(char),bytesAEscribir,archivo);
-			bytesEscritos=bytesAEscribir+bytesEscritos;
-			bloqueActual++;
-			log_info(LOGGER,"Flusheando");
-			fflush(archivo);
-			fclose(archivo);
-			}
-		if(hayQueActualziarMetadataDelArchivo){
-			actualizarMetaData(ubicacionDelArchivoDeMetadata,&metadata);
-			}
-		return DatosGuardados;
+				log_info(LOGGER,"Abriendo el bloque %s para escribir",archivoDeBloque);
+				FILE * archivo = fopen(archivoDeBloque,"rb+");
+				//fwrite recibe: puntero a los datos, el tamaño de los registros, numero de registros, archivo
+
+				if(i!=numeroDeBloqueDeFinDeEscritura){
+					bytesAEscribir=configuracionDeMetadata.tamanioBloques;
+				}else{
+					bytesAEscribir=configuracionDeMetadata.tamanioBloques-escribirEnPrimerArchivoDesde;
+					fseek(archivo, escribirEnPrimerArchivoDesde, SEEK_SET);
+					}
+				log_info(LOGGER,"Escribiendo en el archivo %s",archivoDeBloque);
+				fwrite(Buffer[bytesEscritos],sizeof(char),bytesAEscribir,archivo);
+				bytesEscritos=bytesAEscribir+bytesEscritos;
+				bloqueActual++;
+				log_info(LOGGER,"Flusheando");
+				fflush(archivo);
+				fclose(archivo);
+				}
+			if(hayQueActualziarMetadataDelArchivo){
+				actualizarMetaData(ubicacionDelArchivoDeMetadata,&metadata);
+				}
+			return DatosGuardados;
+		}else{
+			return ArchivoNoEncontrado;
+		}
 	}else{
-		return ArchivoNoEncontrado;
+		log_info(LOGGER,"El size que quiero escribir es menor o igual a 0: %d",size);
 	}
 }
 
