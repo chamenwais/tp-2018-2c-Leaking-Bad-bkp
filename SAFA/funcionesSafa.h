@@ -30,5 +30,12 @@ void *funcionHiloConsola(void *arg);
 char** parser_instruccion(char* linea);
 t_DTB * crear_DTB(char* path);
 int inicializarListas();
+int iniciarPCP();
+int iniciarPLP();
+int liberarMemoria();
+void *funcionHiloPLP(void *arg);
+void *funcionHiloPlanif(void *arg);
+int planificar_PLP();
+int planificar();
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */

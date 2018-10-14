@@ -33,6 +33,8 @@ extern char estadoSAFA;
 extern pthread_t hiloComDMA;
 extern pthread_t hiloComCPU;
 extern pthread_t hiloConsola;
+extern pthread_t hiloPlanif;
+extern pthread_t hiloPLP;
 extern int fd_DMA;
 extern int resultadoComElDiego;
 extern bool safa_conectado;
@@ -41,7 +43,8 @@ extern t_list* nuevos;
 extern t_list* listos;
 extern t_list* ejecutando;
 extern t_list* bloqueados;
-extern t_list* exit_status;
+extern t_list* terminados;
+extern pthread_mutex_t mutexDePausaDePlanificacion;
 
 
 #endif /* SAFA_VARIABLESGLOBALES_H_ */

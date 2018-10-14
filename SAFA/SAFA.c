@@ -36,8 +36,8 @@ int main(int argc, char** argv){
 
 	//Iniciar escucha//
 	if(escuchar()==EXIT_FAILURE) finalizarTodo();
-	/*if(iniciarEscuchaCPU()==EXIT_FAILURE) finalizarTodo();
-	if(esperarFinEscuchaDMA()==EXIT_FAILURE) finalizarTodo();*/
+	if(iniciarPLP()==EXIT_FAILURE) finalizarTodo();
+	if(iniciarPCP()==EXIT_FAILURE) finalizarTodo();
 
-
+	liberarMemoria();
 }

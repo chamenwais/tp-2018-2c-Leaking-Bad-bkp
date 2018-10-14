@@ -12,6 +12,8 @@ char estadoSAFA;
 pthread_t hiloComDMA;
 pthread_t hiloComCPU;
 pthread_t hiloConsola;
+pthread_t hiloPlanif;
+pthread_t hiloPLP;
 int fd_DMA;
 int resultadoComElDiego;
 bool safa_conectado;
@@ -20,5 +22,6 @@ t_list* nuevos;
 t_list* listos;
 t_list* ejecutando;
 t_list* bloqueados;
-t_list* exit_status;
+t_list* terminados;
+pthread_mutex_t mutexDePausaDePlanificacion;
 

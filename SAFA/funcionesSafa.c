@@ -86,7 +86,12 @@ int finalizarTodo(){
 
 int inicializarSemaforosSAFA(){
 	//log_info(LOG_SAFA,"Inicializando semaforos");
-		return EXIT_SUCCESS;
+	if (pthread_mutex_init(&mutexDePausaDePlanificacion, NULL) != 0) {
+		/*Para pausar la planificacion*/
+		log_error(LOG_SAFA,"No se pudo inicializar el semaforo de planificacion");
+		exit(1);
+	}
+	return EXIT_SUCCESS;
  }
 
 int inicializarListas(){
@@ -95,7 +100,19 @@ int inicializarListas(){
 	nuevos = list_create();
 	ejecutando = list_create();
 	bloqueados = list_create();
-	exit_status = list_create();
+	terminados = list_create();
+	return EXIT_SUCCESS;
+}
+
+int liberarMemoria(){
+	log_info(LOG_SAFA, "Liberando memoria");
+	list_destroy_and_destroy_elements(listos, free);
+	list_destroy_and_destroy_elements(nuevos, free);
+	list_destroy_and_destroy_elements(ejecutando, free);
+	list_destroy_and_destroy_elements(bloqueados, free);
+	list_destroy_and_destroy_elements(terminados, free);
+
+	log_info(LOG_SAFA, "Habemus memoria liberada");
 	return EXIT_SUCCESS;
 }
 
@@ -285,4 +302,99 @@ t_DTB* crear_DTB(char* path){
 	new_DTB->program_counter = 0;
 	new_DTB->tabla_dir_archivos = list_create();
 	return new_DTB;
+}
+
+int iniciarPLP(){
+	int resultadoDeCrearHilo = pthread_create(
+		&hiloPLP, NULL, funcionHiloPLP, &configSAFA);
+	if(resultadoDeCrearHilo){
+		log_error(LOG_SAFA,"Error: no se pudo crear el hilo para la planificacion a largo plazo",resultadoDeCrearHilo);
+		exit(EXIT_FAILURE);
+		}
+	else{
+		log_info(LOG_SAFA,"Se creo el hilo para la planificacion a largo plazo");
+		return EXIT_SUCCESS;
+		}
+	return EXIT_SUCCESS;
+}
+
+void *funcionHiloPLP(void *arg){
+	char *ret="Cerrando hilo PLP";
+
+	while(safa_conectado){
+		//log_info(LOGGER,"Lockeando semaforo de pausa de planificacion");
+		//pthread_mutex_lock(&mutexDePausaDePlanificacion);
+
+		//log_info(LOGGER,"Planifico");
+		if(safa_conectado && list_size(nuevos)<configSAFA.grado_multiprogramacion){
+			planificar_PLP();
+		}
+		//log_info(LOGGER,"Deslockeando semaforo de pausa de planificacion");
+		//pthread_mutex_unlock(&mutexDePausaDePlanificacion);
+		}
+
+	pthread_exit(ret);
+	return EXIT_SUCCESS;
+}
+
+int planificar_PLP(){
+	t_DTB* idDTB;
+	//lockearListas();
+	log_info(LOG_SAFA,"PLP en accion");
+	if(list_size(nuevos)>0){
+		idDTB=list_remove(nuevos, 0);
+		list_add(listos, idDTB);
+		log_info(LOG_SAFA,"DTB listo para planificar %d",idDTB);
+		}
+	//deslockearListas();*/
+	return EXIT_SUCCESS;
+}
+
+int iniciarPCP(){
+	int resultadoDeCrearHilo = pthread_create(
+		&hiloPlanif, NULL, funcionHiloPlanif, &configSAFA);
+	if(resultadoDeCrearHilo){
+		log_error(LOG_SAFA,"Error: no se pudo crear el hilo para la planificacion a corto plazo",resultadoDeCrearHilo);
+		exit(EXIT_FAILURE);
+		}
+	else{
+		log_info(LOG_SAFA,"Se creo el hilo para la planificacion a corto plazo");
+		return EXIT_SUCCESS;
+		}
+	return EXIT_SUCCESS;
+}
+
+void* funcionHiloPlanif(void *arg){
+	char *ret="Cerrando hilo PCP";
+
+	while(safa_conectado){
+		//log_info(LOGGER,"Lockeando semaforo de pausa de planificacion");
+		pthread_mutex_lock(&mutexDePausaDePlanificacion);
+
+		//log_info(LOGGER,"Planifico");
+		if(safa_conectado)
+			planificar();
+
+		//log_info(LOGGER,"Deslockeando semaforo de pausa de planificacion");
+		pthread_mutex_unlock(&mutexDePausaDePlanificacion);
+		}
+
+	pthread_exit(ret);
+	return EXIT_SUCCESS;
+}
+
+int planificar(){
+	/*int idDTB;
+	//lockearListas();
+	log_info(LOG_SAFA,"Vamo a planificarno");
+	if(list_size(listos)>0||list_size(ejecutando) < configSAFA.grado_multiprogramacion){
+		idDTB=proximoDTBAPlanificar();
+		log_info(LOG_SAFA,"Proximo DTB a planificar %d",idDTB);
+		if(ponerAEjecutar(idDTB)!=EXIT_FAILURE){
+			log_info(LOG_SAFA,"Pongo el ESI %d a ejecutar",idDTB);
+			enviarMensajeDeEjecucion(idDTB);//enviarDTBACPU
+		}
+	}
+	//deslockearListas();*/
+	return EXIT_SUCCESS;
 }
