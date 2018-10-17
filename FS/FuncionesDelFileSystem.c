@@ -13,6 +13,38 @@ int inicializarLog(){
 	return EXIT_SUCCESS;
 }
 
+int crearDirectorios(){
+	/* Me asegura que todos los directorios que contienen estructuras administrativas esten creados
+	 * */
+
+	log_info(LOGGER,"Creando directorios");
+
+	char*path=string_new();
+	string_append(&path, configuracionDelFS.punto_montaje);
+	mkdir(path,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	log_info(LOGGER,"Directorio %s creado",path);
+
+	path=string_new();
+	string_append(&path, configuracionDelFS.punto_montaje);
+	string_append(&path, "/Archivos/");
+	mkdir(path,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	log_info(LOGGER,"Directorio %s creado",path);
+
+	path=string_new();
+	string_append(&path, configuracionDelFS.punto_montaje);
+	string_append(&path, "/Bloques/");
+	mkdir(path,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	log_info(LOGGER,"Directorio %s creado",path);
+
+	path=string_new();
+	string_append(&path, configuracionDelFS.punto_montaje);
+	string_append(&path, "/Metadata/");
+	mkdir(path,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	log_info(LOGGER,"Directorio %s creado",path);
+
+	return EXIT_SUCCESS;
+}
+
 int inicializarVariables(){
 	resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_SUCCESS;
 	return EXIT_SUCCESS;
@@ -339,14 +371,21 @@ int levantarMetadataBin(){
 }
 
 bool existeElArchivo(char *directorioDelArchivo){
-  FILE *fd=fopen(directorioDelArchivo, "r");
-  if(fd==NULL){
-	  log_info(LOGGER,"No existe el archivo %s",directorioDelArchivo);
-	  return false;
-  	  }
-  log_info(LOGGER,"Si existe el archivo %s",directorioDelArchivo);
-  fclose(fd);
-  return true;
+	/* Tengo q hacer un open con write si o si xq:
+	 * The fopen() function will fail if:
+	 * [EISDIR] The named file is a directory and mode requires write access.
+	 * sino lo hago asi cuando abro un directorio me dice q esta todo bien
+	 * "r+": Opens a file to update both reading and writing. The file must exist.
+	 * */
+	FILE *fd=fopen(directorioDelArchivo, "r+");
+	if(fd==NULL){
+		log_info(LOGGER,"No existe el archivo %s",directorioDelArchivo);
+		return false;
+	}else{
+		log_info(LOGGER,"Si existe el archivo %s",directorioDelArchivo);
+		fclose(fd);
+		return true;
+  		}
 }
 
 int obtenerBloqueLibreDelBitMap(){
@@ -355,10 +394,11 @@ int obtenerBloqueLibreDelBitMap(){
 	int i;
 	log_info(LOGGER,"Obteniendo bloque libre");
 	for(i=0;i<configuracionDeMetadata.cantidadBloques;i++){
-		if(bitarray_test_bit(bitmap,i)){
+		if(!bitarray_test_bit(bitmap,i)){
 			log_info(LOGGER,"El bloque %d esta libre", i);
 			return i;
 			}
+		log_info(LOGGER,"El bloque: %d esta ocupado",i);
 		}
 	log_info(LOGGER,"No hay mas bloques libres");
 	return -1;
@@ -382,6 +422,7 @@ int levantarBitMap(){
 		fread(bitmap,configuracionDeMetadata.cantidadBloques,1,archivoBitmap);
 		fclose(archivoBitmap);
 	}else{
+		log_info(LOGGER,"Creando archivo de BITMAP");
 		char* bitarray = malloc(configuracionDeMetadata.cantidadBloques * sizeof(char));
 		//Pongo todos los bites en 0
 		bzero(bitarray,configuracionDeMetadata.cantidadBloques);
@@ -580,7 +621,10 @@ int crearCarpetas(char *carpetasACrear){
 	for(i=0;carpetas[i]!=NULL;i++);
 	char*directorio=string_new();
 	string_append(&directorio,configuracionDelFS.punto_montaje);
-	string_append(&directorio,"/Archivos/");
+	mkdir(configuracionDelFS.punto_montaje,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	string_append(&directorio,"/Archivos");
+	mkdir(directorio,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	string_append(&directorio,"/");
 	for(int j=0;(j<(i-1))&&(carpetas[j]!=NULL);j++){
 		string_append(&directorio,carpetas[j]);
 		mkdir(directorio,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -602,11 +646,15 @@ int crearArchivo(char *ubicacionDelArchivo, char *path){
 	 * Ejemplo del contenido del archivo [Punto_Montaje]/Archivos/[PathDelArchivo] :
 	 * TAMANIO=250
 	 * BLOQUES=[40,21,82,3]
+	 * ----------------------------------
+	 * Ejemplo de contenido:
+	 * path: carpeta/asd.txt
+	 * ubicacionDelArchivo: montaje/Archivos/carpeta/asd.txt
 	 * */
 	log_info(LOGGER,"Voy a crear el archivo en: %s, path:%s",ubicacionDelArchivo,path);
 
 	if(!existeElArchivo(ubicacionDelArchivo)){
-		crearCarpetas(ubicacionDelArchivo);
+		crearCarpetas(path);
 		FILE *archivo=fopen(ubicacionDelArchivo, "w");
 		if(archivo!=NULL){
 			fprintf(archivo,"%s","TAMANIO=0\n");
@@ -693,7 +741,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 				string_append(&archivoDeBloque,configuracionDelFS.punto_montaje);
 				string_append(&archivoDeBloque, "/Bloques/");
 				if(bloqueActual<cantidadTotalDeBloquesCreados){
-					numeroDeBloque =list_get(metadata->bloques,i);
+					numeroDeBloque =(int)list_get(metadata->bloques,i);
 					string_append(&archivoDeBloque, string_itoa(numeroDeBloque));
 					log_info(LOGGER,"Voy a escribir en el bloque %s que ya esta creado",archivoDeBloque);
 				}else{
@@ -701,13 +749,13 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 					//El bloque no existe tengo que tomar uno vacio, crearlo y ademas actualizar la metadata
 					int numeroDeBloqueLibre=obtenerBloqueLibreDelBitMap();
 					if(numeroDeBloqueLibre!=-1){
-						log_info(LOGGER,"El bloque %d esta libre",numeroDeBloque);
+						log_info(LOGGER,"Voy a escribir en el bloque %d",numeroDeBloqueLibre);
 						//actualizo el bitarray
 						bitarray_set_bit(bitmap,numeroDeBloqueLibre);
-						string_append(&archivoDeBloque, string_itoa(numeroDeBloque));
+						string_append(&archivoDeBloque, string_itoa(numeroDeBloqueLibre));
 						//actualizo la lista y activo la bandera para actualizar mi archivo de metadata de ese archivo
 						hayQueActualziarMetadataDelArchivo=true;
-						list_add(metadata->bloques,numeroDeBloque);
+						list_add(metadata->bloques,numeroDeBloqueLibre);
 						log_info(LOGGER,"Creando el archivo de bloque%s",archivoDeBloque);
 						FILE * archivoTemp = fopen(archivoDeBloque,"wb");
 						fclose(archivoTemp);
@@ -721,23 +769,26 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 				log_info(LOGGER,"Abriendo el bloque %s para escribir",archivoDeBloque);
 				FILE * archivo = fopen(archivoDeBloque,"rb+");
 				//fwrite recibe: puntero a los datos, el tamaño de los registros, numero de registros, archivo
-
-				if(i!=numeroDeBloqueDeFinDeEscritura){
-					bytesAEscribir=configuracionDeMetadata.tamanioBloques;
+				if(archivo!=NULL){
+					if(i!=numeroDeBloqueDeFinDeEscritura){
+						bytesAEscribir=configuracionDeMetadata.tamanioBloques;
+					}else{
+						bytesAEscribir=configuracionDeMetadata.tamanioBloques-escribirEnPrimerArchivoDesde;
+						fseek(archivo, escribirEnPrimerArchivoDesde, SEEK_SET);
+						}
+					log_info(LOGGER,"Escribiendo en el archivo %s",archivoDeBloque);
+					fwrite(&Buffer[bytesEscritos],sizeof(char),bytesAEscribir,archivo);
+					bytesEscritos=bytesAEscribir+bytesEscritos;
+					bloqueActual++;
+					log_info(LOGGER,"Flusheando");
+					fflush(archivo);
+					fclose(archivo);
 				}else{
-					bytesAEscribir=configuracionDeMetadata.tamanioBloques-escribirEnPrimerArchivoDesde;
-					fseek(archivo, escribirEnPrimerArchivoDesde, SEEK_SET);
+					log_error(LOGGER,"No se pudo abrir el archivo %s para modificar",archivoDeBloque);
 					}
-				log_info(LOGGER,"Escribiendo en el archivo %s",archivoDeBloque);
-				fwrite(Buffer[bytesEscritos],sizeof(char),bytesAEscribir,archivo);
-				bytesEscritos=bytesAEscribir+bytesEscritos;
-				bloqueActual++;
-				log_info(LOGGER,"Flusheando");
-				fflush(archivo);
-				fclose(archivo);
 				}
 			if(hayQueActualziarMetadataDelArchivo){
-				actualizarMetaData(ubicacionDelArchivoDeMetadata,&metadata);
+				actualizarMetaData(ubicacionDelArchivoDeMetadata,metadata);
 				}
 			return DatosGuardados;
 		}else{
@@ -750,14 +801,19 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 
 int actualizarMetaData(char* ubicacionDelArchivoDeMetadata,tp_metadata metadata){
 	int i;
+	log_info(LOGGER,"Actualizando metadata del archivo: %s",ubicacionDelArchivoDeMetadata);
 	FILE * archivoTemp = fopen(ubicacionDelArchivoDeMetadata,"w");
 	fprintf(archivoTemp,"TAMANIO=%d\n",metadata->tamanio);
+	log_info(LOGGER,"	Tamaño actualizado: %d",metadata->tamanio);
 	fprintf(archivoTemp,"BLOQUES=[");
 	for(i=0;i<(list_size(metadata->bloques)-1);i++){
-		fprintf(archivoTemp,"%d,",list_get(metadata->bloques,i));
+		log_info(LOGGER,"	Guardando el bloque: %d",(int)list_get(metadata->bloques,i));
+		fprintf(archivoTemp,"%d,",(int)list_get(metadata->bloques,i));
 	}
-	fprintf(archivoTemp,"%d,",list_get(metadata->bloques,i));
+	log_info(LOGGER,"	Guardando el bloque: %d",(int)list_get(metadata->bloques,i));
+	fprintf(archivoTemp,"%d",(int)list_get(metadata->bloques,i));
 	fprintf(archivoTemp,"]");
+	log_info(LOGGER,"	Bloques actualizados: %d",metadata->tamanio);
 	fclose(archivoTemp);
 	return EXIT_SUCCESS;
 }
@@ -796,9 +852,11 @@ tp_metadata recuperarMetaData(char *ubicacionDelArchivoDeMetadata){
 	char** instruccion = string_split(bloques, ",");
 	metadata->bloques=list_create();
 	for(int i=0;instruccion[i]!=NULL;i++){
-		list_add(metadata->bloques,atoi(instruccion[i]));
+		int valor=atoi(instruccion[i]);
+		list_add(metadata->bloques,&valor);
 		log_info(LOGGER,"Agregando el valor %d a la lista",atoi(instruccion[i]));
 		}
+	config_destroy(configuracion);
 	return metadata;
 }
 

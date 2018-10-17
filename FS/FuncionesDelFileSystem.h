@@ -35,6 +35,7 @@ typedef t_hiloDMA* tp_hiloDMA;
 
 
 int inicializarLog();
+int crearDirectorios();
 int inicializarVariables();
 int levantarLineasDelArchivoDeConfiguracion(char* ubicacionDelArchivoConfiguracion);
 int levantarArchivoDeConfiguracion(int argc,char** argv);

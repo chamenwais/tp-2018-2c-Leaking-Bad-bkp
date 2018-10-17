@@ -15,7 +15,7 @@ int main(int argc,char** argv) {
 	inicializarLog();
 	inicializarVariables();
 	if(levantarArchivoDeConfiguracion(argc,argv)==EXIT_FAILURE) finalizarTodoPorError();
-
+	crearDirectorios();
 	if(levantarMetadataBin()==EXIT_FAILURE) finalizarTodoPorError();
 	if(levantarBitMap()==EXIT_FAILURE) finalizarTodoPorError();
 	if(iniciarEscuchaConDMA()==EXIT_FAILURE) finalizarTodoPorError();
