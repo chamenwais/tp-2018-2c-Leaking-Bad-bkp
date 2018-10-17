@@ -235,3 +235,24 @@ void logger_DAM(int tipo_esc, int tipo_log, const char* mensaje, ...){
 
 	return;
 }
+
+
+void mostrar_mensaje_previa_conexion_con_mdj() {
+	char* mensaje_informativo_previa_conexion_con_mdj =
+			mensaje_informativo_previa_conexion_con(const_name_mdj);
+	logger_DAM(escribir_loguear,l_info, mensaje_informativo_previa_conexion_con_mdj, ip_mdj,
+			puerto_mdj);
+	free(mensaje_informativo_previa_conexion_con_mdj);
+}
+
+int comunicarse_con_file_system(){
+	mostrar_mensaje_previa_conexion_con_mdj();
+	int socket_mdj=conectarseA(ip_mdj, puerto_mdj);
+	validar_comunicacion(socket_mdj, const_name_mdj);
+	realizar_handshake_con_mdj(socket_mdj);
+	return socket_mdj;
+}
+
+void realizar_handshake_con_mdj(int socket_id){
+	mandar_handshake_a(socket_id, FS, const_name_mdj);
+}

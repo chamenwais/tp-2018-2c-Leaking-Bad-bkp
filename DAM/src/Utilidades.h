@@ -43,6 +43,8 @@ void informar_handksake_exitoso(int socket_id, char* proceso);
 void informar_recibimiento_handshake(char* proceso);
 void destruir_logger();
 void validar_apertura_archivo_configuracion();
+void configurar_signals(void);
+void captura_sigpipe(int signo);
 
 //Conexiones
 void cerrar_socket_y_terminar(int socket_id);
@@ -50,7 +52,8 @@ void validar_comunicacion(int socket_id, char * proceso);
 void informar_handshake_erroneo_y_cerrar(int socket_id, char * proceso);
 void mandar_handshake_a(int socket_id, enum PROCESO enumProceso, char * proceso);
 void recibir_handshake_de(int socket_id, enum PROCESO enumProceso, char * proceso);
-void configurar_signals(void);
-void captura_sigpipe(int signo);
+int comunicarse_con_file_system();
+void realizar_handshake_con_mdj(int socket_id);
+void mostrar_mensaje_previa_conexion_con_mdj();
 
 #endif /* UTILIDADES_H_ */
