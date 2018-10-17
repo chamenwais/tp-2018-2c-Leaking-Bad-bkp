@@ -32,15 +32,30 @@ enum MENSAJES {
 	CrearArchivo,
 	ObtenerDatos,
 	GuardarDatos,
-	MemoriaDown,
-	MemoriaUp,
 	ElArchivoNoExiste,
 	ElArchivoExiste,
 	ArchivoCreado,
 	ArchivoNoCreado,
 	DatosGuardados,
 	ArchivoNoEncontrado,
-	DatosObtenidos
+	DatosObtenidos,
+	AbrirPathParaProceso,
+	AbrirPathEjecutandose,
+	AbrirPathNoFinalizado,
+	AbrirPathFinalizadoOk,
+	GuardarArchivoEnDisco,
+	GuardarArchivoEnDiscoEjecutandose,
+	GuardarArchivoNoFinalizado,
+	GuardarArchivoFinalizadoOk,
+	CrearLineasEnArchivo,
+	CrearLineasEnArchivoEjecutandose,
+	CrearLineasEnArchivoNoFinalizado,
+	CrearLineasEnArchivoFinalizadoOk,
+	EliminarArchivoDeDisco,
+	EliminarArchivoDeDiscoEjecutandose,
+	EliminarArchivoDeDiscoNoFinalizado,
+	EliminarArchivoDeDiscoFinalizadoOk,
+	CargarParteEnMemoria
 };
 
 typedef struct {

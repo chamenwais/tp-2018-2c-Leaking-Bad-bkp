@@ -11,38 +11,18 @@ int main() {
 	configurar_logger();
 	levantar_configuracion();
 	configurar_signals();
-	//Va a hacer el handshake con MDJ
+	//Va a hacer el handshake con MDJ solo para chequear si escucha
 	int socket_file_system=comunicarse_con_file_system();
+	close(socket_file_system);
 	//Va a hacer el handshake con FM9
 	int socket_memoria=comunicarse_con_memoria();
 	//Va a comunicarse con S-AFA
 	int socket_safa=comunicarse_con_safa();
 	//Va a quedarse escuchando a los CPU
-	crear_hilos_conexiones_entrantes(socket_memoria, socket_file_system, socket_safa);
-	close(socket_file_system);
+	crear_hilos_conexiones_entrantes(socket_memoria, socket_safa);
 	close(socket_memoria);
 	close(socket_safa);
 	terminar_controladamente(EXIT_SUCCESS);
-}
-
-void mostrar_mensaje_previa_conexion_con_mdj() {
-	char* mensaje_informativo_previa_conexion_con_mdj =
-			mensaje_informativo_previa_conexion_con(const_name_mdj);
-	logger_DAM(escribir_loguear,l_info, mensaje_informativo_previa_conexion_con_mdj, ip_mdj,
-			puerto_mdj);
-	free(mensaje_informativo_previa_conexion_con_mdj);
-}
-
-int comunicarse_con_file_system(){
-	mostrar_mensaje_previa_conexion_con_mdj();
-	int socket_mdj=conectarseA(ip_mdj, puerto_mdj);
-	validar_comunicacion(socket_mdj, const_name_mdj);
-	realizar_handshake_con_mdj(socket_mdj);
-	return socket_mdj;
-}
-
-void realizar_handshake_con_mdj(int socket_id){
-	mandar_handshake_a(socket_id, FS, const_name_mdj);
 }
 
 void mostrar_mensaje_previa_conexion_con_fm9() {
