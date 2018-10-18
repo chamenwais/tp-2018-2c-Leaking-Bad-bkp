@@ -704,7 +704,11 @@ int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer){
 }
 
 int guardarDatosDeDMA(int fileDescriptorActual){
-
+	log_info(LOGGER,"Voy a recibir los datos a guardar");
+	tp_obtenerDatos datos = prot_recibir_DMA_FS_obtenerDatos(fileDescriptorActual);
+	log_info(LOGGER,"Path:%s | Offset:%d | Size:%d | Buffer:%s",
+			datos->path,datos->offset,datos->size,datos->buffer);
+	guardarDatos(datos->path,datos->offset,datos->size,datos->buffer);
 	return EXIT_SUCCESS;
 }
 
@@ -715,6 +719,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 	 * que se soliciten datos o se intenten guardar datos en un archivo inexistente el File System
 	 * deberá retornar un error de Archivo no encontrado.
 	 */
+	int escribiHasta=0;
 	char *ubicacionDelArchivoDeMetadata=string_new();
 	bool hayQueActualziarMetadataDelArchivo=false;
 	string_append(&ubicacionDelArchivoDeMetadata,configuracionDelFS.punto_montaje);
@@ -724,7 +729,6 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 		if(existeElArchivo(ubicacionDelArchivoDeMetadata)){
 			tp_metadata metadata = recuperarMetaData(ubicacionDelArchivoDeMetadata);
 			log_info(LOGGER,"Offset: %d, tamaño de bloques %d, size %d",offset, configuracionDeMetadata.tamanioBloques,size);
-
 			int numeroDeBloqueDeInicioDeEscritura=offset/configuracionDeMetadata.tamanioBloques;
 			int numeroDeBloqueDeFinDeEscritura=(offset+size)/configuracionDeMetadata.tamanioBloques;
 			int escribirEnPrimerArchivoDesde=offset%configuracionDeMetadata.tamanioBloques;
@@ -787,16 +791,22 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 					log_error(LOGGER,"No se pudo abrir el archivo %s para modificar",archivoDeBloque);
 					}
 				}
+			escribiHasta=offset+size;
+			if(escribiHasta>metadata->tamanio){
+				//tengo que actualizar la cantidad de datos q tiene el archivo
+				metadata->tamanio=escribiHasta;
+				}
 			if(hayQueActualziarMetadataDelArchivo){
 				actualizarMetaData(ubicacionDelArchivoDeMetadata,metadata);
 				}
 			return DatosGuardados;
 		}else{
 			return ArchivoNoEncontrado;
-		}
+			}
 	}else{
 		log_info(LOGGER,"El size que quiero escribir es menor o igual a 0: %d",size);
-	}
+		}
+	return ArchivoNoEncontrado;
 }
 
 int actualizarMetaData(char* ubicacionDelArchivoDeMetadata,tp_metadata metadata){
@@ -853,7 +863,7 @@ tp_metadata recuperarMetaData(char *ubicacionDelArchivoDeMetadata){
 	metadata->bloques=list_create();
 	for(int i=0;instruccion[i]!=NULL;i++){
 		int valor=atoi(instruccion[i]);
-		list_add(metadata->bloques,&valor);
+		list_add(metadata->bloques,valor);
 		log_info(LOGGER,"Agregando el valor %d a la lista",atoi(instruccion[i]));
 		}
 	config_destroy(configuracion);

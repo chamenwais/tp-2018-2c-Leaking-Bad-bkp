@@ -14,6 +14,7 @@ typedef struct stru_obtenerDatos{
 	char* path;
 	int offset;
 	int size;
+	char* buffer;
 } t_obtenerDatos;
 typedef t_obtenerDatos* tp_obtenerDatos;
 
