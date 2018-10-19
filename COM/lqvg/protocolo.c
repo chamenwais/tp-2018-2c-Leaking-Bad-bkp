@@ -21,6 +21,34 @@ char* prot_recibir_DMA_FS_path(int sock){
 	return path;
 }
 
+void prot_enviar_DMA_FS_guardarDatos(char *path, int offset, int size, char *buffer, int sock){
+	int tam = strlen(path) + 1;
+	enviar(sock,&tam,sizeof(tam));
+	enviar(sock,path,tam);
+	enviar(sock,&offset,sizeof(offset));
+	enviar(sock,&size,sizeof(size));
+	int tam2 = strlen(buffer) + 1;
+	enviar(sock,&tam2,sizeof(tam2));
+	enviar(sock,buffer,tam2);
+	//printf("enviando: %s, size:%d | %d | %d | %s size:%d\n",path,tam,offset,size,buffer,tam2);
+	return;
+}
+
+tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos(int sock){
+	int tam;
+	tp_obtenerDatos datos = malloc(sizeof(t_obtenerDatos));
+	recibir(sock,&tam,sizeof(tam));
+	datos->path = malloc(tam);
+	recibir(sock,(datos->path),tam);
+	recibir(sock,&(datos->offset),sizeof(datos->offset));
+	recibir(sock,&(datos->size),sizeof(datos->size));
+	int tam2;
+	recibir(sock,&tam2,sizeof(tam2));
+	datos->buffer = malloc(tam2);
+	recibir(sock,(datos->buffer),tam2);
+	return datos;
+}
+
 void prot_enviar_DMA_FS_obtenerDatos(char *path, int offset, int size, int sock){
 	int tam = sizeof(&path);
 	enviar(sock,&tam,sizeof(tam));

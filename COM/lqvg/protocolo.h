@@ -48,6 +48,8 @@ typedef t_datosEnMemoria* tp_datosEnMemoria;
 
 void prot_enviar_DMA_FS_path(char* path,int sock);
 char* prot_recibir_DMA_FS_path(int sock);
+void prot_enviar_DMA_FS_guardarDatos(char *path, int offset, int size, char *buffer, int sock);
+tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos(int sock);
 void prot_enviar_DMA_FS_obtenerDatos(char *path, int offset, int size, int sock);
 tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos(int sock);
 void prot_enviar_CPU_DMA_abrirPath(char* path, int pid, int sock);
