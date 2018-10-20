@@ -127,25 +127,22 @@ tp_cargarEnMemoria prot_recibir_DMA_FM9_cargarEnMemoria(int sock){
 	return recibido;
 }
 
-void prot_enviar_FM9_DMA_cargaEnMemoria(int base, int offset, int sock){
-	enviar(sock,&base,sizeof(base));
-	enviar(sock,&offset,sizeof(offset));
+void prot_enviar_FM9_DMA_cargaEnMemoria(int memory_address, int sock){
+	enviar(sock,&memory_address,sizeof(memory_address));
 }
 
-tp_cargaEnMemoria prot_recibir_FM9_DMA_cargaEnMemoria(int sock){
-	tp_cargaEnMemoria recibido = malloc(sizeof(tp_cargaEnMemoria));
-	recibir(sock,&(recibido->base),sizeof(recibido->base));
-	recibir(sock,&(recibido->offset),sizeof(recibido->offset));
+int prot_recibir_FM9_DMA_cargaEnMemoria(int sock){
+	int recibido;
+	recibir(sock,&recibido,sizeof(recibido));
 	return recibido;
 }
 
-void prot_enviar_DMA_SAFA_datosEnMemoria(char* path, int pid, int base, int offset, int sock){
+void prot_enviar_DMA_SAFA_datosEnMemoria(char* path, int pid, int memory_address, int sock){
 	int path_size = sizeof(&path);
 	enviar(sock,&path_size,sizeof(path_size));
 	enviar(sock,path,path_size);
 	enviar(sock,&pid,sizeof(pid));
-	enviar(sock,&base,sizeof(base));
-	enviar(sock,&offset,sizeof(offset));
+	enviar(sock,&memory_address,sizeof(memory_address));
 }
 
 tp_datosEnMemoria prot_recibir_DMA_SAFA_datosEnMemoria(int sock){
@@ -155,7 +152,6 @@ tp_datosEnMemoria prot_recibir_DMA_SAFA_datosEnMemoria(int sock){
 	recibido->path = malloc(path_size);
 	recibir(sock,recibido->path,path_size);
 	recibir(sock,&(recibido->pid),sizeof(recibido->pid));
-	recibir(sock,&(recibido->base),sizeof(recibido->base));
-	recibir(sock,&(recibido->offset),sizeof(recibido->offset));
+	recibir(sock,&(recibido->memory_address),sizeof(recibido->memory_address));
 	return recibido;
 }

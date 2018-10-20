@@ -76,13 +76,15 @@ void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 		, int socket_CPU_solicitante
 		, int socket_fm9
 		, int socket_safa){
+	pthread_attr_t atributo_detachable;
+	pthread_t hilo_correspondiente_a_pedido;
 	switch(mensaje_entrante){
-		case AbrirPathParaProceso:;
-			//TODO pedir path y pid
-			char * path="";
-			int pid=0;
-			logger_DAM(escribir_loguear, l_trace,"Ehhh, voy a buscar [%s] para [%d]",path,pid);
-			//TODO crear hilo que maneje el abrir
+		case AbrirPathParaProceso:
+			pthread_attr_init(&atributo_detachable);
+			pthread_attr_setdetachstate(&atributo_detachable, PTHREAD_CREATE_DETACHED);
+			pthread_create(&hilo_correspondiente_a_pedido,&atributo_detachable,operacion_abrir_path,
+					adaptar_sockets_para_hilo(socket_CPU_solicitante,socket_fm9,socket_safa));
+			pthread_attr_destroy(&atributo_detachable);
 			break;
 		case GuardarArchivoEnDisco:
 			break;
@@ -93,6 +95,7 @@ void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 		default:
 			break;
 	}
+	pthread_detach(hilo_correspondiente_a_pedido);
 
 }
 
@@ -143,4 +146,25 @@ int cabecera_correcta(t_cabecera* cabecera){
 void loguear_tamanio_cabecera_recibida_de_CPU(t_cabecera* cabecera_de_CPU) {
 	logger_DAM(escribir_loguear, l_trace,
 			"Se recibio una cabecera con tamanio %d", cabecera_de_CPU->tamanio);
+}
+
+void * operacion_abrir_path(void * sockets){
+	int * vector_sockets=sockets;
+	int socket_CPU=vector_sockets[0];
+	int socket_fm9=vector_sockets[1];
+	int socket_safa=vector_sockets[2];
+	tp_abrirPath mensaje_cpu=prot_recibir_CPU_DMA_abrirPath(socket_CPU);
+	logger_DAM(escribir_loguear, l_trace,"Ehhh, voy a buscar [%s] para [%d]",mensaje_cpu->path,mensaje_cpu->pid);
+	//TODO completar
+	free(sockets);
+	return EXIT_SUCCESS;
+}
+
+void * adaptar_sockets_para_hilo(int CPU_Fd, int fm9_Fd, int Safa_fd){
+	void * sockets=calloc(3,sizeof(int));
+	int * sockets_aux=sockets;
+	sockets_aux[0]=CPU_Fd;
+	sockets_aux[1]=fm9_Fd;
+	sockets_aux[2]=Safa_fd;
+	return sockets;
 }

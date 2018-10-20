@@ -41,5 +41,7 @@ void loguear_tamanio_cabecera_recibida_de_CPU(t_cabecera* cabecera_de_CPU);
 void loguear_nueva_conexion_con_CPU(int nuevo_socketfd);
 void loguear_y_cerrar_comunicacion_erronea_con_CPU(
 		int sockfd_CPU_a_cerrar);
+void * operacion_abrir_path(void * sockets);
+void * adaptar_sockets_para_hilo(int CPU_Fd, int fm9_Fd, int Safa_fd);
 
 #endif /* CONEXIONESENTRANTES_H_ */
