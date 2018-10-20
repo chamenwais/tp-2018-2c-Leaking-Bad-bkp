@@ -31,17 +31,10 @@ typedef struct stru_cargarEnMemoria{
 } t_cargarEnMemoria;
 typedef t_cargarEnMemoria* tp_cargarEnMemoria;
 
-typedef struct stru_cargaEnMemoria{
-	int base;
-	int offset;
-} t_cargaEnMemoria;
-typedef t_cargaEnMemoria* tp_cargaEnMemoria;
-
 typedef struct stru_datosEnMemoria{
 	char* path;
 	int pid;
-	int base;
-	int offset;
+	int memory_address;
 } t_datosEnMemoria;
 typedef t_datosEnMemoria* tp_datosEnMemoria;
 
@@ -55,9 +48,9 @@ void prot_enviar_FS_DMA_devolverDatos(void* buffer, int sock);
 void* prot_recibir_FS_DMA_devolverDatos(int sock);
 void prot_enviar_DMA_FM9_cargarEnMemoria(char* path, void* buffer, int offset, int size, int sock);
 tp_cargarEnMemoria prot_recibir_DMA_FM9_cargarEnMemoria(int sock);
-void prot_enviar_FM9_DMA_cargaEnMemoria(int base, int offset, int sock);
-tp_cargaEnMemoria prot_recibir_FM9_DMA_cargaEnMemoria(int sock);
-void prot_enviar_DMA_SAFA_datosEnMemoria(char* path, int pid, int base, int offset, int sock);
+void prot_enviar_FM9_DMA_cargaEnMemoria(int memory_address, int sock);
+int prot_recibir_FM9_DMA_cargaEnMemoria(int sock);
+void prot_enviar_DMA_SAFA_datosEnMemoria(char* path, int pid, int memory_address, int sock);
 tp_datosEnMemoria prot_recibir_DMA_SAFA_datosEnMemoria(int sock);
 
 #endif /* LQVG_PROTOCOLO_H_ */
