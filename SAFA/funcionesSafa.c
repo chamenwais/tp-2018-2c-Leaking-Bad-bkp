@@ -346,7 +346,7 @@ int planificar_PLP(){
 		list_add(listos, idDTB);
 		log_info(LOG_SAFA,"DTB listo para planificar %d",idDTB);
 		}
-	//deslockearListas();*/
+	//deslockearListas();
 	return EXIT_SUCCESS;
 }
 
@@ -384,17 +384,41 @@ void* funcionHiloPlanif(void *arg){
 }
 
 int planificar(){
-	/*int idDTB;
+	t_DTB* DTB;
+	int idDTB;
 	//lockearListas();
 	log_info(LOG_SAFA,"Vamo a planificarno");
-	if(list_size(listos)>0||list_size(ejecutando) < configSAFA.grado_multiprogramacion){
+	if(list_size(listos)>0 && list_size(ejecutando) < configSAFA.grado_multiprogramacion){
 		idDTB=proximoDTBAPlanificar();
 		log_info(LOG_SAFA,"Proximo DTB a planificar %d",idDTB);
-		if(ponerAEjecutar(idDTB)!=EXIT_FAILURE){
+		/*if(ponerAEjecutar(idDTB)!=EXIT_FAILURE){//idDTB es solo un int TODO
 			log_info(LOG_SAFA,"Pongo el ESI %d a ejecutar",idDTB);
 			enviarMensajeDeEjecucion(idDTB);//enviarDTBACPU
+			*/
 		}
 	}
-	//deslockearListas();*/
+	//deslockearListas();
 	return EXIT_SUCCESS;
+}
+
+int proximoDTBAPlanificar(){
+	int idDTBAPlanificar = -1;
+	if(list_size(ejecutando) < configSAFA.grado_multiprogramacion){
+		log_info(LOG_SAFA,"No hay DTBs ejecutando");
+		if(list_size(listos)>0){
+			log_info(LOG_SAFA,"Hay mas procesos para ejecutar");
+			if(string_equals_ignore_case(configSAFA.algoritmo_planif, "RR")){
+				log_info(LOG_SAFA, "El algoritmo de planif es ROUND ROBIN");
+				idDTBAPlanificar=calcularDTBAPlanificarConRR();
+			}
+			if(string_equals_ignore_case(configSAFA.algoritmo_planif, "VRR")){
+				log_info(LOG_SAFA, "El algoritmo de planif es VIRTUAL ROUND ROBIN");
+				idDTBAPlanificar=calcularDTBAPlanificarConVRR();
+			}
+		log_info(LOG_SAFA,"Proximo DTB a planififcar: %d ",idDTBAPlanificar);
+		return idDTBAPlanificar;
+		}
+	}
+	log_info(LOG_SAFA, "No hay mas DTB para ser ejecutados");
+	return idDTBAPlanificar;
 }

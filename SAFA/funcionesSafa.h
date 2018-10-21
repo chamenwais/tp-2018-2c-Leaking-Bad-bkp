@@ -37,5 +37,8 @@ void *funcionHiloPLP(void *arg);
 void *funcionHiloPlanif(void *arg);
 int planificar_PLP();
 int planificar();
+int proximoDTBAPlanificar();
+int calcularDTBAPlanificarConRR();
+int calcularDTBAPlanificarConVRR();
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */
