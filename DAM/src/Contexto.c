@@ -10,7 +10,7 @@
  * Constantes
  */
 char * path_archivo_log="/home/utnso/DAM.log";
-char * path_archivo_configuracion="configDAM.cfg";
+char * nombre_archivo_configuracion="configDAM.cfg";
 char * clave_puerto_de_escucha="PUERTO_DE_ESCUCHA";
 char * clave_ip_safa="IP_SAFA";
 char * clave_puerto_safa="PUERTO_S-AFA";

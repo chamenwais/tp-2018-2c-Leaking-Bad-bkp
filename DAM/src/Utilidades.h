@@ -28,7 +28,7 @@ enum tipo_logueo { escribir, loguear, escribir_loguear, l_trace, l_debug, l_info
 void configurar_logger();
 void logger_DAM(int tipo_esc, int tipo_log, const char* mensaje, ...);
 void leer_puerto_de_escucha();
-void levantar_configuracion();
+void levantar_configuracion(int cantidad_parametros, char ** parametros);
 void terminar_controladamente(int return_nr);
 void enlazar_hilos(pthread_t hilo1, pthread_t hilo2);
 void leer_configuracion_safa();
@@ -45,6 +45,7 @@ void destruir_logger();
 void validar_apertura_archivo_configuracion();
 void configurar_signals(void);
 void captura_sigpipe(int signo);
+void loguear_cabecera_recibida(char * proceso);
 
 //Conexiones
 void cerrar_socket_y_terminar(int socket_id);

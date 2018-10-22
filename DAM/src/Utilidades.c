@@ -18,8 +18,16 @@ void validar_apertura_archivo_configuracion() {
 	}
 }
 
-void levantar_configuracion(){
-	configuracion = config_create(path_archivo_configuracion);
+void levantar_configuracion(int cantidad_parametros, char ** parametros){
+	if (cantidad_parametros>0){
+		configuracion = config_create(parametros[1]);
+	} else {
+		char* path_archivo_configuracion = string_new();
+		string_append(&path_archivo_configuracion,"../");
+		string_append(&path_archivo_configuracion, nombre_archivo_configuracion);
+		configuracion = config_create(path_archivo_configuracion);
+		free(path_archivo_configuracion);
+	}
 	validar_apertura_archivo_configuracion();
 	leer_puerto_de_escucha();
 	leer_configuracion_safa();
@@ -236,6 +244,13 @@ void logger_DAM(int tipo_esc, int tipo_log, const char* mensaje, ...){
 	return;
 }
 
+void loguear_cabecera_recibida(char * proceso) {
+	char* mensaje_cabecera_recibida = string_new();
+	string_append(&mensaje_cabecera_recibida, "Se recibio una cabecera de ");
+	string_append(&mensaje_cabecera_recibida, proceso);
+	logger_DAM(escribir_loguear, l_trace,mensaje_cabecera_recibida);
+	free(mensaje_cabecera_recibida);
+}
 
 void mostrar_mensaje_previa_conexion_con_mdj() {
 	char* mensaje_informativo_previa_conexion_con_mdj =

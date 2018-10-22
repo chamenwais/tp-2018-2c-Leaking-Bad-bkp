@@ -41,7 +41,7 @@ void crear_hilos_conexiones_entrantes(int socket_fm9, int socket_safa){
 			if(FD_ISSET(iterador_conexiones_existentes, &lista_fd_temporal)){
 				//Recibimos una conexion
 				if (iterador_conexiones_existentes==socketfd_escucha){
-					//Nueva conexion
+					//Nueva conexion, la agregamos a la lista de conocidas (master)
 					nuevo_socketfd=aceptarConexion(socketfd_escucha);
 					validar_comunicacion(socketfd_escucha, const_name_cpu);
 					FD_SET(nuevo_socketfd, &lista_fd_maestra);
@@ -58,7 +58,7 @@ void crear_hilos_conexiones_entrantes(int socket_fm9, int socket_safa){
 						FD_CLR(iterador_conexiones_existentes, &lista_fd_maestra);
 					}
 					if(cabecera_correcta(&cabecera)){
-						loguear_tamanio_cabecera_recibida_de_CPU(&cabecera);
+						loguear_cabecera_recibida(const_name_cpu);
 						clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 								cabecera.tipoDeMensaje
 								,iterador_conexiones_existentes
@@ -78,13 +78,12 @@ void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 		, int socket_safa){
 	pthread_attr_t atributo_detachable;
 	pthread_t hilo_correspondiente_a_pedido;
+	pthread_attr_init(&atributo_detachable);
+	pthread_attr_setdetachstate(&atributo_detachable, PTHREAD_CREATE_DETACHED);
 	switch(mensaje_entrante){
 		case AbrirPathParaProceso:
-			pthread_attr_init(&atributo_detachable);
-			pthread_attr_setdetachstate(&atributo_detachable, PTHREAD_CREATE_DETACHED);
 			pthread_create(&hilo_correspondiente_a_pedido,&atributo_detachable,operacion_abrir_path,
 					adaptar_sockets_para_hilo(socket_CPU_solicitante,socket_fm9,socket_safa));
-			pthread_attr_destroy(&atributo_detachable);
 			break;
 		case GuardarArchivoEnDisco:
 			break;
@@ -95,8 +94,8 @@ void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 		default:
 			break;
 	}
+	pthread_attr_destroy(&atributo_detachable);
 	pthread_detach(hilo_correspondiente_a_pedido);
-
 }
 
 void establecer_nuevo_fd_maximo(int * maximo_actual, int potencial_nuevo_maximo){
@@ -129,7 +128,7 @@ void loguear_nueva_conexion_con_CPU(int nuevo_socketfd) {
 void loguear_y_cerrar_comunicacion_erronea_con_CPU(
 		int sockfd_CPU_a_cerrar) {
 	//No se puede leer el mensaje, se va a cerrar el sockfd
-	logger_DAM(escribir_loguear, l_trace,
+	logger_DAM(escribir_loguear, l_error,
 			"No se pudo obtener info del CPU. Se cierra el sockfd %d",
 			sockfd_CPU_a_cerrar);
 	close(sockfd_CPU_a_cerrar);
@@ -143,9 +142,10 @@ int cabecera_correcta(t_cabecera* cabecera){
 	return cabecera->tamanio>0;
 }
 
-void loguear_tamanio_cabecera_recibida_de_CPU(t_cabecera* cabecera_de_CPU) {
-	logger_DAM(escribir_loguear, l_trace,
-			"Se recibio una cabecera con tamanio %d", cabecera_de_CPU->tamanio);
+t_cabecera validar_archivo(int socket_mdj, tp_abrirPath mensaje_cpu) {
+	enviarCabecera(socket_mdj, ValidarArchivo, sizeof(ValidarArchivo));
+	prot_enviar_DMA_FS_path(mensaje_cpu->path, socket_mdj);
+	return recibirCabecera(socket_mdj);
 }
 
 void * operacion_abrir_path(void * sockets){
@@ -153,10 +153,20 @@ void * operacion_abrir_path(void * sockets){
 	int socket_CPU=vector_sockets[0];
 	int socket_fm9=vector_sockets[1];
 	int socket_safa=vector_sockets[2];
+	free(sockets);
 	tp_abrirPath mensaje_cpu=prot_recibir_CPU_DMA_abrirPath(socket_CPU);
 	logger_DAM(escribir_loguear, l_trace,"Ehhh, voy a buscar [%s] para [%d]",mensaje_cpu->path,mensaje_cpu->pid);
-	//TODO completar
-	free(sockets);
+	enviarCabecera(socket_CPU,AbrirPathEjecutandose,sizeof(AbrirPathEjecutandose));
+	int socket_mdj=comunicarse_con_file_system();
+	t_cabecera respuesta_validacion_path = validar_archivo(socket_mdj, mensaje_cpu);
+	if(cabecera_esta_vacia(&respuesta_validacion_path)||!cabecera_correcta(&respuesta_validacion_path)){
+		loguear_y_avisar_a_safa_apertura_erronea(socket_safa,const_name_mdj,mensaje_cpu);
+	} else {
+		loguear_cabecera_recibida(const_name_mdj);
+		//Tratamos la respuesta de la validez o invalidez del path del archivo por abrir
+		tratar_invalidez_archivo(respuesta_validacion_path, mensaje_cpu, socket_safa);
+		tratar_validez_archivo(respuesta_validacion_path, mensaje_cpu, socket_mdj, socket_fm9, socket_safa);
+	}
 	return EXIT_SUCCESS;
 }
 
@@ -167,4 +177,57 @@ void * adaptar_sockets_para_hilo(int CPU_Fd, int fm9_Fd, int Safa_fd){
 	sockets_aux[1]=fm9_Fd;
 	sockets_aux[2]=Safa_fd;
 	return sockets;
+}
+
+void loguear_y_avisar_a_safa_apertura_erronea(int sockfd_safa, char * proceso, tp_abrirPath path_y_pid){
+	logger_DAM(escribir_loguear, l_warning,"Hubo un error de comunicacion con %s al abrir el archivo",proceso);
+	informar_operacion_abrir_erronea(sockfd_safa,path_y_pid);
+}
+
+void informar_operacion_abrir_erronea(int socket_safa, tp_abrirPath path_y_pid) {
+	enviarCabecera(socket_safa, AbrirPathNoFinalizado, sizeof(AbrirPathNoFinalizado));
+	prot_enviar_DMA_SAFA_datosEnMemoria(path_y_pid->path, path_y_pid->pid, -1, socket_safa);
+}
+
+void tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath info_cpu, int socket_safa){
+	if(ElArchivoNoExiste==(respuesta_validez_archivo.tipoDeMensaje)){
+		logger_DAM(escribir_loguear, l_warning,"Dijo Mdj que el archivo %s no existe",info_cpu->path);
+		informar_operacion_abrir_erronea(socket_safa, info_cpu);
+	}
+}
+
+void* pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int socket_mdj) {
+	prot_enviar_DMA_FS_obtenerDatos(ruta, offset_Mdj, transfer_size, socket_mdj);
+	return prot_recibir_FS_DMA_devolverDatos(socket_mdj);
+}
+
+int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, int direccion_de_memoria, void* parte_archivo) {
+	enviarCabecera(socket_fm9, CargarParteEnMemoria, sizeof(CargarParteEnMemoria));
+	prot_enviar_DMA_FM9_cargarEnMemoria(info_cpu->path, parte_archivo, offset_Fm9, transfer_size, socket_fm9);
+	free(parte_archivo);
+	return prot_recibir_FM9_DMA_cargaEnMemoria(socket_fm9);
+}
+
+void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath info_cpu, int socket_mdj, int socket_fm9, int socket_safa){
+	if(ElArchivoExiste==(respuesta_validez_archivo.tipoDeMensaje)){
+		int offset_Mdj=0;
+		int offset_Fm9=0;
+		logger_DAM(escribir_loguear, l_trace,"El archivo %s es valido, vamos a cargarlo en memoria",info_cpu->path);
+		void* parte_archivo = pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
+		int tamanio_parte_archivo=0;
+		int direccion_de_memoria;
+		while(NULL!=parte_archivo){
+			tamanio_parte_archivo=sizeof(&parte_archivo);
+			logger_DAM(escribir_loguear, l_trace,"Se recibio un fragmento de archivo de %d bytes",tamanio_parte_archivo);
+			offset_Mdj+=tamanio_parte_archivo;
+			direccion_de_memoria = cargar_datos_en_Fm9(socket_fm9, info_cpu, offset_Fm9, direccion_de_memoria, parte_archivo);
+			logger_DAM(escribir_loguear, l_trace,"Se cargo el fragmento en memoria");
+			offset_Fm9+=tamanio_parte_archivo;
+			parte_archivo=pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
+		}
+		enviarCabecera(socket_safa, AbrirPathFinalizadoOk, sizeof(AbrirPathFinalizadoOk));
+		prot_enviar_DMA_SAFA_datosEnMemoria(info_cpu->path,info_cpu->pid,direccion_de_memoria,socket_safa);
+		logger_DAM(escribir_loguear, l_trace,"Se mando a safa la direccion de memoria %d del archivo que se abrio",direccion_de_memoria);
+		free(parte_archivo);
+	}
 }

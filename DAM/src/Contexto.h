@@ -13,7 +13,7 @@
 extern t_log * logger;
 extern char * path_archivo_log;
 extern t_config * configuracion;
-extern char * path_archivo_configuracion;
+extern char * nombre_archivo_configuracion;
 extern int puerto_de_escucha;
 extern char * clave_puerto_de_escucha;
 extern char * ip_safa;

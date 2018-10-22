@@ -29,7 +29,7 @@ all: ElDiego
 ElDiego: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc  -o "ElDiego" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L"/home/utnso/TP/tp-2018-2c-Leaking-Bad/COM/lqvg" -o "ElDiego" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
