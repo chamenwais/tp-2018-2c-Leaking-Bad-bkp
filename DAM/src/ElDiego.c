@@ -7,9 +7,9 @@
 
 #include "ElDiego.h"
 
-int main() {
+int main(int argc, char ** argv) {
 	configurar_logger();
-	levantar_configuracion();
+	levantar_configuracion(argc,argv);
 	configurar_signals();
 	//Va a hacer el handshake con MDJ solo para chequear si escucha
 	int socket_file_system=comunicarse_con_file_system();
