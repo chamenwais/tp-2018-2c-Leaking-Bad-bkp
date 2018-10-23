@@ -228,8 +228,11 @@ void *funcionHiloConsola(void *arg){
 		if(strcmp(instruccion[0],"config")==0){
 			mostrarConfiguracion();
 		}else{
+		if(strcmp(instruccion[0],"bitmap")==0){
+			imprimirEstadoDelBitmap();
+		}else{
 		printf("Comando desconocido\n");
-		}}}}}}}}}}}}
+		}}}}}}}}}}}}}
 		free(linea);
 		//for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
 		//free(instruccion);
@@ -247,6 +250,30 @@ int mostrarConfiguracion(){
 	printf("Cantidad de : %d\n", configuracionDeMetadata.cantidadBloques);
 	printf("Magic number: %s\n", configuracionDeMetadata.magicNumber);
 	printf("Tamaño de bloques: %d\n", configuracionDeMetadata.tamanioBloques);
+	return EXIT_SUCCESS;
+}
+
+int imprimirEstadoDelBitmap(){
+	int i;
+	int bloquesLibres=0;
+	int bloquesOcupados=0;
+	printf("Cantidad total de bloques: %d\n",configuracionDeMetadata.cantidadBloques);
+	printf("Imprimiendo estado de los bloques\n");
+	printf("Bloques libres:\n");
+	for(i=0;i<configuracionDeMetadata.cantidadBloques;i++){
+		if(!bitarray_test_bit(bitmap,i)){
+			printf("%d; ",i);
+			bloquesLibres++;
+			}
+		}
+	printf("\nBloques ocupados:\n");
+	for(i=0;i<configuracionDeMetadata.cantidadBloques;i++){
+		if(bitarray_test_bit(bitmap,i)){
+			printf("%d; ",i);
+			bloquesOcupados++;
+			}
+		}
+	printf("\n");
 	return EXIT_SUCCESS;
 }
 
@@ -270,6 +297,7 @@ int man(){
 	printf("   que se soliciten datos o se intenten guardar datos en un archivo inexistente el File System\n");
 	printf("   deberá retornar un error de Archivo no encontrado\n");
 	printf("10) \"config\", me muestra la data que levante de la configracion\n");
+	printf("11) \"bitmap\", muestra el estado de todos los bloques del bitmap\n");
 	return EXIT_SUCCESS;
 }
 
@@ -411,12 +439,46 @@ int reservarBloqueYCrearEstructuras(int numeroDeBloqueLibre){
 int levantarBitMap(){
 	FILE *archivoBitmap;
 	char* ubicacionDelArchivo;
-	char *bufferDelArchivo;
+	//char *bufferDelArchivo;
 	ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo,configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Metadata/Bitmap.bin");
 	log_info(LOGGER,"Buscando el archivo \"Bitmap.bin\" en el directorio: %s",ubicacionDelArchivo);
-	if(existeElArchivo(ubicacionDelArchivo)){
+
+	int FDbitmap = open(ubicacionDelArchivo, O_RDWR);
+
+	if(FDbitmap==-1){
+		log_error(LOGGER,"No se pudo abrir el file descriptor del archivo de bitmap %s",ubicacionDelArchivo);
+	}else{
+		log_info(LOGGER,"Se abrio el file descriptor del archivo de bitmap%s",ubicacionDelArchivo);
+		}
+
+	struct stat mystat;
+	char* bitarray = malloc(configuracionDeMetadata.cantidadBloques * sizeof(char));
+	if(fstat(FDbitmap, &mystat) < 0) {
+	    log_error(LOGGER,"Error al establecer fstat");
+	    close(FDbitmap);
+		}
+
+	if(mystat.st_size==0){
+		log_error(LOGGER,"El archivo esta vacio y no tiene nada para mapearlo a memeoria");
+		close(FDbitmap);
+		}
+
+	bitarray = mmap(NULL, mystat.st_size, PROT_WRITE | PROT_READ, MAP_SHARED, FDbitmap, 0);
+
+	if(bitarray == MAP_FAILED){
+		log_error(LOGGER,"Error al mapear a memoria: %s",strerror(errno));
+		log_info(LOGGER,"Es probable que no este creado el archivo o este vacio, paso a crearlo y llenarlo con basura");
+		/*close(FDbitmap);
+		archivoBitmap=fopen(ubicacionDelArchivo, "wb");
+		fprintf();
+				fclose(archivoBitmap);*/
+		}
+
+	bitmap = bitarray_create_with_mode(bitarray,configuracionDeMetadata.cantidadBloques,MSB_FIRST);
+		//bitarray_create_with_mode(bitarray, 5200/8, MSB_FIRST);
+	/*if(existeElArchivo(ubicacionDelArchivo)){
 		log_info(LOGGER,"Levantando el BITMAP de disco");
 		archivoBitmap=fopen(ubicacionDelArchivo, "wb");
 		fread(bitmap,configuracionDeMetadata.cantidadBloques,1,archivoBitmap);
@@ -434,7 +496,7 @@ int levantarBitMap(){
 		archivoBitmap=fopen(ubicacionDelArchivo, "wb");
 		fclose(archivoBitmap);
 		bajarADiscoBitmap();
-	}
+	}*/
 	return EXIT_SUCCESS;
 
 }
@@ -451,8 +513,13 @@ int bajarADiscoBitmap(){
 		log_error(LOGGER,"No se pudo abrir el archivo de bitmap en %s para bajar a disco",ubicacionDelArchivo);
 		return EXIT_FAILURE;
 	}else{
-		log_info(LOGGER,"Se pudo abrir el archivo de bitmap en %s para bajar a disco",ubicacionDelArchivo);
-		fwrite(bitmap,1,bitarray_get_max_bit(bitmap),archivoBitMap);
+		log_info(LOGGER,"Se pudo abrir el archivo de bitmap en %s para bajar a disco, tamaño del bitmap: %d",
+				ubicacionDelArchivo,bitmap->size);
+		printf("\n\n%s\n\n%d\n\n",bitmap->bitarray,bitmap->size);
+		write(archivoBitMap,bitmap->size,sizeof(bitmap->size));
+		write(archivoBitMap,bitmap->bitarray,bitmap->size);
+		//write(archivoBitMap,bitmap->mode,1);
+		//fwrite(bitmap,1,bitarray_get_max_bit(bitmap),archivoBitMap);
 		fclose(archivoBitMap);
 		log_info(LOGGER,"Bitmap bajado a disco");
 		return EXIT_SUCCESS;

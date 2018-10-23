@@ -19,6 +19,8 @@
 //#include "../COM/lqvg/com.h"
 #include "//usr/include/lqvg/com.h"
 #include "//usr/include/lqvg/protocolo.h"
+#include <sys/mman.h>
+#include <errno.h>
 
 typedef struct defMetadata {
 	int tamanio;
@@ -43,6 +45,7 @@ int iniciarConsola();
 char** parser_instruccion(char* linea);
 void *funcionHiloConsola(void *arg);
 int mostrarConfiguracion();
+int imprimirEstadoDelBitmap();
 int man();
 int esperarAQueTermineLaEscuchaConElDMA();
 int esperarAQueTermineLaConsola();
