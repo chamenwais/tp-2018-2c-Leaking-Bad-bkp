@@ -332,6 +332,11 @@ void liberarRecursos(){
 	log_info(LOGGER,"Cerrando esctructuras");
 	log_info(LOGGER,"Cerrando log");
 	log_destroy(LOGGER);
+	log_info(LOGGER,"Desmapeando el bitmap");
+	msync(bitmap, tamanioBitmap, MS_SYNC);
+	munmap(bitmap,tamanioBitmap);
+	log_info(LOGGER,"Destruyendo el bitarray");
+	bitarray_destroy(bitmap);
 }
 
 int listarDirectorioActual(){
@@ -439,8 +444,11 @@ int reservarBloqueYCrearEstructuras(int numeroDeBloqueLibre){
 int levantarBitMap(){
 	FILE *archivoBitmap;
 	char* ubicacionDelArchivo;
+	bool estaCreadoElBitmap;
+	bool estaVacioElBitmap=false;
 	//char *bufferDelArchivo;
 	ubicacionDelArchivo=string_new();
+	tamanioBitmap=configuracionDeMetadata.cantidadBloques * sizeof(char);
 	string_append(&ubicacionDelArchivo,configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Metadata/Bitmap.bin");
 	log_info(LOGGER,"Buscando el archivo \"Bitmap.bin\" en el directorio: %s",ubicacionDelArchivo);
@@ -449,81 +457,74 @@ int levantarBitMap(){
 
 	if(FDbitmap==-1){
 		log_error(LOGGER,"No se pudo abrir el file descriptor del archivo de bitmap %s",ubicacionDelArchivo);
+		archivoBitmap=fopen(ubicacionDelArchivo, "wb");
+		for(int i=0;i<tamanioBitmap;i++){
+			fprintf(archivoBitmap,"0");
+			}
+		fclose(archivoBitmap);
+		FDbitmap = open(ubicacionDelArchivo, O_RDWR);
+		estaCreadoElBitmap=false;
 	}else{
 		log_info(LOGGER,"Se abrio el file descriptor del archivo de bitmap%s",ubicacionDelArchivo);
+		estaCreadoElBitmap=true;
 		}
 
 	struct stat mystat;
-	char* bitarray = malloc(configuracionDeMetadata.cantidadBloques * sizeof(char));
+
 	if(fstat(FDbitmap, &mystat) < 0) {
 	    log_error(LOGGER,"Error al establecer fstat");
 	    close(FDbitmap);
 		}
 
 	if(mystat.st_size==0){
+		estaVacioElBitmap=true;
 		log_error(LOGGER,"El archivo esta vacio y no tiene nada para mapearlo a memeoria");
 		close(FDbitmap);
+		archivoBitmap=fopen(ubicacionDelArchivo, "wb");
+		for(int i=0;i<tamanioBitmap;i++){
+			fprintf(archivoBitmap,"0");
+			}
+		fclose(archivoBitmap);
+		FDbitmap = open(ubicacionDelArchivo, O_RDWR);
+	}else{
+		estaVacioElBitmap=false;
 		}
 
-	bitarray = mmap(NULL, mystat.st_size, PROT_WRITE | PROT_READ, MAP_SHARED, FDbitmap, 0);
+	char * src = mmap(NULL, mystat.st_size, PROT_WRITE | PROT_READ | PROT_EXEC, MAP_SHARED, FDbitmap, 0);
 
-	if(bitarray == MAP_FAILED){
+	if(src == MAP_FAILED){
 		log_error(LOGGER,"Error al mapear a memoria: %s",strerror(errno));
 		log_info(LOGGER,"Es probable que no este creado el archivo o este vacio, paso a crearlo y llenarlo con basura");
-		/*close(FDbitmap);
-		archivoBitmap=fopen(ubicacionDelArchivo, "wb");
-		fprintf();
-				fclose(archivoBitmap);*/
+	}else{
+		log_info(LOGGER,"MAP exitoso");
 		}
 
-	bitmap = bitarray_create_with_mode(bitarray,configuracionDeMetadata.cantidadBloques,MSB_FIRST);
-		//bitarray_create_with_mode(bitarray, 5200/8, MSB_FIRST);
-	/*if(existeElArchivo(ubicacionDelArchivo)){
-		log_info(LOGGER,"Levantando el BITMAP de disco");
-		archivoBitmap=fopen(ubicacionDelArchivo, "wb");
-		fread(bitmap,configuracionDeMetadata.cantidadBloques,1,archivoBitmap);
-		fclose(archivoBitmap);
+	char * bufferArchivo = malloc(tamanioBitmap);
+
+	memcpy(bufferArchivo, src, tamanioBitmap);
+
+	if(!estaCreadoElBitmap||estaVacioElBitmap){
+		log_info(LOGGER,"El archivo de bitmap no existia");
+		log_info(LOGGER,"Generando el BITMAP con los datos de \"Bitmap.bin\" en: %s",ubicacionDelArchivo);
+		bzero(bufferArchivo,configuracionDeMetadata.cantidadBloques);
 	}else{
-		log_info(LOGGER,"Creando archivo de BITMAP");
-		char* bitarray = malloc(configuracionDeMetadata.cantidadBloques * sizeof(char));
-		//Pongo todos los bites en 0
-		bzero(bitarray,configuracionDeMetadata.cantidadBloques);
-		bitmap=bitarray_create_with_mode(bitarray,configuracionDeMetadata.cantidadBloques,MSB_FIRST);
+		log_info(LOGGER,"El archivo de bitmap existia");
+		}
+
+	bitmap = bitarray_create_with_mode(bufferArchivo,tamanioBitmap,MSB_FIRST);
+
+	if(!estaCreadoElBitmap||estaVacioElBitmap){
 		for(int i=0;i<configuracionDeMetadata.cantidadBloques;i++){
 			bitarray_clean_bit(bitmap,i);
 			}
-		log_info(LOGGER,"Generando el BITMAP con los datos de \"Bitmap.bin\" en: %s",ubicacionDelArchivo);
-		archivoBitmap=fopen(ubicacionDelArchivo, "wb");
-		fclose(archivoBitmap);
-		bajarADiscoBitmap();
-	}*/
-	return EXIT_SUCCESS;
 
+		}
+	close(FDbitmap);
+	return EXIT_SUCCESS;
 }
 
 int bajarADiscoBitmap(){
-	FILE *archivoBitMap;
-	char *ubicacionDelArchivo;
-	ubicacionDelArchivo=string_new();
-	string_append(&ubicacionDelArchivo,configuracionDelFS.punto_montaje);
-	string_append(&ubicacionDelArchivo, "/Metadata/Bitmap.bin");
-	archivoBitMap = fopen(ubicacionDelArchivo, "wb");
-
-	if(archivoBitMap==NULL){
-		log_error(LOGGER,"No se pudo abrir el archivo de bitmap en %s para bajar a disco",ubicacionDelArchivo);
-		return EXIT_FAILURE;
-	}else{
-		log_info(LOGGER,"Se pudo abrir el archivo de bitmap en %s para bajar a disco, tamaño del bitmap: %d",
-				ubicacionDelArchivo,bitmap->size);
-		printf("\n\n%s\n\n%d\n\n",bitmap->bitarray,bitmap->size);
-		write(archivoBitMap,bitmap->size,sizeof(bitmap->size));
-		write(archivoBitMap,bitmap->bitarray,bitmap->size);
-		//write(archivoBitMap,bitmap->mode,1);
-		//fwrite(bitmap,1,bitarray_get_max_bit(bitmap),archivoBitMap);
-		fclose(archivoBitMap);
-		log_info(LOGGER,"Bitmap bajado a disco");
-		return EXIT_SUCCESS;
-		}
+	msync(bitmap, tamanioBitmap, MS_SYNC);
 	return EXIT_SUCCESS;
 }
 
@@ -740,13 +741,16 @@ int crearArchivo(char *ubicacionDelArchivo, char *path){
 }
 
 int obtenerDatosDeConsola(char *path, int offset, int Size){
-
+	obtenerDatos(path,offset,Size);
 	return EXIT_SUCCESS;
 }
 
 int obtenerDatosDeDMA(int FDDMA){
+	log_info(LOGGER,"Voy a recibir los datos a guardar por el FD: %d",FDDMA);
 	tp_obtenerDatos parametrosDeObtenerDatos = prot_recibir_DMA_FS_obtenerDatos(FDDMA);
-
+	log_info(LOGGER,"Path:%s | Offset:%d | Size:%d",
+		parametrosDeObtenerDatos->path,parametrosDeObtenerDatos->offset,parametrosDeObtenerDatos->size);
+	obtenerDatos(parametrosDeObtenerDatos->path,parametrosDeObtenerDatos->offset,parametrosDeObtenerDatos->size);
 	return EXIT_SUCCESS;
 }
 
@@ -823,6 +827,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 						log_info(LOGGER,"Voy a escribir en el bloque %d",numeroDeBloqueLibre);
 						//actualizo el bitarray
 						bitarray_set_bit(bitmap,numeroDeBloqueLibre);
+						msync(bitmap, tamanioBitmap, MS_SYNC);
 						string_append(&archivoDeBloque, string_itoa(numeroDeBloqueLibre));
 						//actualizo la lista y activo la bandera para actualizar mi archivo de metadata de ese archivo
 						hayQueActualziarMetadataDelArchivo=true;
