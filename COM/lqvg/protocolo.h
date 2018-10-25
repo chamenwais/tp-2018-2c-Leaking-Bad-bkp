@@ -39,6 +39,7 @@ typedef struct stru_datosEnMemoria{
 } t_datosEnMemoria;
 typedef t_datosEnMemoria* tp_datosEnMemoria;
 
+void prot_enviar_FS_DMA_datosObtenidos(char* datos, int size, int resultado, int sock);
 void prot_enviar_DMA_FS_path(char* path,int sock);
 char* prot_recibir_DMA_FS_path(int sock);
 void prot_enviar_DMA_FS_guardarDatos(char *path, int offset, int size, char *buffer, int sock);

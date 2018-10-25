@@ -29,5 +29,6 @@ extern t_bitarray *bitmap;
 extern pthread_t threadComunicacionConElDMA;
 extern int resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
 extern int tamanioBitmap;
+extern bool finalizarPrograma;
 
 #endif /* VARIABLESGLOBALES_H_ */

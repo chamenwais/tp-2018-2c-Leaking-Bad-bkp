@@ -14,3 +14,4 @@ t_bitarray *bitmap;
 pthread_t threadComunicacionConElDMA;
 int resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
 int tamanioBitmap;
+bool finalizarPrograma;

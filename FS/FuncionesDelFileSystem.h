@@ -28,6 +28,12 @@ typedef struct defMetadata {
 } t_metadata;
 typedef t_metadata* tp_metadata;
 
+typedef struct defDatosObtenidos {
+	enum MENSAJES resultado;
+	char * datos;
+} t_datosObtenidos;
+
+typedef t_metadata* tp_metadata;
 typedef struct defHiloDMA {
 	pthread_attr_t attr;
 	pthread_t thread;
@@ -71,7 +77,7 @@ int crearCarpetas(char *carpetasACrear);
 int crearArchivo(char *ubicacionDelArchivo, char *path);
 int obtenerDatosDeConsola(char *path, int offset, int Size);
 int obtenerDatosDeDMA(int FDDMA);
-int obtenerDatos(char *path, int offset, int Size);
+t_datosObtenidos obtenerDatos(char *path, int offset, int size);
 int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer);
 int guardarDatosDeDMA(int fileDescriptorActual);
 int guardarDatos(char *path, int offset, int size, char *Buffer);

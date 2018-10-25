@@ -6,6 +6,16 @@
  */
 #include "protocolo.h"
 
+void prot_enviar_FS_DMA_datosObtenidos(char* datos, int size, int resultado, int sock){
+	enviar(sock,&resultado,sizeof(resultado));
+	if(resultado==DatosObtenidos){
+		enviar(sock,&size,sizeof(size));
+		int tam = sizeof(&datos);
+		enviar(sock,&tam,sizeof(tam));
+		enviar(sock,datos,tam);
+		}
+}
+
 void prot_enviar_DMA_FS_path(char* path,int sock){
 	int tam = sizeof(&path);
 	enviar(sock,&tam,sizeof(tam));
