@@ -46,6 +46,10 @@ int crearDirectorios(){
 }
 
 int inicializarVariables(){
+	if (pthread_mutex_init(&mutexFinalizarPrograma, NULL) != 0) {
+		log_error(LOGGER,"No se pudo inicializar el semaforo de la variable para saber si hay que finalizar el programa");
+		return EXIT_FAILURE;
+		}
 	finalizarPrograma=false;
 	resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_SUCCESS;
 	return EXIT_SUCCESS;
@@ -122,12 +126,15 @@ int iniciarConsola(){
 	int resultadoDeCrearHilo = pthread_create( &threadConsola, NULL, funcionHiloConsola, "Hilo consola");
 		if(resultadoDeCrearHilo){
 			log_error(LOGGER,"Error al crear el hilo, return code: %d",resultadoDeCrearHilo);
+			avisoDeFinalizarPrograma();
 			exit(EXIT_FAILURE);
 			}
 		else{
 			log_info(LOGGER,"La consola se creo exitosamente");
+			avisoDeFinalizarPrograma();
 			return EXIT_SUCCESS;
 			}
+	avisoDeFinalizarPrograma();
 	return EXIT_SUCCESS;
 }
 
@@ -331,13 +338,14 @@ int finalizarTodoPorError(){
 
 void liberarRecursos(){
 	log_info(LOGGER,"Cerrando esctructuras");
-	log_info(LOGGER,"Cerrando log");
-	log_destroy(LOGGER);
 	log_info(LOGGER,"Desmapeando el bitmap");
 	msync(bitmap, tamanioBitmap, MS_SYNC);
 	munmap(bitmap,tamanioBitmap);
 	log_info(LOGGER,"Destruyendo el bitarray");
 	bitarray_destroy(bitmap);
+	log_info(LOGGER,"Cerrando log");
+	log_destroy(LOGGER);
+	printf("PROGRAMA FINALIZADO\n");
 }
 
 int listarDirectorioActual(){
@@ -592,10 +600,17 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 
 bool hayQueFinalizarElPrograma(){
 	bool resultado;
-
+	pthread_mutex_lock(&mutexFinalizarPrograma);
 	resultado=finalizarPrograma;
-
+	pthread_mutex_unlock(&mutexFinalizarPrograma);
 	return resultado;
+}
+
+int avisoDeFinalizarPrograma(){
+	pthread_mutex_lock(&mutexFinalizarPrograma);
+	finalizarPrograma=true;
+	pthread_mutex_unlock(&mutexFinalizarPrograma);
+	return EXIT_SUCCESS;
 }
 
 int iniciarTrabajoConElDMA(int fileDescriptorActual){

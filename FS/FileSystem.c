@@ -18,12 +18,15 @@ int main(int argc,char** argv) {
 	crearDirectorios();
 	if(levantarMetadataBin()==EXIT_FAILURE) finalizarTodoPorError();
 	if(levantarBitMap()==EXIT_FAILURE) finalizarTodoPorError();
+
 	if(iniciarEscuchaConDMA()==EXIT_FAILURE) finalizarTodoPorError();
 
 	if(iniciarConsola()==EXIT_FAILURE) finalizarTodoPorError();
 
-	if(esperarAQueTermineLaEscuchaConElDMA()==EXIT_FAILURE) finalizarTodoPorError();
 	if(esperarAQueTermineLaConsola()==EXIT_FAILURE) finalizarTodoPorError();
+	pthread_cancel(threadComunicacionConElDMA);
+	//if(esperarAQueTermineLaEscuchaConElDMA()==EXIT_FAILURE) finalizarTodoPorError();
+
 
 	liberarRecursos();
 	return EXIT_SUCCESS;
