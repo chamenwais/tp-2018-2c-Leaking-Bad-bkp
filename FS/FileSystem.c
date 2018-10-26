@@ -24,10 +24,12 @@ int main(int argc,char** argv) {
 	if(iniciarConsola()==EXIT_FAILURE) finalizarTodoPorError();
 
 	if(esperarAQueTermineLaConsola()==EXIT_FAILURE) finalizarTodoPorError();
+
 	pthread_cancel(threadComunicacionConElDMA);
+
 	//if(esperarAQueTermineLaEscuchaConElDMA()==EXIT_FAILURE) finalizarTodoPorError();
 
-
 	liberarRecursos();
+
 	return EXIT_SUCCESS;
 }

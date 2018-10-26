@@ -213,6 +213,14 @@ void *funcionHiloConsola(void *arg){
 				printf("Faltan parametros para poder crear el archivo\n");
 				}
 		}else{
+		if(strcmp(instruccion[0],"BorrarArchivo")==0){
+			if(instruccion[1]!=NULL){
+				printf("Voy a borrar el archivo: %s\n",instruccion[1]);
+				borrarArchivoDeConsola(instruccion[1]);
+			}else{
+				printf("Falta el path para poder borrar el archivo\n");
+				}
+		}else{
 		if(strcmp(instruccion[0],"ObtenerDatos")==0){
 			if((instruccion[1]!=NULL)&&(instruccion[2]!=NULL)&&(instruccion[3]!=NULL)){
 				printf("Voy a obtener datos del archivo: %s\n",instruccion[1]);
@@ -240,7 +248,7 @@ void *funcionHiloConsola(void *arg){
 			imprimirEstadoDelBitmap();
 		}else{
 		printf("Comando desconocido\n");
-		}}}}}}}}}}}}}
+		}}}}}}}}}}}}}}
 		free(linea);
 		//for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
 		//free(instruccion);
@@ -306,6 +314,7 @@ int man(){
 	printf("   deberá retornar un error de Archivo no encontrado\n");
 	printf("10) \"config\", me muestra la data que levante de la configracion\n");
 	printf("11) \"bitmap\", muestra el estado de todos los bloques del bitmap\n");
+	printf("12) \"BorrarArchivo\" [Path], borra el archivo solicitado\n");
 	return EXIT_SUCCESS;
 }
 
@@ -590,10 +599,9 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 		//FDDMA=malloc(sizeof(int));
 		FDDMA = aceptarConexion(sockDelServer);
 		log_info(LOGGER,"Voy a atender una conexion por el FD: %d", FDDMA);
-
 		pthread_create(&thread, &attr,&hiloDePedidoDeDMA, FDDMA);
+		}
 
-	}
 	pthread_attr_destroy(&attr);
 	return EXIT_SUCCESS;
 }
@@ -763,6 +771,45 @@ int crearArchivo(char *ubicacionDelArchivo, char *path){
 		log_info(LOGGER,"El archivo ya existe");
 		return ArchivoNoCreado;
 	}
+}
+
+int borrarArchivoDeConsola(char *path){
+	return borrarArchivo(path);
+}
+
+int borrarArchivoDeDMA(int fileDescriptorActual){
+	char*path=prot_recibir_DMA_FS_path(fileDescriptorActual);
+	int resultadoDelBorrado=borrarArchivo(path);
+	enviarCabecera(fileDescriptorActual, resultadoDelBorrado, 1);
+	return EXIT_SUCCESS;
+}
+
+int borrarArchivo(char *path){
+	char *ubicacionDelArchivoDeMetadata=string_new();
+	int numeroDeBloque,i;
+	string_append(&ubicacionDelArchivoDeMetadata,configuracionDelFS.punto_montaje);
+	string_append(&ubicacionDelArchivoDeMetadata, "/Archivos/");
+	string_append(&ubicacionDelArchivoDeMetadata,path);
+	if(existeElArchivo(ubicacionDelArchivoDeMetadata)){
+		tp_metadata metadata = recuperarMetaData(ubicacionDelArchivoDeMetadata);
+		log_info(LOGGER,"Tamaño del archivo a borrar:",metadata->tamanio);
+		for(i=0;i<list_size(metadata->bloques);i++){
+			numeroDeBloque =(int)list_get(metadata->bloques,i);
+			log_info(LOGGER,"Liberando el bloque: %d",numeroDeBloque);
+			bitarray_clean_bit(bitmap,i);
+			msync(bitmap, tamanioBitmap, MS_SYNC);
+			}
+		if(remove(ubicacionDelArchivoDeMetadata)==0){
+			log_info(LOGGER,"Se elimino el archivo de metadata: %s",ubicacionDelArchivoDeMetadata);
+			return ArchivoBorrado;
+		}else{
+			log_error(LOGGER,"No se pudo eliminar el archivo de metadata: %s",ubicacionDelArchivoDeMetadata);
+			return ArchivoNoBorrado;
+			}
+	}else{
+		log_error(LOGGER,"El archivo %s de metadata no existe, no lo puedo borrar",ubicacionDelArchivoDeMetadata);
+		return ArchivoNoBorrado;
+		}
 }
 
 int obtenerDatosDeConsola(char *path, int offset, int Size){

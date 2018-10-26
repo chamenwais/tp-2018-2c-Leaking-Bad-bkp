@@ -55,7 +55,9 @@ enum MENSAJES {
 	EliminarArchivoDeDiscoEjecutandose,
 	EliminarArchivoDeDiscoNoFinalizado,
 	EliminarArchivoDeDiscoFinalizadoOk,
-	CargarParteEnMemoria
+	CargarParteEnMemoria,
+	ArchivoBorrado,
+	ArchivoNoBorrado
 };
 
 typedef struct {
