@@ -781,6 +781,7 @@ int borrarArchivoDeDMA(int fileDescriptorActual){
 	char*path=prot_recibir_DMA_FS_path(fileDescriptorActual);
 	int resultadoDelBorrado=borrarArchivo(path);
 	enviarCabecera(fileDescriptorActual, resultadoDelBorrado, 1);
+	log_info(LOGGER,"Resultado de borrar al archivo enviado al DMA (%d)",resultadoDelBorrado);
 	return EXIT_SUCCESS;
 }
 
