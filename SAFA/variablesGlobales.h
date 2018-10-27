@@ -45,6 +45,7 @@ extern t_list* listos;
 extern t_list* ejecutando;
 extern t_list* bloqueados;
 extern t_list* terminados;
+extern t_list* auxVirtualRR;
 extern pthread_mutex_t mutexDePausaDePlanificacion;
 
 

@@ -101,6 +101,7 @@ int inicializarListas(){
 	ejecutando = list_create();
 	bloqueados = list_create();
 	terminados = list_create();
+	auxVirtualRR = list_create();
 	return EXIT_SUCCESS;
 }
 
