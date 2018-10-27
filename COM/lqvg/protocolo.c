@@ -7,6 +7,7 @@
 #include "protocolo.h"
 
 void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTotalDelArchivo, int sock){
+	//1 envia
 	enviar(sock,&resultado,sizeof(resultado));
 	if(resultado==DatosObtenidos){
 		//enviar(sock,&size,sizeof(size));
@@ -19,6 +20,7 @@ void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTo
 }
 
 char* prot_recibir_FS_DMA_devolverDatos(int sock){
+	//1 recibir
 	int resultado;
 	int size, tamanioTotalDelArchivo;
 	char* buffer;
@@ -34,6 +36,7 @@ char* prot_recibir_FS_DMA_devolverDatos(int sock){
 }
 
 void prot_enviar_DMA_FS_obtenerDatos(char *path, int offset, int size, int sock){
+	//2 envia
 	int tam = sizeof(&path);
 	enviar(sock,&tam,sizeof(tam));
 	enviar(sock,path,tam);
@@ -43,6 +46,7 @@ void prot_enviar_DMA_FS_obtenerDatos(char *path, int offset, int size, int sock)
 }
 
 tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos(int sock){
+	//2 recibe
 	int tam;
 	tp_obtenerDatos recibido = malloc(sizeof(t_obtenerDatos));
 	recibir(sock,&tam,sizeof(tam));
@@ -54,12 +58,14 @@ tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos(int sock){
 }
 
 void prot_enviar_DMA_FS_path(char* path,int sock){
+	//3 recibe
 	int tam = sizeof(&path);
 	enviar(sock,&tam,sizeof(tam));
 	enviar(sock,path,tam);
 }
 
 char* prot_recibir_DMA_FS_path(int sock){
+	//3 envia
 	char* path;
 	int size;
 	recibir(sock,&size,sizeof(size));
@@ -69,6 +75,7 @@ char* prot_recibir_DMA_FS_path(int sock){
 }
 
 void prot_enviar_DMA_FS_guardarDatos(char *path, int offset, int size, char *buffer, int sock){
+	//4 envia
 	int tam = strlen(path) + 1;
 	enviar(sock,&tam,sizeof(tam));
 	enviar(sock,path,tam);
@@ -82,6 +89,7 @@ void prot_enviar_DMA_FS_guardarDatos(char *path, int offset, int size, char *buf
 }
 
 tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos(int sock){
+	//4 recibe
 	int tam;
 	tp_obtenerDatos datos = malloc(sizeof(t_obtenerDatos));
 	recibir(sock,&tam,sizeof(tam));
@@ -97,6 +105,7 @@ tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos(int sock){
 }
 
 void prot_enviar_CPU_DMA_abrirPath(char* path, int pid, int sock){
+	//5 envia
 	int tam = sizeof(&path);
 	enviar(sock,&tam,sizeof(tam));
 	enviar(sock,path,tam);
@@ -104,6 +113,7 @@ void prot_enviar_CPU_DMA_abrirPath(char* path, int pid, int sock){
 }
 
 tp_abrirPath prot_recibir_CPU_DMA_abrirPath(int sock){
+	//5 recibe
 	int size;
 	tp_abrirPath recibido = malloc(sizeof(tp_abrirPath));
 	recibir(sock,&size,sizeof(size));
@@ -113,14 +123,8 @@ tp_abrirPath prot_recibir_CPU_DMA_abrirPath(int sock){
 	return recibido;
 }
 
-void prot_enviar_FS_DMA_devolverDatos(void* buffer, int sock){
-	int tam = sizeof(&buffer);
-	enviar(sock,&tam,sizeof(tam));
-	enviar(sock,buffer,tam);
-}
-
-
 void prot_enviar_DMA_FM9_cargarEnMemoria(char* path, void* buffer, int offset, int size, int sock){
+	//6 envia
 	int path_size = sizeof(&path);
 	int buffer_size = sizeof(&buffer);
 	enviar(sock,&path_size,sizeof(path_size));
@@ -132,6 +136,7 @@ void prot_enviar_DMA_FM9_cargarEnMemoria(char* path, void* buffer, int offset, i
 }
 
 tp_cargarEnMemoria prot_recibir_DMA_FM9_cargarEnMemoria(int sock){
+	//6 recibe
 	int path_size;
 	int buffer_size;
 	tp_cargarEnMemoria recibido = malloc(sizeof(tp_cargarEnMemoria));
@@ -147,16 +152,19 @@ tp_cargarEnMemoria prot_recibir_DMA_FM9_cargarEnMemoria(int sock){
 }
 
 void prot_enviar_FM9_DMA_cargaEnMemoria(int memory_address, int sock){
+	//7 envia
 	enviar(sock,&memory_address,sizeof(memory_address));
 }
 
 int prot_recibir_FM9_DMA_cargaEnMemoria(int sock){
+	//7 recibe
 	int recibido;
 	recibir(sock,&recibido,sizeof(recibido));
 	return recibido;
 }
 
 void prot_enviar_DMA_SAFA_datosEnMemoria(char* path, int pid, int memory_address, int sock){
+	//8 envia
 	int path_size = sizeof(&path);
 	enviar(sock,&path_size,sizeof(path_size));
 	enviar(sock,path,path_size);
@@ -165,6 +173,7 @@ void prot_enviar_DMA_SAFA_datosEnMemoria(char* path, int pid, int memory_address
 }
 
 tp_datosEnMemoria prot_recibir_DMA_SAFA_datosEnMemoria(int sock){
+	//8 recibe
 	int path_size;
 	tp_datosEnMemoria recibido = malloc(sizeof(tp_datosEnMemoria));
 	recibir(sock,&path_size,sizeof(path_size));
