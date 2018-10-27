@@ -6,14 +6,51 @@
  */
 #include "protocolo.h"
 
-void prot_enviar_FS_DMA_datosObtenidos(char* datos, int size, int resultado, int sock){
+void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTotalDelArchivo, int sock){
 	enviar(sock,&resultado,sizeof(resultado));
 	if(resultado==DatosObtenidos){
-		enviar(sock,&size,sizeof(size));
+		//enviar(sock,&size,sizeof(size));
+		enviar(sock,&tamanioTotalDelArchivo,sizeof(tamanioTotalDelArchivo));
 		int tam = sizeof(&datos);
 		enviar(sock,&tam,sizeof(tam));
 		enviar(sock,datos,tam);
+
 		}
+}
+
+char* prot_recibir_FS_DMA_devolverDatos(int sock){
+	int resultado;
+	int size, tamanioTotalDelArchivo;
+	char* buffer;
+	recibir(sock,&resultado,sizeof(resultado));
+	if(resultado==DatosObtenidos){
+		//en este caso tengo datos para recibir
+		recibir(sock,&tamanioTotalDelArchivo,sizeof(tamanioTotalDelArchivo));
+		recibir(sock,&size,sizeof(size));
+		buffer = malloc(size);
+		recibir(sock,buffer,size);
+		}
+	return buffer;
+}
+
+void prot_enviar_DMA_FS_obtenerDatos(char *path, int offset, int size, int sock){
+	int tam = sizeof(&path);
+	enviar(sock,&tam,sizeof(tam));
+	enviar(sock,path,tam);
+	enviar(sock,&offset,sizeof(offset));
+	enviar(sock,&size,sizeof(size));
+	return;
+}
+
+tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos(int sock){
+	int tam;
+	tp_obtenerDatos recibido = malloc(sizeof(t_obtenerDatos));
+	recibir(sock,&tam,sizeof(tam));
+	recibido->path = malloc(tam);
+	recibir(sock,recibido->path,tam);
+	recibir(sock,&(recibido->offset),sizeof(recibido->offset));
+	recibir(sock,&(recibido->size),sizeof(recibido->size));
+	return recibido;
 }
 
 void prot_enviar_DMA_FS_path(char* path,int sock){
@@ -59,26 +96,6 @@ tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos(int sock){
 	return datos;
 }
 
-void prot_enviar_DMA_FS_obtenerDatos(char *path, int offset, int size, int sock){
-	int tam = sizeof(&path);
-	enviar(sock,&tam,sizeof(tam));
-	enviar(sock,path,tam);
-	enviar(sock,&offset,sizeof(offset));
-	enviar(sock,&size,sizeof(size));
-	return;
-}
-
-tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos(int sock){
-	int tam;
-	tp_obtenerDatos recibido = malloc(sizeof(t_obtenerDatos));
-	recibir(sock,&tam,sizeof(tam));
-	recibido->path = malloc(tam);
-	recibir(sock,recibido->path,tam);
-	recibir(sock,&(recibido->offset),sizeof(recibido->offset));
-	recibir(sock,&(recibido->size),sizeof(recibido->size));
-	return recibido;
-}
-
 void prot_enviar_CPU_DMA_abrirPath(char* path, int pid, int sock){
 	int tam = sizeof(&path);
 	enviar(sock,&tam,sizeof(tam));
@@ -102,14 +119,6 @@ void prot_enviar_FS_DMA_devolverDatos(void* buffer, int sock){
 	enviar(sock,buffer,tam);
 }
 
-void* prot_recibir_FS_DMA_devolverDatos(int sock){
-	int size;
-	void* buffer;
-	recibir(sock,&size,sizeof(size));
-	buffer = malloc(size);
-	recibir(sock,buffer,size);
-	return buffer;
-}
 
 void prot_enviar_DMA_FM9_cargarEnMemoria(char* path, void* buffer, int offset, int size, int sock){
 	int path_size = sizeof(&path);

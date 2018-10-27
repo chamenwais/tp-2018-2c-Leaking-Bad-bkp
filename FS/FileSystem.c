@@ -16,6 +16,7 @@ int main(int argc,char** argv) {
 	inicializarVariables();
 	if(levantarArchivoDeConfiguracion(argc,argv)==EXIT_FAILURE) finalizarTodoPorError();
 	crearDirectorios();
+	cargarDirectorioActual();
 	if(levantarMetadataBin()==EXIT_FAILURE) finalizarTodoPorError();
 	if(levantarBitMap()==EXIT_FAILURE) finalizarTodoPorError();
 

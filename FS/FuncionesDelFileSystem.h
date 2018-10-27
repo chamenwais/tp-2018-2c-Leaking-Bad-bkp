@@ -43,6 +43,7 @@ typedef t_hiloDMA* tp_hiloDMA;
 
 
 int inicializarLog();
+int cargarDirectorioActual();
 int crearDirectorios();
 int inicializarVariables();
 int levantarLineasDelArchivoDeConfiguracion(char* ubicacionDelArchivoConfiguracion);
@@ -82,6 +83,7 @@ int borrarArchivoDeDMA(int fileDescriptorActual);
 int borrarArchivo(char *path);
 int obtenerDatosDeConsola(char *path, int offset, int Size);
 int obtenerDatosDeDMA(int FDDMA);
+int obtenerTamanioTotalDelArchivo(char *path);
 t_datosObtenidos obtenerDatos(char *path, int offset, int size);
 int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer);
 int guardarDatosDeDMA(int fileDescriptorActual);

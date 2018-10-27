@@ -13,6 +13,14 @@ int inicializarLog(){
 	return EXIT_SUCCESS;
 }
 
+int cargarDirectorioActual(){
+	directorioActual=string_new();
+	string_append(&directorioActual, configuracionDelFS.punto_montaje);
+	string_append(&directorioActual, "/Archivos");
+	directorioAnterior=string_duplicate(&directorioActual);
+	return EXIT_SUCCESS;
+}
+
 int crearDirectorios(){
 	/* Me asegura que todos los directorios que contienen estructuras administrativas esten creados
 	 * */
@@ -177,7 +185,7 @@ void *funcionHiloConsola(void *arg){
 		}else{
 		if(strcmp(instruccion[0],"cd")==0){
 			if(instruccion[1]!=NULL){
-				printf("Cambiando al directorio: %s\n",instruccion[1]);
+				funcionDeConsolacd(instruccion[1]);
 			}else{
 				printf("Faltan parametros, falta el path del directorio, reintentar\n");
 				}
@@ -356,6 +364,23 @@ void liberarRecursos(){
 	log_destroy(LOGGER);
 	printf("PROGRAMA FINALIZADO\n");
 }
+
+int funcionDeConsolacd(char* path){
+	log_info(LOGGER,"Pedido por consola del comando \"cd\", con el parametro: %s",path);
+
+	if(strcmp(path, ".")==0){
+
+	}else{
+		if(strcmp(path, "..")==0){
+
+		}else{
+
+			}
+		}
+	printf("Cambiando al directorio: %s\n",path);
+	return EXIT_SUCCESS;
+}
+
 
 int listarDirectorioActual(){
 
@@ -832,9 +857,15 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 		parametrosDeObtenerDatos->path,parametrosDeObtenerDatos->offset,parametrosDeObtenerDatos->size);
 	t_datosObtenidos datosObtenidos = obtenerDatos(parametrosDeObtenerDatos->path,
 		parametrosDeObtenerDatos->offset,parametrosDeObtenerDatos->size);
-	prot_enviar_FS_DMA_datosObtenidos(datosObtenidos.datos, parametrosDeObtenerDatos->size,
+	int tamanioTotalDelArchivo=obtenerTamanioTotalDelArchivo(parametrosDeObtenerDatos->path);
+	prot_enviar_FS_DMA_datosObtenidos(datosObtenidos.datos, tamanioTotalDelArchivo,
 			datosObtenidos.resultado, fileDescriptorActual);
 	return EXIT_SUCCESS;
+}
+
+int obtenerTamanioTotalDelArchivo(char *path){
+	int tamanio;
+	return tamanio;
 }
 
 t_datosObtenidos obtenerDatos(char *path, int offset, int size){

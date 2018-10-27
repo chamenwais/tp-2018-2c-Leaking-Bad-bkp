@@ -39,7 +39,7 @@ typedef struct stru_datosEnMemoria{
 } t_datosEnMemoria;
 typedef t_datosEnMemoria* tp_datosEnMemoria;
 
-void prot_enviar_FS_DMA_datosObtenidos(char* datos, int size, int resultado, int sock);
+void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTotalDelArchivo, int sock);
 void prot_enviar_DMA_FS_path(char* path,int sock);
 char* prot_recibir_DMA_FS_path(int sock);
 void prot_enviar_DMA_FS_guardarDatos(char *path, int offset, int size, char *buffer, int sock);
@@ -49,7 +49,7 @@ tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos(int sock);
 void prot_enviar_CPU_DMA_abrirPath(char* path, int pid, int sock);
 tp_abrirPath prot_recibir_CPU_DMA_abrirPath(int sock);
 void prot_enviar_FS_DMA_devolverDatos(void* buffer, int sock);
-void* prot_recibir_FS_DMA_devolverDatos(int sock);
+char* prot_recibir_FS_DMA_devolverDatos(int sock);
 void prot_enviar_DMA_FM9_cargarEnMemoria(char* path, void* buffer, int offset, int size, int sock);
 tp_cargarEnMemoria prot_recibir_DMA_FM9_cargarEnMemoria(int sock);
 void prot_enviar_FM9_DMA_cargaEnMemoria(int memory_address, int sock);
