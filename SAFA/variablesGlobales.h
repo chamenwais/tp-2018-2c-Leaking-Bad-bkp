@@ -26,6 +26,7 @@ typedef struct defDTB {
 	int program_counter;
 	int iniGDT; // 0 o 1
 	t_list* tabla_dir_archivos; //tabla_dir_archivos;
+	int quantum;
 } t_DTB;
 
 extern t_configuracionSAFA configSAFA;

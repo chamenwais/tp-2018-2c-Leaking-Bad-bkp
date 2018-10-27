@@ -301,6 +301,7 @@ t_DTB* crear_DTB(char* path){
 	new_DTB->iniGDT = 0;
 	new_DTB->program_counter = 0;
 	new_DTB->tabla_dir_archivos = list_create();
+	new_DTB->quantum = configSAFA.quantum;
 	return new_DTB;
 }
 
