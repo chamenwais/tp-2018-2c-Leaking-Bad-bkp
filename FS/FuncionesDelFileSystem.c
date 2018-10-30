@@ -171,15 +171,13 @@ void *funcionHiloConsola(void *arg){
 			free(linea);
 			log_info(LOGGER,"Cerrando consola");
 			resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
-			return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
+			return ret;
 			//pthread_exit(ret);
 			}else{
 		if(strcmp(instruccion[0],"ls")==0){
 			if(instruccion[1]==NULL){
-				printf("Listando directorio actual, %s\n",instruccion[1]);
 				listarDirectorioActual();
 			}else{
-				printf("Listando directorio: %s\n",instruccion[1]);
 				listarDirectorio(instruccion[1]);
 				}
 		}else{
@@ -199,7 +197,7 @@ void *funcionHiloConsola(void *arg){
 		}else{
 		if(strcmp(instruccion[0],"cat")==0){
 			if(instruccion[1]!=NULL){
-				printf("Mostrando el contenido del archivo %s por pantalla\n",instruccion[1]);
+				funcionDeConsolacat(instruccion[1]);
 			}else{
 				printf("Faltan parametros para mostrar el contenido del archivo por pantalla, falta el path del archivo,reintentar\n");
 				}
@@ -262,7 +260,7 @@ void *funcionHiloConsola(void *arg){
 		//free(instruccion);
 	}//Cierre del while(1)
 	resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
-	return resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
+	return ret;
 	//pthread_exit(ret);
 }
 
@@ -365,6 +363,51 @@ void liberarRecursos(){
 	printf("PROGRAMA FINALIZADO\n");
 }
 
+
+int obtenerLongigutDelArchivo(char* path){
+	int longitudDelArchivo=0;
+	char* ubicacionDelArchivo;
+	ubicacionDelArchivo=string_new();
+	string_append(&ubicacionDelArchivo,configuracionDelFS.punto_montaje);
+	string_append(&ubicacionDelArchivo, "/Archivos/");
+	string_append(&ubicacionDelArchivo, path);
+	log_info(LOGGER,"Buscando el archivo %s",ubicacionDelArchivo);
+	t_config* configuracion = config_create(ubicacionDelArchivo);
+
+	if(configuracion!=NULL){
+		log_info(LOGGER,"El archivo %s existe",ubicacionDelArchivo);
+		log_info(LOGGER,"Abriendo el archivo de configuracion del FS, su ubicacion es: %s",ubicacionDelArchivo);
+		if(!config_has_property(configuracion,"TAMANIO")) {
+			log_error(LOGGER,"No esta el valor TAMANIO en el archivo");
+			config_destroy(configuracion);
+			return longitudDelArchivo;
+			}
+		longitudDelArchivo = config_get_int_value(configuracion,"TAMANIO");
+		log_info(LOGGER,"El tamaño del archivo fue recuperado: %d",longitudDelArchivo);
+	}else{
+		log_error(LOGGER,"No existe el archivo %s",ubicacionDelArchivo);
+		return longitudDelArchivo;
+		}
+	log_info(LOGGER,"Cerrando el archivo %s, info recuperada",ubicacionDelArchivo);
+	config_destroy(configuracion);
+	return longitudDelArchivo;
+}
+
+
+int funcionDeConsolacat(char* path){
+	printf("Mostrando el contenido del archivo %s por pantalla\n",path);
+	int longitudDelArchivo=obtenerLongigutDelArchivo(path);
+	t_datosObtenidos datosObtenidos = obtenerDatos(path,0,longitudDelArchivo);
+	if(datosObtenidos.resultado==DatosObtenidos){
+		printf("Los datos del archivo %s son:\n",path);
+		for(int i=0;i<longitudDelArchivo;i++) printf("%c",datosObtenidos.datos[i]);
+		printf("\n");
+	}else{
+		printf("No se pudieron recuperar los datos del archivo:%s\n",path);
+		}
+	return EXIT_SUCCESS;
+}
+
 int funcionDeConsolacd(char* path){
 	log_info(LOGGER,"Pedido por consola del comando \"cd\", con el parametro: %s",path);
 
@@ -383,12 +426,25 @@ int funcionDeConsolacd(char* path){
 
 
 int listarDirectorioActual(){
+	printf("Listando directorio actual, %s\n",directorioActual);
+	struct dirent **namelist;
 
+	int n;
+	n = scandir(".", &namelist, NULL, alphasort);
+	if (n == -1) {
+		perror("scandir");
+		return EXIT_FAILURE;
+		}
+	while(n--){
+		printf("%s\n", namelist[n]->d_name);
+		free(namelist[n]);
+		}
+	free(namelist);
 	return EXIT_SUCCESS;
 }
 
 int listarDirectorio(char* directorio){
-
+	printf("Listando directorio: %s\n",instruccion[1]);
 	return EXIT_SUCCESS;
 }
 
@@ -857,15 +913,10 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 		parametrosDeObtenerDatos->path,parametrosDeObtenerDatos->offset,parametrosDeObtenerDatos->size);
 	t_datosObtenidos datosObtenidos = obtenerDatos(parametrosDeObtenerDatos->path,
 		parametrosDeObtenerDatos->offset,parametrosDeObtenerDatos->size);
-	int tamanioTotalDelArchivo=obtenerTamanioTotalDelArchivo(parametrosDeObtenerDatos->path);
+	int tamanioTotalDelArchivo=obtenerLongigutDelArchivo(parametrosDeObtenerDatos->path);
 	prot_enviar_FS_DMA_datosObtenidos(datosObtenidos.datos, tamanioTotalDelArchivo,
 			datosObtenidos.resultado, fileDescriptorActual);
 	return EXIT_SUCCESS;
-}
-
-int obtenerTamanioTotalDelArchivo(char *path){
-	int tamanio;
-	return tamanio;
 }
 
 t_datosObtenidos obtenerDatos(char *path, int offset, int size){
@@ -1025,7 +1076,6 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 							msync(bitmap, tamanioBitmap, MS_SYNC);
 							string_append(&archivoDeBloque, string_itoa(numeroDeBloqueLibre));
 							//actualizo la lista y activo la bandera para actualizar mi archivo de metadata de ese archivo
-							hayQueActualziarMetadataDelArchivo=true;
 							list_add(metadata->bloques,numeroDeBloqueLibre);
 							log_info(LOGGER,"Creando el archivo de bloque%s",archivoDeBloque);
 							FILE * archivoTemp = fopen(archivoDeBloque,"wb");
@@ -1112,13 +1162,13 @@ tp_metadata recuperarMetaData(char *ubicacionDelArchivoDeMetadata){
 		log_info(LOGGER,"Abriendo el archivo de metadata %s",ubicacionDelArchivoDeMetadata);
 	}else{
 		log_error(LOGGER,"No existe el archivo de metadata en: %s",ubicacionDelArchivoDeMetadata);
-		return EXIT_FAILURE;
+		return metadata;
 		}
 	//Recupero el tamanio
 	if(!config_has_property(configuracion,"TAMANIO")) {
 		log_error(LOGGER,"No esta el TAMANIO en el archivo de metadata");
 		config_destroy(configuracion);
-		return EXIT_FAILURE;
+		return metadata;
 		}
 	metadata->tamanio = config_get_int_value(configuracion,"TAMANIO");
 	log_info(LOGGER,"TAMANIO del archivo de metadata recuperado: %d", metadata->tamanio);
@@ -1127,7 +1177,8 @@ tp_metadata recuperarMetaData(char *ubicacionDelArchivoDeMetadata){
 	if(!config_has_property(configuracion,"BLOQUES")) {
 		log_error(LOGGER,"No estan los bloques en el archivo de metadata");
 		config_destroy(configuracion);
-		return EXIT_FAILURE;
+		metadata->tamanio=-1;
+		return metadata;
 		}
 	char* bloques = config_get_string_value(configuracion,"BLOQUES");
 	//tengo que volarle a la mierda al string q levante los []

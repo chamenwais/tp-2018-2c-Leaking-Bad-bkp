@@ -21,6 +21,7 @@
 #include "//usr/include/lqvg/protocolo.h"
 #include <sys/mman.h>
 #include <errno.h>
+#include <dirent.h>
 
 typedef struct defMetadata {
 	int tamanio;
@@ -58,6 +59,9 @@ int esperarAQueTermineLaEscuchaConElDMA();
 int esperarAQueTermineLaConsola();
 int finalizarTodoPorError();
 void liberarRecursos();
+int obtenerLongigutDelArchivo(char* path);
+int funcionDeConsolacat(char* path);
+int funcionDeConsolacd(char* path);
 int listarDirectorioActual();
 int listarDirectorio(char* directorio);
 int levantarMetadataBin();
@@ -83,7 +87,6 @@ int borrarArchivoDeDMA(int fileDescriptorActual);
 int borrarArchivo(char *path);
 int obtenerDatosDeConsola(char *path, int offset, int Size);
 int obtenerDatosDeDMA(int FDDMA);
-int obtenerTamanioTotalDelArchivo(char *path);
 t_datosObtenidos obtenerDatos(char *path, int offset, int size);
 int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer);
 int guardarDatosDeDMA(int fileDescriptorActual);

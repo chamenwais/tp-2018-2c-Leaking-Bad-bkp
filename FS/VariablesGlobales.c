@@ -17,3 +17,4 @@ int tamanioBitmap;
 bool finalizarPrograma;
 pthread_mutex_t mutexFinalizarPrograma;
 char* directorioActual;
+char* directorioAnterior;
