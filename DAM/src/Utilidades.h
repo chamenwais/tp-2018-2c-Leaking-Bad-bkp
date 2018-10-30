@@ -56,5 +56,6 @@ void recibir_handshake_de(int socket_id, enum PROCESO enumProceso, char * proces
 int comunicarse_con_file_system();
 void realizar_handshake_con_mdj(int socket_id);
 void mostrar_mensaje_previa_conexion_con_mdj();
+void inicializar_semaforos_de_procesos();
 
 #endif /* UTILIDADES_H_ */

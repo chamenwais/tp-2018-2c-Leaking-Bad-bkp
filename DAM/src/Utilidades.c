@@ -7,7 +7,7 @@
 #include "Utilidades.h"
 
 void configurar_logger() {
-	logger = log_create(path_archivo_log, "DAM", false, LOG_LEVEL_TRACE);
+	logger = log_create(PATH_ARCHIVO_LOG, "DAM", false, LOG_LEVEL_TRACE);
 }
 
 void validar_apertura_archivo_configuracion() {
@@ -24,7 +24,7 @@ void levantar_configuracion(int cantidad_parametros, char ** parametros){
 	} else {
 		char* path_archivo_configuracion = string_new();
 		string_append(&path_archivo_configuracion,"../");
-		string_append(&path_archivo_configuracion, nombre_archivo_configuracion);
+		string_append(&path_archivo_configuracion, NOMBRE_ARCHIVO_CONFIGURACION);
 		configuracion = config_create(path_archivo_configuracion);
 		free(path_archivo_configuracion);
 	}
@@ -37,26 +37,26 @@ void levantar_configuracion(int cantidad_parametros, char ** parametros){
 }
 
 void leer_puerto_de_escucha(){
-	puerto_de_escucha = config_get_int_value(configuracion, clave_puerto_de_escucha);
+	puerto_de_escucha = config_get_int_value(configuracion, CLAVE_PUERTO_DE_ESCUCHA);
 }
 
 void leer_configuracion_safa(){
-	ip_safa = config_get_string_value(configuracion, clave_ip_safa);
-	puerto_safa = config_get_int_value(configuracion, clave_puerto_safa);
+	ip_safa = config_get_string_value(configuracion, CLAVE_IP_SAFA);
+	puerto_safa = config_get_int_value(configuracion, CLAVE_PUERTO_SAFA);
 }
 
 void leer_configuracion_fm9(){
-	ip_fm9 = config_get_string_value(configuracion, clave_ip_fm9);
-	puerto_fm9 = config_get_int_value(configuracion, clave_puerto_fm9);
+	ip_fm9 = config_get_string_value(configuracion, CLAVE_IP_FM9);
+	puerto_fm9 = config_get_int_value(configuracion, CLAVE_PUERTO_FM9);
 }
 
 void leer_configuracion_mdj(){
-	ip_mdj = config_get_string_value(configuracion, clave_ip_mdj);
-	puerto_mdj = config_get_int_value(configuracion, clave_puerto_mdj);
+	ip_mdj = config_get_string_value(configuracion, CLAVE_IP_MDJ);
+	puerto_mdj = config_get_int_value(configuracion, CLAVE_PUERTO_MDJ);
 }
 
 void leer_transfer_size(){
-	transfer_size = config_get_int_value(configuracion, clave_transfer_size);
+	transfer_size = config_get_int_value(configuracion, CLAVE_TRANSFER_SIZE);
 }
 
 void destruir_logger() {
@@ -64,10 +64,13 @@ void destruir_logger() {
 	log_destroy(logger);
 }
 
+
 void terminar_controladamente(int return_nr){
 	logger_DAM(escribir_loguear,l_info, "Se destruira estructura de archivo de configuracion");
 	config_destroy(configuracion);
 	destruir_logger();
+	//Apago semaforos
+	apagar_semaforos_de_procesos();
 	exit(return_nr);
 }
 
@@ -254,7 +257,7 @@ void loguear_cabecera_recibida(char * proceso) {
 
 void mostrar_mensaje_previa_conexion_con_mdj() {
 	char* mensaje_informativo_previa_conexion_con_mdj =
-			mensaje_informativo_previa_conexion_con(const_name_mdj);
+			mensaje_informativo_previa_conexion_con(CONST_NAME_MDJ);
 	logger_DAM(escribir_loguear,l_info, mensaje_informativo_previa_conexion_con_mdj, ip_mdj,
 			puerto_mdj);
 	free(mensaje_informativo_previa_conexion_con_mdj);
@@ -263,11 +266,25 @@ void mostrar_mensaje_previa_conexion_con_mdj() {
 int comunicarse_con_file_system(){
 	mostrar_mensaje_previa_conexion_con_mdj();
 	int socket_mdj=conectarseA(ip_mdj, puerto_mdj);
-	validar_comunicacion(socket_mdj, const_name_mdj);
+	validar_comunicacion(socket_mdj, CONST_NAME_MDJ);
 	realizar_handshake_con_mdj(socket_mdj);
 	return socket_mdj;
 }
 
 void realizar_handshake_con_mdj(int socket_id){
-	mandar_handshake_a(socket_id, FS, const_name_mdj);
+	mandar_handshake_a(socket_id, FS, CONST_NAME_MDJ);
+}
+
+void inicializar_semaforos_de_procesos() {
+	pthread_mutex_init(&MX_MEMORIA, NULL);
+	pthread_mutex_init(&MX_FS, NULL);
+	pthread_mutex_init(&MX_SAFA, NULL);
+	pthread_mutex_init(&MX_CPU, NULL);
+}
+
+void apagar_semaforos_de_procesos() {
+	pthread_mutex_destroy(&MX_MEMORIA);
+	pthread_mutex_destroy(&MX_FS);
+	pthread_mutex_destroy(&MX_SAFA);
+	pthread_mutex_destroy(&MX_CPU);
 }
