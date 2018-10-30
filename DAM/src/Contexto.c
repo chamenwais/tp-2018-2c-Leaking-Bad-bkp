@@ -9,20 +9,26 @@
 /**
  * Constantes
  */
-char * path_archivo_log="/home/utnso/DAM.log";
-char * nombre_archivo_configuracion="configDAM.cfg";
-char * clave_puerto_de_escucha="PUERTO_DE_ESCUCHA";
-char * clave_ip_safa="IP_SAFA";
-char * clave_puerto_safa="PUERTO_S-AFA";
-char * clave_ip_fm9="IP_FM9";
-char * clave_puerto_fm9="PUERTO_FM9";
-char * clave_ip_mdj="IP_MDJ";
-char * clave_puerto_mdj="PUERTO_MDJ";
-char * clave_transfer_size="TRANSFER_SIZE";
-char * const_name_fm9 = "FM9";
-char * const_name_mdj = "MDJ";
-char * const_name_safa = "SAFA";
-char * const_name_cpu = "CPU";
+char * PATH_ARCHIVO_LOG="/home/utnso/DAM.log";
+char * NOMBRE_ARCHIVO_CONFIGURACION="configDAM.cfg";
+char * CLAVE_PUERTO_DE_ESCUCHA="PUERTO_DE_ESCUCHA";
+char * CLAVE_IP_SAFA="IP_SAFA";
+char * CLAVE_PUERTO_SAFA="PUERTO_S-AFA";
+char * CLAVE_IP_FM9="IP_FM9";
+char * CLAVE_PUERTO_FM9="PUERTO_FM9";
+char * CLAVE_IP_MDJ="IP_MDJ";
+char * CLAVE_PUERTO_MDJ="PUERTO_MDJ";
+char * CLAVE_TRANSFER_SIZE="TRANSFER_SIZE";
+char * CONST_NAME_FM9 = "FM9";
+char * CONST_NAME_MDJ = "MDJ";
+char * CONST_NAME_SAFA = "SAFA";
+char * CONST_NAME_CPU = "CPU";
+
+//Semaforos mutex
+pthread_mutex_t MX_MEMORIA;
+pthread_mutex_t MX_FS;
+pthread_mutex_t MX_SAFA;
+pthread_mutex_t MX_CPU;
 
 t_log * logger;
 t_config * configuracion;
