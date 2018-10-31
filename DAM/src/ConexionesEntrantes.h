@@ -42,10 +42,14 @@ void loguear_y_cerrar_comunicacion_erronea_con_CPU(int sockfd_CPU_a_cerrar);
 void loguear_y_avisar_a_safa_apertura_erronea(int sockfd_safa, char * proceso, tp_abrirPath path_y_pid);
 void informar_operacion_abrir_erronea(int socket_safa, tp_abrirPath path_y_pid);
 void informar_operacion_abrir_exitosa(int socket_safa, tp_abrirPath path_y_pid, int direccion_de_memoria);
-void operacion_abrir_path(void * sockets);
+void operacion_abrir_path(int * sockets);
 int * adaptar_sockets_para_hilo(int CPU_Fd, int fm9_Fd, int Safa_fd);
 t_cabecera validar_archivo(int socket_mdj, tp_abrirPath mensaje_cpu);
-void* pedir_datos_a_Mdj(char * ruta, int offset_Mdj, int socket_mdj);
+bool validar_fragmento_archivo(tp_datosObtenidos fragmento_archivo, int socket_safa, tp_abrirPath mensaje_cpu);
+void informar_carga_en_memoria_erronea(int socket_safa, tp_abrirPath mensaje_cpu);
+int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, char* parte_archivo);
+void loguear_no_obtencion_de_fragmento_archivo();
+tp_datosObtenidos pedir_datos_a_Mdj(char * ruta, int offset_Mdj, int socket_mdj);
 void tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath path_y_pid, int socket_safa);
 void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath path_y_pid, int socket_mdj, int socket_fm9, int socket_safa);
 #endif /* CONEXIONESENTRANTES_H_ */

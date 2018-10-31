@@ -201,6 +201,8 @@ void informar_operacion_abrir_exitosa(int socket_safa, tp_abrirPath path_y_pid, 
 	logger_DAM(escribir_loguear, l_trace,
 			"Se mando a safa la direccion de memoria %d del archivo que se abrio",
 			direccion_de_memoria);
+	free(path_y_pid->path);
+	free(path_y_pid);
 }
 
 void tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath info_cpu, int socket_safa){
@@ -210,15 +212,15 @@ void tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath
 	}
 }
 
-void* pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int socket_mdj) {
+tp_datosObtenidos pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int socket_mdj) {
 	pthread_mutex_lock(&MX_FS);
 	prot_enviar_DMA_FS_obtenerDatos(ruta, offset_Mdj, transfer_size, socket_mdj);
-	void* datos = prot_recibir_FS_DMA_devolverDatos(socket_mdj);
+	tp_datosObtenidos datos = prot_recibir_FS_DMA_datosObtenidos(socket_mdj);
 	pthread_mutex_unlock(&MX_FS);
 	return datos;
 }
 
-int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, int direccion_de_memoria, void* parte_archivo) {
+int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, char* parte_archivo) {
 	pthread_mutex_lock(&MX_MEMORIA);
 	enviarCabecera(socket_fm9, CargarParteEnMemoria, sizeof(CargarParteEnMemoria));
 	prot_enviar_DMA_FM9_cargarEnMemoria(info_cpu->path, parte_archivo, offset_Fm9, transfer_size, socket_fm9);
@@ -228,24 +230,53 @@ int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, i
 	return direccion_logica;
 }
 
+bool validar_fragmento_archivo(tp_datosObtenidos fragmento_archivo, int socket_safa, tp_abrirPath mensaje_cpu){
+	if(fragmento_archivo==NULL){
+		loguear_y_avisar_a_safa_apertura_erronea(socket_safa,CONST_NAME_MDJ,mensaje_cpu);
+		return false;
+	}
+	return true;
+}
+
+void informar_carga_en_memoria_erronea(int socket_safa, tp_abrirPath mensaje_cpu){
+	logger_DAM(escribir_loguear, l_error,"No se cargo el fragmento en memoria");
+	loguear_y_avisar_a_safa_apertura_erronea(socket_safa,CONST_NAME_MDJ,mensaje_cpu);
+}
+
+void loguear_no_obtencion_de_fragmento_archivo() {
+	logger_DAM(escribir_loguear, l_error, "No se obtuvo el fragmento de archivo desde el FS");
+}
+
 void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath info_cpu, int socket_mdj, int socket_fm9, int socket_safa){
 	if(ElArchivoExiste==(respuesta_validez_archivo.tipoDeMensaje)){
 		int offset_Mdj=0;
 		int offset_Fm9=0;
 		logger_DAM(escribir_loguear, l_trace,"El archivo %s es valido, vamos a cargarlo en memoria",info_cpu->path);
-		void* parte_archivo = pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
-		int tamanio_parte_archivo=0;
+		tp_datosObtenidos parte_archivo = pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
+		if(validar_fragmento_archivo(parte_archivo, socket_safa, info_cpu)==false){
+			loguear_no_obtencion_de_fragmento_archivo();
+			return;
+		}
+		int tamanio_parcial_archivo=0;
 		int direccion_de_memoria;
-		while(NULL!=parte_archivo){
-			tamanio_parte_archivo=sizeof(&parte_archivo);
-			logger_DAM(escribir_loguear, l_trace,"Se recibio un fragmento de archivo de %d bytes",tamanio_parte_archivo);
-			offset_Mdj+=tamanio_parte_archivo;
-			direccion_de_memoria = cargar_datos_en_Fm9(socket_fm9, info_cpu, offset_Fm9, direccion_de_memoria, parte_archivo);
+		while(tamanio_parcial_archivo <= parte_archivo->tamanio_total_archivo){
+			logger_DAM(escribir_loguear, l_trace,"Se recibio un fragmento de archivo de %d bytes",parte_archivo->size);
+			offset_Mdj+=parte_archivo->size;
+			direccion_de_memoria = cargar_datos_en_Fm9(socket_fm9, info_cpu, offset_Fm9, parte_archivo->buffer);
+			if(direccion_de_memoria==-1){
+				informar_carga_en_memoria_erronea(socket_safa, info_cpu);
+				return;
+			}
 			logger_DAM(escribir_loguear, l_trace,"Se cargo el fragmento en memoria");
-			offset_Fm9+=tamanio_parte_archivo;
+			offset_Fm9+=parte_archivo->size;
 			parte_archivo=pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
+			if(validar_fragmento_archivo(parte_archivo, socket_safa, info_cpu)){
+				loguear_no_obtencion_de_fragmento_archivo();
+				return;
+			}
 		}
 		informar_operacion_abrir_exitosa(socket_safa, info_cpu,	direccion_de_memoria);
+		free(parte_archivo->buffer);
 		free(parte_archivo);
 	}
 }
