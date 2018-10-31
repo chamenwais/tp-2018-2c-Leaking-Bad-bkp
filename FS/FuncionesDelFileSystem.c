@@ -17,7 +17,7 @@ int cargarDirectorioActual(){
 	directorioActual=string_new();
 	string_append(&directorioActual, configuracionDelFS.punto_montaje);
 	string_append(&directorioActual, "/Archivos");
-	directorioAnterior=string_duplicate(&directorioActual);
+	log_info(LOGGER,"Directorio actual: %s",directorioActual);
 	return EXIT_SUCCESS;
 }
 
@@ -155,11 +155,16 @@ void *funcionHiloConsola(void *arg){
 	char * linea;
 	char *ret="Cerrando hilo";
 	char** instruccion;
-
-	printf("> Consola lista\n");
-
+	char* ubicacionDelPunteroDeLaConsola;
+	log_info(LOGGER,"Consola lista");
+	sleep(1);
+	printf("\n");
 	while(1){
-		linea = readline(">");
+		ubicacionDelPunteroDeLaConsola=string_new();
+		string_append(&ubicacionDelPunteroDeLaConsola,"~/");
+		string_append(&ubicacionDelPunteroDeLaConsola,directorioActual);
+		string_append(&ubicacionDelPunteroDeLaConsola,"$ ");
+		linea = readline(ubicacionDelPunteroDeLaConsola);
 		if(strlen(linea)>0){
 			add_history(linea);
 
@@ -178,7 +183,7 @@ void *funcionHiloConsola(void *arg){
 			if(instruccion[1]==NULL){
 				listarDirectorioActual();
 			}else{
-				listarDirectorio(instruccion[1]);
+				listarDirectorioConParametro(instruccion[1]);
 				}
 		}else{
 		if(strcmp(instruccion[0],"cd")==0){
@@ -247,6 +252,9 @@ void *funcionHiloConsola(void *arg){
 			printf("Voy a listar todas las instrucciones posibles:\n");
 			man();
 		}else{
+		if(strcmp(instruccion[0],"pwd")==0){
+			pwd();
+		}else{
 		if(strcmp(instruccion[0],"config")==0){
 			mostrarConfiguracion();
 		}else{
@@ -254,10 +262,11 @@ void *funcionHiloConsola(void *arg){
 			imprimirEstadoDelBitmap();
 		}else{
 		printf("Comando desconocido\n");
-		}}}}}}}}}}}}}}
+		}}}}}}}}}}}}}}}
 		free(linea);
 		//for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
 		//free(instruccion);
+		free(ubicacionDelPunteroDeLaConsola);
 	}//Cierre del while(1)
 	resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
 	return ret;
@@ -321,6 +330,27 @@ int man(){
 	printf("10) \"config\", me muestra la data que levante de la configracion\n");
 	printf("11) \"bitmap\", muestra el estado de todos los bloques del bitmap\n");
 	printf("12) \"BorrarArchivo\" [Path], borra el archivo solicitado\n");
+	printf("13) \"pwd\", print working directory\n");
+	return EXIT_SUCCESS;
+}
+
+int pwd(){
+	log_info(LOGGER,"directorioActual=%s",directorioActual);
+	char** pathPartido = string_split(directorioActual, "/");
+	char* directorio=string_new();
+	bool encontreArchivo=false;
+	int i;
+	for(i=0;pathPartido[i]!=NULL;i++){
+		if(encontreArchivo){
+			string_append(&directorio,pathPartido[i]);
+			if(pathPartido[i+1]!=NULL){
+				string_append(&directorio,"/");
+				}
+			}
+		if(strcmp(pathPartido[i],"Archivos")==0)
+			encontreArchivo=true;
+		}
+	printf("El working directory es: \"%s\"\n",directorio);
 	return EXIT_SUCCESS;
 }
 
@@ -345,7 +375,6 @@ int finalizarTodoPorError(){
 	log_info(LOGGER,"Hubo un error insalvable, finalizando el programa");
 	log_info(LOGGER,"Cerrando esctructuras");
 	log_info(LOGGER,"Cerrando log");
-
 	log_destroy(LOGGER);
 	exit(1);
 	return EXIT_FAILURE;
@@ -393,7 +422,6 @@ int obtenerLongigutDelArchivo(char* path){
 	return longitudDelArchivo;
 }
 
-
 int funcionDeConsolacat(char* path){
 	printf("Mostrando el contenido del archivo %s por pantalla\n",path);
 	int longitudDelArchivo=obtenerLongigutDelArchivo(path);
@@ -410,43 +438,109 @@ int funcionDeConsolacat(char* path){
 
 int funcionDeConsolacd(char* path){
 	log_info(LOGGER,"Pedido por consola del comando \"cd\", con el parametro: %s",path);
+	char* nuevoDirectorio=string_new();
+	char** pathPartido = string_split(path, "/");
+	char* copiaDelDirectorioActual=string_new();
+	string_append(&copiaDelDirectorioActual,directorioActual);
 
-	if(strcmp(path, ".")==0){
-
-	}else{
+	int i;
+	for(i=0;pathPartido[i]!=NULL;i++){
 		if(strcmp(path, "..")==0){
-
+			volverUnaCarpetaParaAtras();
 		}else{
-
+			if(strcmp(path, ".")==0){
+				//nada
+			}else{
+				agregarCarpetaAlDirectorioActual(pathPartido[i]);
+				}
 			}
 		}
-	printf("Cambiando al directorio: %s\n",path);
-	return EXIT_SUCCESS;
-}
 
-
-int listarDirectorioActual(){
-	printf("Listando directorio actual, %s\n",directorioActual);
-	struct dirent **namelist;
-
-	int n;
-	n = scandir(".", &namelist, NULL, alphasort);
-	if (n == -1) {
-		perror("scandir");
+	if(existeElDirectorio(directorioActual)){
+		printf("Cambiando al directorio %s\n",directorioActual);
+		return EXIT_SUCCESS;
+	}else{
+		printf("Error no existe el directorio %s\n",directorioActual);
+		directorioActual=string_new();
+		string_append(&directorioActual,copiaDelDirectorioActual);
+		printf("Volviendo al directorio %s\n",directorioActual);
 		return EXIT_FAILURE;
 		}
-	while(n--){
-		printf("%s\n", namelist[n]->d_name);
-		free(namelist[n]);
+}
+
+void volverUnaCarpetaParaAtras(){
+	char** pathPartido = string_split(directorioActual, "/");
+	directorioActual=string_new();
+	for(int i=0;pathPartido[i]!=NULL;i++){
+		if(i!=0){
+			string_append(&directorioActual,pathPartido[i]);
+			if(pathPartido[i+1]!=NULL){
+				string_append(&directorioActual,"/");
+				}
+			}//ver q pasa con el primero
 		}
-	free(namelist);
-	return EXIT_SUCCESS;
+
+	}
+
+void agregarCarpetaAlDirectorioActual(char* carpeta){
+	string_append(&directorioActual,"/");
+	string_append(&directorioActual,carpeta);
 }
 
 int listarDirectorio(char* directorio){
-	printf("Listando directorio: %s\n",instruccion[1]);
+	printf("Voy a listar el directorio: %s\n",directorio);
+	struct dirent **namelist;
+
+	int n;
+	int elementosEnElDirectorio=scandir(directorio, &namelist, NULL, alphasort);
+	n=elementosEnElDirectorio;
+	if(n==-1){
+		perror("scandir");
+		return EXIT_FAILURE;
+		}
+	log_info(LOGGER,"Cantidad de elementos a listar: %d",n);
+	while((n--)>2){
+		if(namelist[n]->d_type==DT_DIR){
+			//A directory.
+			printf("%-40.40s | dir\n", namelist[n]->d_name);
+			}
+		if(namelist[n]->d_type==DT_REG){
+			//A regular file.
+			printf("%-40.40s | file\n", namelist[n]->d_name);
+			}
+
+		free(namelist[n]);
+		}
+	free(namelist);
+	log_info(LOGGER,"Se listo el directorio actual: %s",directorioActual);
 	return EXIT_SUCCESS;
+	/*
+	Tipos de valores para d_type:
+	DT_UNKNOWN:	The type is unknown. Only some filesystems have full support to return the type of the file, others might always return this value.
+	DT_REG:	A regular file.
+	DT_DIR:	A directory.
+	DT_FIFO: A named pipe, or FIFO. See FIFO Special Files.
+	DT_SOCK: A local-domain socket.
+	DT_CHR: A character device.
+	DT_BLK: A block device.
+	DT_LNK: A symbolic link.
+	*/
 }
+
+int listarDirectorioConParametro(char* path){
+	char* directorio=string_new();
+	string_append(&directorio,configuracionDelFS.punto_montaje);
+	string_append(&directorio, "/Archivos/");
+	string_append(&directorio, path);
+	printf("Listando directorio pasado por parametro, %s\n",directorio);
+	return listarDirectorio(directorio);
+}
+
+int listarDirectorioActual(){
+	printf("Listando directorio actual, %s\n",directorioActual);
+	return listarDirectorio(directorioActual);
+}
+
 
 int levantarMetadataBin(){
 	char* ubicacionDelArchivo;
@@ -500,6 +594,17 @@ int levantarMetadataBin(){
 	log_info(LOGGER,"Cerrando \"Metadata.bin\", info recuperada");
 	config_destroy(configuracion);
 	return EXIT_SUCCESS;
+}
+
+bool existeElDirectorio(char* path){
+	DIR * directorio = opendir(path);
+	if(directorio==NULL){
+		log_info(LOGGER,"El directorio \"%s\" no existe",path);
+		return false;
+	}else{
+		log_info(LOGGER,"El directorio \"%s\" existe",path);
+		return true;
+	}
 }
 
 bool existeElArchivo(char *directorioDelArchivo){

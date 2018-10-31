@@ -32,6 +32,5 @@ extern int tamanioBitmap;
 extern bool finalizarPrograma;
 extern pthread_mutex_t mutexFinalizarPrograma;
 extern char* directorioActual;
-extern char* directorioAnterior;
 
 #endif /* VARIABLESGLOBALES_H_ */
