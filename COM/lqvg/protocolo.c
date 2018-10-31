@@ -15,24 +15,23 @@ void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTo
 		int tam = sizeof(&datos);
 		enviar(sock,&tam,sizeof(tam));
 		enviar(sock,datos,tam);
-
-		}
+	}
 }
 
-char* prot_recibir_FS_DMA_devolverDatos(int sock){
+tp_datosObtenidos prot_recibir_FS_DMA_datosObtenidos(int sock){
 	//1 recibir
 	int resultado;
-	int size, tamanioTotalDelArchivo;
-	char* buffer;
+	tp_datosObtenidos obtenidos=NULL;
 	recibir(sock,&resultado,sizeof(resultado));
 	if(resultado==DatosObtenidos){
 		//en este caso tengo datos para recibir
-		recibir(sock,&tamanioTotalDelArchivo,sizeof(tamanioTotalDelArchivo));
-		recibir(sock,&size,sizeof(size));
-		buffer = malloc(size);
-		recibir(sock,buffer,size);
-		}
-	return buffer;
+		obtenidos = malloc(sizeof(tp_datosObtenidos));
+		recibir(sock,&(obtenidos->tamanio_total_archivo),sizeof(obtenidos->tamanio_total_archivo));
+		recibir(sock,&(obtenidos->size),sizeof(&(obtenidos->size)));
+		obtenidos->buffer = malloc(obtenidos->size);
+		recibir(sock,obtenidos->buffer,obtenidos->size);
+	}
+	return obtenidos;
 }
 
 void prot_enviar_DMA_FS_obtenerDatos(char *path, int offset, int size, int sock){

@@ -34,5 +34,9 @@ extern char * CONST_NAME_FM9;
 extern char * CONST_NAME_MDJ;
 extern char * CONST_NAME_SAFA;
 extern char * CONST_NAME_CPU;
+extern pthread_mutex_t MX_MEMORIA;
+extern pthread_mutex_t MX_FS;
+extern pthread_mutex_t MX_SAFA;
+extern pthread_mutex_t MX_CPU;
 
 #endif /* CONTEXTO_H_ */
