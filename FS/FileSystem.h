@@ -20,7 +20,7 @@
 #include <commons/bitarray.h>
 #include "VariablesGlobales.h"
 #include "FuncionesDelFileSystem.h"
-
+#include <openssl/md5.h>
 
 extern t_log* LOGGER;
 

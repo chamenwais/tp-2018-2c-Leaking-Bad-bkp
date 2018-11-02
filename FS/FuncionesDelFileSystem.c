@@ -58,6 +58,13 @@ int inicializarVariables(){
 		log_error(LOGGER,"No se pudo inicializar el semaforo de la variable para saber si hay que finalizar el programa");
 		return EXIT_FAILURE;
 		}
+	if (pthread_mutex_init(&mutexIniciarConsola, NULL) != 0) {
+		log_error(LOGGER,"No se pudo inicializar el semaforo de la variable para saber si hay que finalizar el programa");
+		return EXIT_FAILURE;
+	}else{
+		pthread_mutex_lock(&mutexIniciarConsola);
+		}
+
 	finalizarPrograma=false;
 	resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_SUCCESS;
 	return EXIT_SUCCESS;
@@ -130,6 +137,8 @@ int levantarArchivoDeConfiguracion(int argc,char** argv){
 }
 
 int iniciarConsola(){
+	pthread_mutex_lock(&mutexIniciarConsola);
+	//Lo uso para q la consola arranque despues de que inicie todo lo demas del otro hilo
 	log_info(LOGGER,"Iniciando hilo de consola");
 	int resultadoDeCrearHilo = pthread_create( &threadConsola, NULL, funcionHiloConsola, "Hilo consola");
 		if(resultadoDeCrearHilo){
@@ -157,7 +166,6 @@ void *funcionHiloConsola(void *arg){
 	char** instruccion;
 	char* ubicacionDelPunteroDeLaConsola;
 	log_info(LOGGER,"Consola lista");
-	sleep(1);
 	printf("\n");
 	while(1){
 		ubicacionDelPunteroDeLaConsola=string_new();
@@ -196,6 +204,7 @@ void *funcionHiloConsola(void *arg){
 		if(strcmp(instruccion[0],"md5")==0){
 			if(instruccion[1]!=NULL){
 				printf("Generando MD5 del archivo: %s\n",instruccion[1]);
+				generarMD5(instruccion[1]);
 			}else{
 				printf("Faltan parametros para generar el MD5, falta el path del archivo,reintentar\n");
 				}
@@ -334,7 +343,7 @@ int man(){
 	return EXIT_SUCCESS;
 }
 
-int pwd(){
+char* directorioDeUsuario(){
 	log_info(LOGGER,"directorioActual=%s",directorioActual);
 	char** pathPartido = string_split(directorioActual, "/");
 	char* directorio=string_new();
@@ -350,7 +359,13 @@ int pwd(){
 		if(strcmp(pathPartido[i],"Archivos")==0)
 			encontreArchivo=true;
 		}
+	return directorio;
+}
+
+int pwd(){
+	char* directorio=directorioDeUsuario();
 	printf("El working directory es: \"%s\"\n",directorio);
+	free(directorio);
 	return EXIT_SUCCESS;
 }
 
@@ -389,6 +404,9 @@ void liberarRecursos(){
 	bitarray_destroy(bitmap);
 	log_info(LOGGER,"Cerrando log");
 	log_destroy(LOGGER);
+	pthread_mutex_unlock(&mutexIniciarConsola);
+	pthread_mutex_destroy(&mutexIniciarConsola);
+	pthread_mutex_destroy(&mutexFinalizarPrograma);
 	printf("PROGRAMA FINALIZADO\n");
 }
 
@@ -420,6 +438,21 @@ int obtenerLongigutDelArchivo(char* path){
 	log_info(LOGGER,"Cerrando el archivo %s, info recuperada",ubicacionDelArchivo);
 	config_destroy(configuracion);
 	return longitudDelArchivo;
+}
+
+int generarMD5(char* pathDelArchivo){
+	int longitudDelArchivo=obtenerLongigutDelArchivo(pathDelArchivo);
+	t_datosObtenidos datosObtenidos = obtenerDatos(pathDelArchivo,0,longitudDelArchivo);
+	char*content=datosObtenidos.datos;
+	void * digest = malloc(MD5_DIGEST_LENGTH);
+	MD5_CTX context;
+	MD5_Init(&context);
+	//MD5_Update(&context, content, strlen(content) + 1);
+	//MD5_Final(digest, &context);
+	free(content);
+	printf("Resultado del MD5:\n");
+	printf("%s\n",(char*)digest);
+	return EXIT_SUCCESS;
 }
 
 int funcionDeConsolacat(char* path){
@@ -780,7 +813,7 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 		log_error(LOGGER, "No se pudo setear dettached state");
 		exit(EXIT_FAILURE);
 		}
-
+	pthread_mutex_unlock(&mutexIniciarConsola);
 	while(!hayQueFinalizarElPrograma()){
 		//FDDMA=malloc(sizeof(int));
 		FDDMA = aceptarConexion(sockDelServer);

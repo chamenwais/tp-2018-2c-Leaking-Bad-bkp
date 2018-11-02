@@ -22,6 +22,7 @@
 #include <sys/mman.h>
 #include <errno.h>
 #include <dirent.h>
+#include <openssl/md5.h>
 
 typedef struct defMetadata {
 	int tamanio;
@@ -55,12 +56,14 @@ void *funcionHiloConsola(void *arg);
 int mostrarConfiguracion();
 int imprimirEstadoDelBitmap();
 int man();
+char* directorioDeUsuario();
 int pwd();
 int esperarAQueTermineLaEscuchaConElDMA();
 int esperarAQueTermineLaConsola();
 int finalizarTodoPorError();
 void liberarRecursos();
 int obtenerLongigutDelArchivo(char* path);
+int generarMD5(char* pathDelArchivo);
 int funcionDeConsolacat(char* path);
 int funcionDeConsolacd(char* path);
 int listarDirectorioConParametro(char* path);
