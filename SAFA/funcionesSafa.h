@@ -40,5 +40,7 @@ int planificar();
 int proximoDTBAPlanificar();
 int calcularDTBAPlanificarConRR();
 int calcularDTBAPlanificarConVRR();
+int obtenerPrimerId(t_list* lista);
+t_DTB* buscarDTBPorId(idDTB);
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */

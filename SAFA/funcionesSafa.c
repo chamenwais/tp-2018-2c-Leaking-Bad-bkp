@@ -393,11 +393,13 @@ int planificar(){
 	if(list_size(listos)>0 && list_size(ejecutando) < configSAFA.grado_multiprogramacion){
 		idDTB=proximoDTBAPlanificar();
 		log_info(LOG_SAFA,"Proximo DTB a planificar %d",idDTB);
+		DTB = buscarDTBPorId(idDTB);
+		//ahora ya tengo el DTB entero que necesito enviar a CPU (ver lo q paso Martin al wp)//
 		/*if(ponerAEjecutar(idDTB)!=EXIT_FAILURE){//idDTB es solo un int TODO
 			log_info(LOG_SAFA,"Pongo el ESI %d a ejecutar",idDTB);
 			enviarMensajeDeEjecucion(idDTB);//enviarDTBACPU
 			*/
-		}
+
 	}
 	//deslockearListas();
 	return EXIT_SUCCESS;
@@ -423,4 +425,39 @@ int proximoDTBAPlanificar(){
 	}
 	log_info(LOG_SAFA, "No hay mas DTB para ser ejecutados");
 	return idDTBAPlanificar;
+}
+
+int calcularDTBAPlanificarConRR(){
+	int id;
+	id = obtenerPrimerId(listos);
+
+	return id;
+}
+
+int calcularDTBAPlanificarConVRR(){
+	int id;
+	if(list_size(auxVirtualRR)>0){
+		id = obtenerPrimerId(auxVirtualRR);
+	}else{
+		id = obtenerPrimerId(listos);
+	}
+	return id;
+}
+
+int obtenerPrimerId(t_list* lista){
+	t_DTB* primerDTB = list_get(lista, 0);
+	return primerDTB->id_GDT;
+}
+
+t_DTB* buscarDTBPorId(idDTB){
+	t_DTB* el_DTB;
+	bool coincideID(void* node) {
+			return ((((t_DTB*) node)->id_GDT)==idDTB);
+			}
+	if(list_size(auxVirtualRR)>0){
+		el_DTB = list_find(auxVirtualRR, coincideID);
+	}else{
+		el_DTB = list_find(listos, coincideID);
+	}
+	return el_DTB;
 }
