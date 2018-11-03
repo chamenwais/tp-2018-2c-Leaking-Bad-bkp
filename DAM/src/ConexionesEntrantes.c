@@ -212,10 +212,10 @@ void tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath
 	}
 }
 
-tp_datosObtenidos pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int socket_mdj) {
+tp_datosObtenidosDeProtocolo pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int socket_mdj) {
 	pthread_mutex_lock(&MX_FS);
 	prot_enviar_DMA_FS_obtenerDatos(ruta, offset_Mdj, transfer_size, socket_mdj);
-	tp_datosObtenidos datos = prot_recibir_FS_DMA_datosObtenidos(socket_mdj);
+	tp_datosObtenidosDeProtocolo datos = prot_recibir_FS_DMA_datosObtenidos(socket_mdj);
 	pthread_mutex_unlock(&MX_FS);
 	return datos;
 }
@@ -230,7 +230,7 @@ int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, c
 	return direccion_logica;
 }
 
-bool validar_fragmento_archivo(tp_datosObtenidos fragmento_archivo, int socket_safa, tp_abrirPath mensaje_cpu){
+bool validar_fragmento_archivo(tp_datosObtenidosDeProtocolo fragmento_archivo, int socket_safa, tp_abrirPath mensaje_cpu){
 	if(fragmento_archivo==NULL){
 		loguear_y_avisar_a_safa_apertura_erronea(socket_safa,CONST_NAME_MDJ,mensaje_cpu);
 		return false;
@@ -252,7 +252,7 @@ void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath i
 		int offset_Mdj=0;
 		int offset_Fm9=0;
 		logger_DAM(escribir_loguear, l_trace,"El archivo %s es valido, vamos a cargarlo en memoria",info_cpu->path);
-		tp_datosObtenidos parte_archivo = pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
+		tp_datosObtenidosDeProtocolo parte_archivo = pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
 		if(validar_fragmento_archivo(parte_archivo, socket_safa, info_cpu)==false){
 			loguear_no_obtencion_de_fragmento_archivo();
 			return;
