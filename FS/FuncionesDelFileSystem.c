@@ -226,9 +226,9 @@ void *funcionHiloConsola(void *arg){
 			}
 		}else{
 		if(strcmp(instruccion[0],"CrearArchivo")==0){
-			if(instruccion[1]!=NULL){
-				printf("Voy a crear el archivo: %s\n",instruccion[1]);
-				crearArchivoDeConsola(instruccion[1]);
+			if((instruccion[1]!=NULL)&&(instruccion[2]!=NULL)){
+				printf("Voy a crear el archivo: %s con %s bytes\n",instruccion[1],atoi(instruccion[2]));
+				crearArchivoDeConsola(instruccion[1],atoi(instruccion[2]));
 			}else{
 				printf("Faltan parametros para poder crear el archivo\n");
 				}
@@ -440,18 +440,36 @@ int obtenerLongigutDelArchivo(char* path){
 	return longitudDelArchivo;
 }
 
+static void MDPrint (digest)
+unsigned char digest[16];{
+	unsigned int i;
+	for (i = 0; i < 16; i++)
+		printf ("%02x", digest[i]);
+}
+
 int generarMD5(char* pathDelArchivo){
 	int longitudDelArchivo=obtenerLongigutDelArchivo(pathDelArchivo);
 	t_datosObtenidos datosObtenidos = obtenerDatos(pathDelArchivo,0,longitudDelArchivo);
 	char*content=datosObtenidos.datos;
+	if(datosObtenidos.resultado==DatosObtenidos){
+		printf("Los datos del archivo %s son:\n",pathDelArchivo);
+		for(int i=0;i<longitudDelArchivo;i++) printf("%c",datosObtenidos.datos[i]);
+		printf("\n");
+	}else{
+		printf("No se pudieron recuperar los datos del archivo:%s\n",pathDelArchivo);
+		return EXIT_FAILURE;
+		}
+	//unsigned char digest[16];
 	void * digest = malloc(MD5_DIGEST_LENGTH);
+	//caddr_t digest = (caddr_t)malloc(16);
 	MD5_CTX context;
 	MD5_Init(&context);
-	//MD5_Update(&context, content, strlen(content) + 1);
-	//MD5_Final(digest, &context);
+	MD5_Update(&context, content, longitudDelArchivo);
+	MD5_Final(digest, &context);
 	free(content);
 	printf("Resultado del MD5:\n");
-	printf("%s\n",(char*)digest);
+	MDPrint (digest);
+	printf("\n");
 	return EXIT_SUCCESS;
 }
 
@@ -907,13 +925,13 @@ int validarArchivo(char *ubicacionDelArchivo){
 		}
 }
 
-int crearArchivoDeConsola(char *path){
+int crearArchivoDeConsola(char *path, int cantidadDeBytes){
 	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",path);
 	char*ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Archivos/");
 	string_append(&ubicacionDelArchivo, path);
-	if(crearArchivo(ubicacionDelArchivo,path)==ArchivoCreado)
+	if(crearArchivo(ubicacionDelArchivo, cantidadDeBytes, path)==ArchivoCreado)
 		return EXIT_SUCCESS;
 	else
 		return EXIT_FAILURE;
@@ -923,12 +941,13 @@ int crearArchivoDeDMA(int FDDMA){
 	/* Recibe del DMA los valores: path
 	 */
 	char*path=prot_recibir_DMA_FS_path(FDDMA);
+	int cantidadDeBytes=;
 	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",path);
 	char*ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Archivos/");
 	string_append(&ubicacionDelArchivo, path);
-	int resultadoDeCrearElArchivo=crearArchivo(ubicacionDelArchivo,path);
+	int resultadoDeCrearElArchivo=crearArchivo(ubicacionDelArchivo, cantidadDeBytes, path);
 	enviarCabecera(FDDMA, resultadoDeCrearElArchivo, 1);
 	return resultadoDeCrearElArchivo;
 }
@@ -957,7 +976,7 @@ int crearCarpetas(char *carpetasACrear){
 	return EXIT_SUCCESS;
 }
 
-int crearArchivo(char *ubicacionDelArchivo, char *path){
+int crearArchivo(char *ubicacionDelArchivo, int cantidadDeBytes, char *path){
 	/* Parámetros​: [Path]
 	 * Descripción​: Cuando el El Diego reciba la operación de crear un archivo deberá llamar a esta
 	 * operación que creará el archivo dentro del path solicitado. El archivo creado deberá tener la

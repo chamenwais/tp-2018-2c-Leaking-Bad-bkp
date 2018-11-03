@@ -73,6 +73,18 @@ char* prot_recibir_DMA_FS_path(int sock){
 	return path;
 }
 
+void prot_enviar_int(int i,int sock){
+	//9 recibe
+	enviar(sock,&i,sizeof(i));
+}
+
+int prot_recibir_int(int sock){
+	//9 envia
+	int i;
+	recibir(sock,&i,sizeof(i));
+	return i;
+}
+
 void prot_enviar_DMA_FS_guardarDatos(char *path, int offset, int size, char *buffer, int sock){
 	//4 envia
 	int tam = strlen(path) + 1;

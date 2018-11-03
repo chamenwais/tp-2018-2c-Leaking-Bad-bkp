@@ -87,7 +87,7 @@ int validarArchivo(char *path);
 int crearArchivoDeConsola(char *path);
 int crearArchivoDeDMA(int FDDMA);
 int crearCarpetas(char *carpetasACrear);
-int crearArchivo(char *ubicacionDelArchivo, char *path);
+int crearArchivo(char *ubicacionDelArchivo, int cantidadDeBytes, char *path);
 int borrarArchivoDeConsola(char *path);
 int borrarArchivoDeDMA(int fileDescriptorActual);
 int borrarArchivo(char *path);
