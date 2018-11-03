@@ -179,7 +179,7 @@ int escuchar(){
 				int fd_CPU = client_fd;
 				log_info(LOG_SAFA, "Iniciando hilo para la comuniacion con el CPU");
 				int resultadoHiloCPU = pthread_create(
-						&hiloComCPU, NULL, funcionHiloComCPU, &configSAFA);
+						&hiloComCPU, NULL, funcionHiloComCPU, fd_CPU);
 				if(resultadoHiloCPU){
 					log_error(LOG_SAFA,"Error no se pudo crear el hilo para la comunicacion con la CPUr: %d\n",resultadoHiloCPU);
 					exit(EXIT_FAILURE);
@@ -460,4 +460,18 @@ t_DTB* buscarDTBPorId(idDTB){
 		el_DTB = list_find(listos, coincideID);
 	}
 	return el_DTB;
+}
+
+int enviarDTBaCPU(t_DTB * dtb, int sockCPU) {
+	t_DTB msj;
+	msj.escriptorio = dtb->escriptorio;
+	msj.id_GDT = dtb->id_GDT;
+	msj.iniGDT = dtb->iniGDT;
+	msj.program_counter = dtb->program_counter;
+	msj.quantum = dtb->quantum;
+	msj.tabla_dir_archivos = dtb->tabla_dir_archivos;
+	int size = sizeof(msj);
+	com_enviar(sockCPU, &msj, size);
+	log_debug(LOG_SAFA, "Envia DTB a CPU");
+	return EXIT_SUCCESS;
 }

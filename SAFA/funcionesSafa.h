@@ -42,5 +42,6 @@ int calcularDTBAPlanificarConRR();
 int calcularDTBAPlanificarConVRR();
 int obtenerPrimerId(t_list* lista);
 t_DTB* buscarDTBPorId(idDTB);
+int enviarDTBaCPU(t_DTB * dtb, int sockCPU);
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */
