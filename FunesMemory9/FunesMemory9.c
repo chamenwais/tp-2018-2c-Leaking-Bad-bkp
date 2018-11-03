@@ -173,7 +173,7 @@ void logger_funesMemory9(int tipo_esc, int tipo_log, const char* mensaje, ...){
 	return;
 }
 
-int atender_nuevo_cliente(int serv_socket){
+int atender_nuevo_cpu(int serv_socket){
 	struct sockaddr_in client_addr;
 
 	//Setea la direccion en 0
@@ -184,13 +184,13 @@ int atender_nuevo_cliente(int serv_socket){
 	int new_client_sock = accept(serv_socket, (struct sockaddr *)&client_addr, &client_len);
 
 	if (new_client_sock < 0) {
-		logger_funesMemory9(escribir_loguear,l_error,"Error al aceptar un nuevo cliente :(\n");
+		logger_funesMemory9(escribir_loguear,l_error,"Error al aceptar un nuevo cpu :(\n");
 	  return -1;
 	}
 
-	logger_funesMemory9(escribir_loguear,l_trace,"\nSe aceptó un nuevo cliente, conexión (%d)", new_client_sock);
+	logger_funesMemory9(escribir_loguear,l_trace,"\nSe aceptó un nuevo cpu, conexión (%d)", new_client_sock);
 
-	close(new_client_sock);
+	return new_client_sock;
 
 }
 
@@ -200,21 +200,63 @@ void crear_hilo_conexion(int socket, void*funcion_a_ejecutar(int)){
 	pthread_detach(hilo);
 }
 
-void *escuchar_mensajes_entrantes(int socket_cliente){
+void *escuchar_mensajes_de_cpus(int socket_cpu){
 
-    logger_funesMemory9(escribir_loguear,l_info, "Esperando mensajes... \n");
+    logger_funesMemory9(escribir_loguear,l_info, "Esperando mensajes de un cpu... \n");
 
     total_hilos++;
 
     //Si no recibo nada...
-    logger_funesMemory9(escribir_loguear, l_info, "\nCerrada la conexión con socket cliente\n");
+    logger_funesMemory9(escribir_loguear, l_info, "\nCerrada la conexión con socket de cpu\n");
 
-    close(socket_cliente);
+    close(socket_cpu);
+}
+
+bool cabecera_es_invalida(t_cabecera* cabecera){
+	if(sizeof(*cabecera) != 0 && cabecera->tamanio>0){
+		logger_funesMemory9(escribir_loguear,l_trace,"\nEl Diego dijo algo, vamos a tratar de entenderlo\n");
+		return false;
+	}
+	logger_funesMemory9(escribir_loguear,l_error,"No se le entendio nada al Diego, se seguira escuchando\n");
+	return true;
+}
+
+void cargar_parte_archivo(int DMA_socket){
+	tp_cargarEnMemoria parte_archivo=prot_recibir_DMA_FM9_cargarEnMemoria(DMA_socket);
+}
+
+void interpretar_mensaje_del_diego(enum MENSAJES mensaje, int DMA_socket){
+	switch(mensaje){
+		case CargarParteEnMemoria:
+			logger_funesMemory9(escribir_loguear, l_info, "\nEl Diego quiere cargar una parte de un archivo\n");
+			cargar_parte_archivo(DMA_socket);
+			break;
+		//TODO agregar otros pedidos de DMA
+		default:
+			break;
+	}
+}
+
+void *escuchar_al_diego(int socket_DMA){
+
+	logger_funesMemory9(escribir_loguear,l_info, "Esperando que el Diego termine una frase... \n");
+
+	while(true){
+		t_cabecera cabecera=recibirCabecera(socket_DMA);
+
+		if(cabecera_es_invalida(&cabecera)) continue;
+
+		interpretar_mensaje_del_diego(cabecera.tipoDeMensaje, socket_DMA);
+
+	}
+
 }
 
 void finalizar_funesMemory9(){
-	//Por el momento solo esta para liberar el logger...
+
 	log_destroy(logger);
+
+	free(MEMORIA_FISICA);
 }
 
 void captura_sigpipe(int signo){
@@ -289,20 +331,28 @@ int comunicarse_con_dam(int socket_escucha){
 	return -1;
 }
 
+char *reservar_total_memoria(){
+	return malloc(TAMANIO_MEMORIA);
+}
+
 int main(int argc, char **argv){
 
 	iniciar_funes_memory_9(argv[1]);
 
 	int server_FM9 = iniciar_servidor(PUERTO_ESCUCHA);
 
+	MEMORIA_FISICA = reservar_total_memoria();
+
 	int cliente_DAM = comunicarse_con_dam(server_FM9);
+
+	crear_hilo_conexion(cliente_DAM, escuchar_al_diego);
 
 	//Entra en un loop consecutivo hasta un ctrl+c...
 	while (GLOBAL_SEGUIR && cliente_DAM>0){
 
-		int socket_cliente = atender_nuevo_cliente(server_FM9);
+		int socket_cpu = atender_nuevo_cpu(server_FM9);
 
-		crear_hilo_conexion(socket_cliente, escuchar_mensajes_entrantes);
+		crear_hilo_conexion(socket_cpu, escuchar_mensajes_de_cpus);
 	}
 
 	close(server_FM9);
