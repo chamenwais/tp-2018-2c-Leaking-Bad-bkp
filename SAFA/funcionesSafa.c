@@ -394,7 +394,8 @@ int planificar(){
 		idDTB=proximoDTBAPlanificar();
 		log_info(LOG_SAFA,"Proximo DTB a planificar %d",idDTB);
 		DTB = buscarDTBPorId(idDTB);
-		//ahora ya tengo el DTB entero que necesito enviar a CPU (ver lo q paso Martin al wp)//
+		//ahora ya tengo el DTB entero que necesito enviar a CPU //
+
 		/*if(ponerAEjecutar(idDTB)!=EXIT_FAILURE){//idDTB es solo un int TODO
 			log_info(LOG_SAFA,"Pongo el ESI %d a ejecutar",idDTB);
 			enviarMensajeDeEjecucion(idDTB);//enviarDTBACPU
