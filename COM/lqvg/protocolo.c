@@ -18,14 +18,14 @@ void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTo
 	}
 }
 
-tp_datosObtenidos prot_recibir_FS_DMA_datosObtenidos(int sock){
+tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos(int sock){
 	//1 recibir
 	int resultado;
-	tp_datosObtenidos obtenidos=NULL;
+	tp_datosObtenidosDeProtocolo obtenidos=NULL;
 	recibir(sock,&resultado,sizeof(resultado));
 	if(resultado==DatosObtenidos){
 		//en este caso tengo datos para recibir
-		obtenidos = malloc(sizeof(tp_datosObtenidos));
+		obtenidos = malloc(sizeof(tp_datosObtenidosDeProtocolo));
 		recibir(sock,&(obtenidos->tamanio_total_archivo),sizeof(obtenidos->tamanio_total_archivo));
 		recibir(sock,&(obtenidos->size),sizeof(&(obtenidos->size)));
 		obtenidos->buffer = malloc(obtenidos->size);

@@ -941,7 +941,7 @@ int crearArchivoDeDMA(int FDDMA){
 	/* Recibe del DMA los valores: path
 	 */
 	char*path=prot_recibir_DMA_FS_path(FDDMA);
-	int cantidadDeBytes=;
+	int cantidadDeBytes=0; //modificar
 	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",path);
 	char*ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);

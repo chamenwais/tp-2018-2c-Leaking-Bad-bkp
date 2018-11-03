@@ -84,7 +84,7 @@ int avisoDeFinalizarPrograma();
 int validarArchivoDeConsola(char *ubicacionDelArchivo);
 int validarArchivoDeDMA(int FDDMA);
 int validarArchivo(char *path);
-int crearArchivoDeConsola(char *path);
+int crearArchivoDeConsola(char *path, int cantidadDeBytes);
 int crearArchivoDeDMA(int FDDMA);
 int crearCarpetas(char *carpetasACrear);
 int crearArchivo(char *ubicacionDelArchivo, int cantidadDeBytes, char *path);
