@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <sys/socket.h>
 #include <pthread.h>
 #include <sys/types.h>      // Para crear los sockets
@@ -22,6 +23,7 @@
 #include <commons/config.h> // Para Archivo de configuración
 #include <signal.h>			// Para manejo de señales
 #include <lqvg/com.h>		// Para manejo de comunicaciones
+#include <lqvg/protocolo.h>		// Para el protocolo de comunicaciones
 
 /*** Defines ***/
 #define MAX_CLIENTES 20
@@ -53,6 +55,7 @@ char * PUERTO_ESCUCHA;
 t_log * logger;
 int total_hilos = 0;
 int GLOBAL_SEGUIR = 1;
+char * MEMORIA_FISICA;
 
 
 /*** Funciones ***/
@@ -63,11 +66,16 @@ void cargar_archivo_de_configuracion();
 void logger_funesMemory9(int tipo_esc, int tipo_log, const char* mensaje, ...);
 void configurar_signals(void);
 void inicializar_logger();
-void *escuchar_mensajes_entrantes(int socket_cliente);
+void *escuchar_mensajes_de_cpus(int socket_cpu);
+void *escuchar_al_diego(int socket_DMA);
 void captura_sigpipe(int signo);
 void crear_hilo_conexion(int socket, void*funcion_a_ejecutar(int));
 void finalizar_funesMemory9();
 struct addrinfo* crear_addrinfo();
 int comunicarse_con_dam(int socket_escucha);
+char * reservar_total_memoria();
+int atender_nuevo_cpu(int serv_socket);
+void interpretar_mensaje_del_diego(enum MENSAJES mensaje, int DMA_socket);
+void cargar_parte_archivo(int DMA_socket);
 
 #endif /* FUNESMEMORY9_FUNESMEMORY9_H_ */
