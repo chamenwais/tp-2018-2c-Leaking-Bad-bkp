@@ -25,7 +25,7 @@
 #include "Contexto.h"
 #include "Utilidades.h"
 
-void crear_hilos_conexiones_entrantes(int socket_fm9, int socket_safa);
+void crear_hilos_conexiones_entrantes(int socket_fm9, int socket_safa, int socket_filesystem);
 void realizar_handshake_con_cpu(int socket_id);
 int escuchar_a_los_CPU();
 void tratar_error_select(int socketfd_escucha);
@@ -34,7 +34,8 @@ void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 		enum MENSAJES mensaje_entrante
 		, int socket_CPU_solicitante
 		, int socket_fm9
-		, int socket_safa);
+		, int socket_safa
+		, int socket_filesystem);
 int cabecera_correcta(t_cabecera* cabecera);
 int cabecera_esta_vacia(t_cabecera* cabecera);
 void loguear_nueva_conexion_con_CPU(int nuevo_socketfd);
@@ -43,7 +44,7 @@ void loguear_y_avisar_a_safa_apertura_erronea(int sockfd_safa, char * proceso, t
 void informar_operacion_abrir_erronea(int socket_safa, tp_abrirPath path_y_pid);
 void informar_operacion_abrir_exitosa(int socket_safa, tp_abrirPath path_y_pid, int direccion_de_memoria);
 void operacion_abrir_path(int * sockets);
-int * adaptar_sockets_para_hilo(int CPU_Fd, int fm9_Fd, int Safa_fd);
+int * adaptar_sockets_para_hilo(int CPU_Fd, int fm9_Fd, int Safa_fd, int filesystem_fd);
 t_cabecera validar_archivo(int socket_mdj, tp_abrirPath mensaje_cpu);
 bool validar_fragmento_archivo(tp_datosObtenidosDeProtocolo fragmento_archivo, int socket_safa, tp_abrirPath mensaje_cpu);
 void informar_carga_en_memoria_erronea(int socket_safa, tp_abrirPath mensaje_cpu);

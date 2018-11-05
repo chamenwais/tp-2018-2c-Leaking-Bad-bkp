@@ -53,9 +53,6 @@ void validar_comunicacion(int socket_id, char * proceso);
 void informar_handshake_erroneo_y_cerrar(int socket_id, char * proceso);
 void mandar_handshake_a(int socket_id, enum PROCESO enumProceso, char * proceso);
 void recibir_handshake_de(int socket_id, enum PROCESO enumProceso, char * proceso);
-int comunicarse_con_file_system();
-void realizar_handshake_con_mdj(int socket_id);
-void mostrar_mensaje_previa_conexion_con_mdj();
 void inicializar_semaforos_de_procesos();
 void apagar_semaforos_de_procesos();
 
