@@ -6,7 +6,7 @@
  */
 #include "ConexionesEntrantes.h"
 
-void crear_hilos_conexiones_entrantes(int socket_fm9, int socket_safa){
+void crear_hilos_conexiones_entrantes(int socket_fm9, int socket_safa, int socket_filesystem){
 	fd_set lista_fd_maestra;
 	fd_set lista_fd_temporal;
 	int maximo_sockfd;
@@ -63,7 +63,8 @@ void crear_hilos_conexiones_entrantes(int socket_fm9, int socket_safa){
 								cabecera.tipoDeMensaje
 								,iterador_conexiones_existentes
 								,socket_fm9
-								,socket_safa);
+								,socket_safa
+								,socket_filesystem);
 					}
 				}
 			}
@@ -75,7 +76,8 @@ void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 		enum MENSAJES mensaje_entrante
 		, int socket_CPU_solicitante
 		, int socket_fm9
-		, int socket_safa){
+		, int socket_safa
+		, int socket_filesystem){
 	pthread_attr_t atributo_detachable;
 	pthread_t hilo_correspondiente_a_pedido;
 	pthread_attr_init(&atributo_detachable);
@@ -84,7 +86,7 @@ void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 	switch(mensaje_entrante){
 		case AbrirPathParaProceso:
 			pthread_create(&hilo_correspondiente_a_pedido,&atributo_detachable,(void *)operacion_abrir_path,
-					adaptar_sockets_para_hilo(socket_CPU_solicitante,socket_fm9,socket_safa));
+					adaptar_sockets_para_hilo(socket_CPU_solicitante,socket_fm9,socket_safa,socket_filesystem));
 			break;
 		case GuardarArchivoEnDisco:
 			break;
@@ -156,12 +158,12 @@ void operacion_abrir_path(int * sockets){
 	int socket_CPU=sockets[0];
 	int socket_fm9=sockets[1];
 	int socket_safa=sockets[2];
+	int socket_mdj=sockets[3];
 	free(sockets);
 	tp_abrirPath mensaje_cpu=prot_recibir_CPU_DMA_abrirPath(socket_CPU);
 	logger_DAM(escribir_loguear, l_trace,"Ehhh, voy a buscar [%s] para [%d]",mensaje_cpu->path,mensaje_cpu->pid);
 	enviarCabecera(socket_CPU,AbrirPathEjecutandose,sizeof(AbrirPathEjecutandose));
 	pthread_mutex_unlock(&MX_CPU);
-	int socket_mdj=comunicarse_con_file_system();
 	t_cabecera respuesta_validacion_path = validar_archivo(socket_mdj, mensaje_cpu);
 	if(cabecera_esta_vacia(&respuesta_validacion_path)||!cabecera_correcta(&respuesta_validacion_path)){
 		loguear_y_avisar_a_safa_apertura_erronea(socket_safa,CONST_NAME_MDJ,mensaje_cpu);
@@ -173,11 +175,12 @@ void operacion_abrir_path(int * sockets){
 	}
 }
 
-int * adaptar_sockets_para_hilo(int CPU_Fd, int fm9_Fd, int Safa_fd){
-	int * sockets=calloc(3,sizeof(int));
+int * adaptar_sockets_para_hilo(int CPU_Fd, int fm9_Fd, int Safa_fd, int filesystem_fd){
+	int * sockets=calloc(4,sizeof(int));
 	sockets[0]=CPU_Fd;
 	sockets[1]=fm9_Fd;
 	sockets[2]=Safa_fd;
+	sockets[3]=filesystem_fd;
 	return sockets;
 }
 

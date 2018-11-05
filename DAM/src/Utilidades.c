@@ -255,26 +255,6 @@ void loguear_cabecera_recibida(char * proceso) {
 	free(mensaje_cabecera_recibida);
 }
 
-void mostrar_mensaje_previa_conexion_con_mdj() {
-	char* mensaje_informativo_previa_conexion_con_mdj =
-			mensaje_informativo_previa_conexion_con(CONST_NAME_MDJ);
-	logger_DAM(escribir_loguear,l_info, mensaje_informativo_previa_conexion_con_mdj, ip_mdj,
-			puerto_mdj);
-	free(mensaje_informativo_previa_conexion_con_mdj);
-}
-
-int comunicarse_con_file_system(){
-	mostrar_mensaje_previa_conexion_con_mdj();
-	int socket_mdj=conectarseA(ip_mdj, puerto_mdj);
-	validar_comunicacion(socket_mdj, CONST_NAME_MDJ);
-	realizar_handshake_con_mdj(socket_mdj);
-	return socket_mdj;
-}
-
-void realizar_handshake_con_mdj(int socket_id){
-	mandar_handshake_a(socket_id, FS, CONST_NAME_MDJ);
-}
-
 void inicializar_semaforos_de_procesos() {
 	pthread_mutex_init(&MX_MEMORIA, NULL);
 	pthread_mutex_init(&MX_FS, NULL);
