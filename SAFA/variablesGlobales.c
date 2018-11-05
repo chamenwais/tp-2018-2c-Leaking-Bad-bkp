@@ -24,5 +24,7 @@ t_list* ejecutando;
 t_list* bloqueados;
 t_list* terminados;
 t_list* auxVirtualRR;
+t_list* cpu_ejecutando;
+t_list* cpu_libres;
 pthread_mutex_t mutexDePausaDePlanificacion;
 

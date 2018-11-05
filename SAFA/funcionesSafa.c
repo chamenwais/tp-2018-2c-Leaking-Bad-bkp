@@ -102,6 +102,8 @@ int inicializarListas(){
 	bloqueados = list_create();
 	terminados = list_create();
 	auxVirtualRR = list_create();
+	cpu_libres = list_create();
+	cpu_ejecutando = list_create();
 	return EXIT_SUCCESS;
 }
 
@@ -148,6 +150,8 @@ int liberarMemoria(){
 		return EXIT_SUCCESS;
 }
  void *funcionHiloComCPU(void *arg){//TODO: ver que hace
+	 list_add(cpu_libres, arg);
+
 	return EXIT_SUCCESS;
 }
 
@@ -177,9 +181,9 @@ int escuchar(){
 		}else if(recibirHandshake(PLANIFICADOR, CPU, client_fd) > 0){
 				log_info(LOG_SAFA, "Conexion realizada con CPU");
 				int fd_CPU = client_fd;
-				log_info(LOG_SAFA, "Iniciando hilo para la comuniacion con el CPU");
+				log_info(LOG_SAFA, "Iniciando hilo para la comunicacion con el CPU");
 				int resultadoHiloCPU = pthread_create(
-						&hiloComCPU, NULL, funcionHiloComCPU, &configSAFA);
+						&hiloComCPU, NULL, funcionHiloComCPU, fd_CPU);
 				if(resultadoHiloCPU){
 					log_error(LOG_SAFA,"Error no se pudo crear el hilo para la comunicacion con la CPUr: %d\n",resultadoHiloCPU);
 					exit(EXIT_FAILURE);
@@ -394,11 +398,11 @@ int planificar(){
 		idDTB=proximoDTBAPlanificar();
 		log_info(LOG_SAFA,"Proximo DTB a planificar %d",idDTB);
 		DTB = buscarDTBPorId(idDTB);
-		//ahora ya tengo el DTB entero que necesito enviar a CPU (ver lo q paso Martin al wp)//
-		/*if(ponerAEjecutar(idDTB)!=EXIT_FAILURE){//idDTB es solo un int TODO
-			log_info(LOG_SAFA,"Pongo el ESI %d a ejecutar",idDTB);
-			enviarMensajeDeEjecucion(idDTB);//enviarDTBACPU
-			*/
+		//ahora ya tengo el DTB entero que necesito enviar a CPU //
+		int proxCPUaUsar = list_remove(cpu_libres, 0);
+		list_add(cpu_ejecutando, proxCPUaUsar);
+		enviarDTBaCPU(DTB, proxCPUaUsar);
+
 
 	}
 	//deslockearListas();
@@ -460,4 +464,18 @@ t_DTB* buscarDTBPorId(idDTB){
 		el_DTB = list_find(listos, coincideID);
 	}
 	return el_DTB;
+}
+
+int enviarDTBaCPU(t_DTB * dtb, int sockCPU) {
+	t_DTB msj;
+	msj.escriptorio = dtb->escriptorio;
+	msj.id_GDT = dtb->id_GDT;
+	msj.iniGDT = dtb->iniGDT;
+	msj.program_counter = dtb->program_counter;
+	msj.quantum = dtb->quantum;
+	msj.tabla_dir_archivos = dtb->tabla_dir_archivos;
+	int size = sizeof(msj);
+	enviar(sockCPU, &msj, size);
+	log_debug(LOG_SAFA, "Envia DTB a CPU");
+	return EXIT_SUCCESS;
 }
