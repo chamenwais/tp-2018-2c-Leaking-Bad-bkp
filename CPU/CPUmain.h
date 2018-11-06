@@ -19,6 +19,7 @@
 #include <pthread.h>
 
 #include <commons/log.h>
+#include <commons/collections/list.h>
 #include <commons/config.h>
 #include <commons/error.h>
 
@@ -34,9 +35,19 @@ typedef struct dConfiguracion{
 	int PUERTOSAFA;
 	char *IPELDIEGO;
 	int PUERTOELDIEGO;
+	char *IPMEM;
+	int PUERTOMEM;
 }tConfiguracion;
 
 
+typedef struct defDTB {
+	int id_GDT;
+	char* escriptorio; // ver si esto realmente es un char*
+	int program_counter;
+	int iniGDT; // 0 o 1
+	t_list* tabla_dir_archivos; //tabla_dir_archivos;
+	int quantum;
+} t_DTB;
 
 
 t_log * LOG_CPU;
@@ -44,14 +55,9 @@ t_config * config;
 tConfiguracion configuracion;
 
 
+
+
 //Funciones
-
-
-
-
-
-
-
 
 
 #endif /* CPUmain_H_ */
