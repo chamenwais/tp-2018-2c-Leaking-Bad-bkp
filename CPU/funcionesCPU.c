@@ -140,3 +140,34 @@ void configurar_signals(void){
     	log_error(LOG_CPU,"\n SIGACTION error \n");
 
 }
+
+
+int recibirDTB(t_DTB * dtb, int sockCPU) {
+	t_DTB msjrecv;
+	int size = sizeof(msjrecv);
+	recibir(sockCPU, &msjrecv, size);
+	msjrecv.escriptorio = dtb->escriptorio;
+	msjrecv.id_GDT = dtb->id_GDT;
+	msjrecv.iniGDT = dtb->iniGDT;
+	msjrecv.program_counter = dtb->program_counter;
+	msjrecv.quantum = dtb->quantum;
+	msjrecv.tabla_dir_archivos = dtb->tabla_dir_archivos;
+	log_info(LOG_CPU, "DTB recibido de SAFA");
+	return EXIT_SUCCESS;
+}
+
+
+int enviarDTBaCPU(t_DTB * dtb, int sockCPU) {
+	t_DTB msj;
+	msj.escriptorio = dtb->escriptorio;
+	msj.id_GDT = dtb->id_GDT;
+	msj.iniGDT = dtb->iniGDT;
+	msj.program_counter = dtb->program_counter;
+	msj.quantum = dtb->quantum;
+	msj.tabla_dir_archivos = dtb->tabla_dir_archivos;
+	int size = sizeof(msj);
+	enviar(sockCPU, &msj, size);
+	log_info(LOG_CPU, "Envia DTB a CPU");
+	return EXIT_SUCCESS;
+}
+
