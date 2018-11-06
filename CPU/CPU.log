@@ -95,3 +95,84 @@
 [INFO] 01:06:30:723 CPU/(3162:3162): Conectando con SAFA por el puerto 2009
 [INFO] 01:06:30:723 CPU/(3162:3162): Conexion realizada con SAFA
 [INFO] 01:06:30:723 CPU/(3162:3162): Se creo hilo comunicador a SAFA
+[INFO] 23:16:42:601 CPU/(5662:5662): Creando Archivo de LOG CPU.log
+[INFO] 23:16:52:932 CPU/(5682:5682): Creando Archivo de LOG CPU.log
+[INFO] 23:17:58:684 CPU/(5710:5710): Creando Archivo de LOG CPU.log
+[INFO] 23:21:50:81 CPU/(5785:5785): Creando Archivo de LOG CPU.log
+[INFO] 23:22:39:912 CPU/(5812:5812): Creando Archivo de LOG CPU.log
+[INFO] 23:23:57:924 CPU/(5890:5890): Creando Archivo de LOG CPU.log
+[INFO] 23:23:57:932 CPU/(5890:5890): Se levanto con exito el archivo de configuracion
+[INFO] 23:23:57:932 CPU/(5890:5890): Conectando con SAFA por el puerto 2009
+[INFO] 23:23:57:932 CPU/(5890:5890): Conexion realizada con SAFA
+[INFO] 23:23:57:932 CPU/(5890:5890): Se creo hilo comunicador a SAFA
+[INFO] 23:30:07:458 CPU/(6038:6038): Creando Archivo de LOG CPU.log
+[INFO] 23:30:07:459 CPU/(6038:6038): Se levanto con exito el archivo de configuracion
+[INFO] 23:30:07:459 CPU/(6038:6038): Conectando con SAFA por el puerto 2009
+[ERROR] 23:30:07:460 CPU/(6038:6038): No se pudo conectar con el proceso SAFA 
+[INFO] 23:30:07:460 CPU/(6038:6038): Se destruira estructura de archivo de configuracion
+[INFO] 23:30:07:460 CPU/(6038:6038): Se destruira el logger
+[INFO] 23:30:31:794 CPU/(6062:6062): Creando Archivo de LOG CPU.log
+[INFO] 23:30:31:797 CPU/(6062:6062): Se levanto con exito el archivo de configuracion
+[INFO] 23:30:31:800 CPU/(6062:6062): Conectando con SAFA por el puerto 2009
+[INFO] 23:30:31:800 CPU/(6062:6062): Conexion realizada con SAFA
+[INFO] 23:30:31:800 CPU/(6062:6062): Se creo hilo comunicador a SAFA
+[INFO] 23:31:37:377 CPU/(6126:6126): Creando Archivo de LOG CPU.log
+[INFO] 23:31:37:385 CPU/(6126:6126): Se levanto con exito el archivo de configuracion
+[INFO] 23:31:37:385 CPU/(6126:6126): Conectando con SAFA por el puerto 2009
+[INFO] 23:31:37:386 CPU/(6126:6126): Conexion realizada con SAFA
+[INFO] 23:31:37:387 CPU/(6126:6126): Se creo hilo comunicador a SAFA
+[INFO] 23:54:52:224 CPU/(8340:8340): Creando Archivo de LOG CPU.log
+[INFO] 23:54:52:232 CPU/(8340:8340): Se levanto con exito el archivo de configuracion
+[INFO] 23:54:52:232 CPU/(8340:8340): Conectando con SAFA por el puerto 8000
+[INFO] 23:54:52:233 CPU/(8340:8340): Conexion realizada con SAFA
+[INFO] 23:54:52:233 CPU/(8340:8340): Se creo hilo comunicador a SAFA
+[INFO] 20:16:55:593 CPU/(14837:14837): Creando Archivo de LOG CPU.log
+[ERROR] 20:16:55:594 CPU/(14837:14837): No se encuentra el parametro IP_MEM en el archivo de configuracion
+[INFO] 20:18:07:708 CPU/(14906:14906): Creando Archivo de LOG CPU.log
+[INFO] 20:18:07:710 CPU/(14906:14906): Se levanto con exito el archivo de configuracion
+[INFO] 20:18:07:710 CPU/(14906:14906): Conectando con SAFA por el puerto 8000
+[INFO] 20:18:07:710 CPU/(14906:14906): Conexion realizada con SAFA
+[INFO] 20:18:07:710 CPU/(14906:14906): Se creo hilo comunicador a SAFA
+[INFO] 21:20:05:114 CPU/(16296:16296): Creando Archivo de LOG CPU.log
+[INFO] 21:20:05:114 CPU/(16296:16296): Se levanto con exito el archivo de configuracion
+[INFO] 21:20:05:114 CPU/(16296:16296): Conectando con SAFA por el puerto 8000
+[INFO] 21:20:05:115 CPU/(16296:16296): Conexion realizada con SAFA
+[INFO] 21:20:05:115 CPU/(16296:16296): Se creo hilo comunicador a SAFA
+[INFO] 09:20:22:397 CPU/(26852:26852): Creando Archivo de LOG CPU.log
+[INFO] 09:20:24:319 CPU/(26852:26852): Se levanto con exito el archivo de configuracion
+[INFO] 09:20:57:845 CPU/(26852:26852): Conectando con SAFA por el puerto 8000
+[INFO] 09:20:57:845 CPU/(26852:26852): Conexion realizada con SAFA
+[INFO] 09:36:17:817 CPU/(27362:27362): Creando Archivo de LOG CPU.log
+[INFO] 09:36:18:913 CPU/(27362:27362): Se levanto con exito el archivo de configuracion
+[INFO] 09:36:30:463 CPU/(27362:27362): Conectando con SAFA por el puerto 8000
+[INFO] 09:36:30:464 CPU/(27362:27362): Conexion realizada con SAFA
+[INFO] 09:36:30:470 CPU/(27362:27362): Se creo hilo comunicador a SAFA
+[INFO] 10:19:36:117 CPU/(27916:27916): Creando Archivo de LOG CPU.log
+[INFO] 10:19:37:154 CPU/(27916:27916): Se levanto con exito el archivo de configuracion
+[INFO] 10:19:47:768 CPU/(27916:27916): Conectando con SAFA por el puerto 8000
+[INFO] 10:22:28:998 CPU/(27916:27916): Conexion realizada con SAFA
+[INFO] 15:03:55:198 CPU/(29715:29715): Creando Archivo de LOG CPU.log
+[INFO] 15:03:55:198 CPU/(29715:29715): Se levanto con exito el archivo de configuracion
+[INFO] 15:03:55:198 CPU/(29715:29715): Conectando con SAFA por el puerto 8000
+[INFO] 15:03:55:199 CPU/(29715:29715): Conexion realizada con SAFA
+[INFO] 15:03:55:203 CPU/(29715:29715): Se creo hilo comunicador a SAFA
+[INFO] 15:14:15:137 CPU/(29890:29890): Creando Archivo de LOG CPU.log
+[INFO] 15:14:16:117 CPU/(29890:29890): Se levanto con exito el archivo de configuracion
+[INFO] 15:14:23:559 CPU/(29890:29890): Conectando con SAFA por el puerto 8000
+[INFO] 15:14:40:84 CPU/(29890:29890): Conexion realizada con SAFA
+[INFO] 15:15:24:22 CPU/(29930:29930): Creando Archivo de LOG CPU.log
+[INFO] 15:15:24:24 CPU/(29930:29930): Se levanto con exito el archivo de configuracion
+[INFO] 15:15:24:24 CPU/(29930:29930): Conectando con SAFA por el puerto 8000
+[INFO] 15:15:24:24 CPU/(29930:29930): Conexion realizada con SAFA
+[INFO] 15:15:24:24 CPU/(29930:29930): Se creo hilo comunicador a SAFA
+[INFO] 15:31:57:394 CPU/(30444:30444): Creando Archivo de LOG CPU.log
+[INFO] 15:31:57:395 CPU/(30444:30444): Se levanto con exito el archivo de configuracion
+[INFO] 15:31:57:395 CPU/(30444:30444): Conectando con SAFA por el puerto 8000
+[INFO] 15:31:57:395 CPU/(30444:30444): Conexion realizada con SAFA
+[INFO] 15:31:57:395 CPU/(30444:30444): Se creo hilo comunicador a SAFA
+[INFO] 22:41:38:582 CPU/(29521:29521): Creando Archivo de LOG CPU.log
+[INFO] 22:41:38:713 CPU/(29521:29521): Se levanto con exito el archivo de configuracion
+[INFO] 22:41:38:713 CPU/(29521:29521): Conectando con SAFA por el puerto 8000
+[INFO] 22:41:38:713 CPU/(29521:29521): Conexion realizada con SAFA
+[INFO] 22:41:38:714 CPU/(29521:29521): Handshake exitoso con SAFA
+[INFO] 22:41:38:714 CPU/(29521:29521): Se creo hilo comunicador a SAFA

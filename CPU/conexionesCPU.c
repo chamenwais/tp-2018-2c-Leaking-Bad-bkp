@@ -37,7 +37,7 @@ void * comunicarse_con_DAM()
 	int socket_conecta_DAM = conectarseA(configuracion.IPELDIEGO, configuracion.PUERTOELDIEGO);
 	if(validar_comunicacion(socket_conecta_DAM, "DAM"))
 	{
-		if(enviarHandshake(CPU, DMA , socket_conecta_DAM))
+		if(enviarHandshake(CPU,DMA, socket_conecta_DAM))
 			log_info(LOG_CPU,"Handshake exitoso con DAM");
 		else
 			log_error(LOG_CPU,"Handshake incorrecto, no era el DAM");
@@ -47,9 +47,10 @@ void * comunicarse_con_DAM()
 void * comunicarse_con_SAFA()
 {
 	log_info(LOG_CPU,"Conectando con SAFA por el puerto %d", configuracion.PUERTOSAFA);
-	int socket_conecta_SAFA = conectarseA("127.0.0.1", configuracion.PUERTOSAFA);
+	int socket_conecta_SAFA = conectarseA(configuracion.IPSAFA, configuracion.PUERTOSAFA);
 	if(validar_comunicacion(socket_conecta_SAFA, "SAFA"))
-		if(enviarHandshake(CPU, PLANIFICADOR , socket_conecta_SAFA))
+		printf("se conecto/n");
+		if(enviarHandshake(CPU,PLANIFICADOR, socket_conecta_SAFA))
 			log_info(LOG_CPU,"Handshake exitoso con SAFA");
 		else
 			log_error(LOG_CPU,"Handshake incorrecto, no era el SAFA");

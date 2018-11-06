@@ -9,10 +9,6 @@
 
 
 
-
-
-
-
 void funciona()
 {
 	printf("Anda hasta aca\n");
@@ -32,9 +28,7 @@ void levantarArchConfig()
 		exit(-1);
 	}
 	else{
-		char * ipsafa = config_get_string_value(config,"IP_SAFA");
-		configuracion.IPSAFA = malloc(strlen(ipsafa)+1);
-		strcpy(configuracion.IPSAFA,ipsafa);
+		configuracion.IPSAFA = string_duplicate(config_get_string_value(config, "IP_SAFA"));
 	}
 	if(!config_has_property(config, "PUERTO_SAFA"))
 	{
@@ -56,7 +50,7 @@ void levantarArchConfig()
 		exit(-1);
 	}
 	else
-		configuracion.IPELDIEGO = config_get_string_value(config, "IP_DIEGO");
+		configuracion.IPELDIEGO = string_duplicate(config_get_string_value(config, "IP_DIEGO"));
 
 	if(!config_has_property(config, "PUERTO_DIEGO"))
 	{
@@ -69,8 +63,33 @@ void levantarArchConfig()
 	else
 		configuracion.PUERTOELDIEGO = config_get_int_value(config, "PUERTO_DIEGO");
 
+
+
+	if (!config_has_property(config, "IP_MEM"))
+	{
+		printf("No se encuentra el parametro IP_MEM en el archivo de configuracion\n");
+		log_error(LOG_CPU,"No se encuentra el parametro IP_MEM en el archivo de configuracion");
+		config_destroy(config);
+		//liberarMemoria();
+		exit(-1);
+	}
+	else{
+		configuracion.IPMEM = string_duplicate(config_get_string_value(config, "IP_MEM"));
+	}
+	if(!config_has_property(config, "PUERTO_MEM"))
+	{
+		printf("No se encuentra el parametro PUERTO_MEM en el archivo de configuracion\n");
+		log_error(LOG_CPU,"No se encuentra el parametro PUERTO_MEM en el archivo de configuracion");
+		config_destroy(config);
+		//liberarMemoria();
+		exit(-1);
+	}
+	else
+		configuracion.PUERTOMEM = config_get_int_value(config, "PUERTO_MEM");
+
 	log_info(LOG_CPU,"Se levanto con exito el archivo de configuracion");
 }
+
 
 
 int configurar_LOG_CPU()
