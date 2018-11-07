@@ -70,6 +70,7 @@ int listarDirectorioConParametro(char* path);
 int listarDirectorioActual();
 int listarDirectorio(char* directorio);
 int levantarMetadataBin();
+bool existeElDirectorioDeConsola(char* path);
 bool existeElDirectorio(char* path);
 bool existeElArchivo(char *directorioDelArchivo);
 int reservarBloqueYCrearEstructuras(int numeroDeBloqueLibre);
