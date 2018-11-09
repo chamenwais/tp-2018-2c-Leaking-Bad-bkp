@@ -259,12 +259,10 @@ void inicializar_semaforos_de_procesos() {
 	pthread_mutex_init(&MX_MEMORIA, NULL);
 	pthread_mutex_init(&MX_FS, NULL);
 	pthread_mutex_init(&MX_SAFA, NULL);
-	pthread_mutex_init(&MX_CPU, NULL);
 }
 
 void apagar_semaforos_de_procesos() {
 	pthread_mutex_destroy(&MX_MEMORIA);
 	pthread_mutex_destroy(&MX_FS);
 	pthread_mutex_destroy(&MX_SAFA);
-	pthread_mutex_destroy(&MX_CPU);
 }

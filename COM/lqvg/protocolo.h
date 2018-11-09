@@ -32,6 +32,7 @@ typedef struct stru_abrirPath{
 typedef t_abrirPath* tp_abrirPath;
 
 typedef struct stru_cargarEnMemoria{
+	int pid;
 	char* path;
 	void* buffer;
 	int offset;
@@ -56,7 +57,7 @@ void prot_enviar_DMA_FS_obtenerDatos(char *path, int offset, int size, int sock)
 tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos(int sock);
 void prot_enviar_CPU_DMA_abrirPath(char* path, int pid, int sock);
 tp_abrirPath prot_recibir_CPU_DMA_abrirPath(int sock);
-void prot_enviar_DMA_FM9_cargarEnMemoria(char* path, void* buffer, int offset, int size, int sock);
+void prot_enviar_DMA_FM9_cargarEnMemoria(int pid, char* path, void* buffer, int offset, int size, int sock);
 tp_cargarEnMemoria prot_recibir_DMA_FM9_cargarEnMemoria(int sock);
 void prot_enviar_FM9_DMA_cargaEnMemoria(int memory_address, int sock);
 int prot_recibir_FM9_DMA_cargaEnMemoria(int sock);

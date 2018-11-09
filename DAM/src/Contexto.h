@@ -37,6 +37,5 @@ extern char * CONST_NAME_CPU;
 extern pthread_mutex_t MX_MEMORIA;
 extern pthread_mutex_t MX_FS;
 extern pthread_mutex_t MX_SAFA;
-extern pthread_mutex_t MX_CPU;
 
 #endif /* CONTEXTO_H_ */
