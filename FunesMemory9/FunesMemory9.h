@@ -76,6 +76,14 @@ int comunicarse_con_dam(int socket_escucha);
 char * reservar_total_memoria();
 int atender_nuevo_cpu(int serv_socket);
 void interpretar_mensaje_del_diego(enum MENSAJES mensaje, int DMA_socket);
-void cargar_parte_archivo(int DMA_socket);
+void cerrar_sockets(int server_FM9, int socket_cpu, int cliente_DAM);
+void inicializar_funciones_variables_por_segmento();
+
+/*** Funciones y variables necesarias a intercambiar segun el esquema de memoria ***/
+char * buffer_archivo;
+void cargar_parte_archivo_en_segmento(int DAM_fd);
+void cargar_parte_archivo_en_segmento_paginado(int DAM_fd);
+void cargar_parte_archivo_en_pagina_invertida(int DAM_fd);
+void (*cargar_parte_archivo[3])(int);
 
 #endif /* FUNESMEMORY9_FUNESMEMORY9_H_ */

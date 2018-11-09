@@ -82,7 +82,6 @@ void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 	pthread_t hilo_correspondiente_a_pedido;
 	pthread_attr_init(&atributo_detachable);
 	pthread_attr_setdetachstate(&atributo_detachable, PTHREAD_CREATE_DETACHED);
-	pthread_mutex_lock(&MX_CPU);
 	switch(mensaje_entrante){
 		case AbrirPathParaProceso:
 			pthread_create(&hilo_correspondiente_a_pedido,&atributo_detachable,(void *)operacion_abrir_path,
@@ -163,7 +162,6 @@ void operacion_abrir_path(int * sockets){
 	tp_abrirPath mensaje_cpu=prot_recibir_CPU_DMA_abrirPath(socket_CPU);
 	logger_DAM(escribir_loguear, l_trace,"Ehhh, voy a buscar [%s] para [%d]",mensaje_cpu->path,mensaje_cpu->pid);
 	enviarCabecera(socket_CPU,AbrirPathEjecutandose,sizeof(AbrirPathEjecutandose));
-	pthread_mutex_unlock(&MX_CPU);
 	t_cabecera respuesta_validacion_path = validar_archivo(socket_mdj, mensaje_cpu);
 	if(cabecera_esta_vacia(&respuesta_validacion_path)||!cabecera_correcta(&respuesta_validacion_path)){
 		loguear_y_avisar_a_safa_apertura_erronea(socket_safa,CONST_NAME_MDJ,mensaje_cpu);
@@ -210,7 +208,7 @@ void informar_operacion_abrir_exitosa(int socket_safa, tp_abrirPath path_y_pid, 
 
 void tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath info_cpu, int socket_safa){
 	if(ElArchivoNoExiste==(respuesta_validez_archivo.tipoDeMensaje)){
-		logger_DAM(escribir_loguear, l_warning,"Dijo Mdj que el archivo %s no existe",info_cpu->path);
+		logger_DAM(escribir_loguear, l_error,"Dijo Mdj que el path %s no existe. Error 10001",info_cpu->path);
 		informar_operacion_abrir_erronea(socket_safa, info_cpu);
 	}
 }
@@ -226,7 +224,7 @@ tp_datosObtenidosDeProtocolo pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int s
 int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, char* parte_archivo) {
 	pthread_mutex_lock(&MX_MEMORIA);
 	enviarCabecera(socket_fm9, CargarParteEnMemoria, sizeof(CargarParteEnMemoria));
-	prot_enviar_DMA_FM9_cargarEnMemoria(info_cpu->path, parte_archivo, offset_Fm9, transfer_size, socket_fm9);
+	prot_enviar_DMA_FM9_cargarEnMemoria(info_cpu->pid, info_cpu->path, parte_archivo, offset_Fm9, transfer_size, socket_fm9);
 	free(parte_archivo);
 	int direccion_logica = prot_recibir_FM9_DMA_cargaEnMemoria(socket_fm9);
 	pthread_mutex_unlock(&MX_MEMORIA);
@@ -242,7 +240,7 @@ bool validar_fragmento_archivo(tp_datosObtenidosDeProtocolo fragmento_archivo, i
 }
 
 void informar_carga_en_memoria_erronea(int socket_safa, tp_abrirPath mensaje_cpu){
-	logger_DAM(escribir_loguear, l_error,"No se cargo el fragmento en memoria");
+	logger_DAM(escribir_loguear, l_error,"No se cargo el path por espacio insuficiente en FM9");
 	loguear_y_avisar_a_safa_apertura_erronea(socket_safa,CONST_NAME_MDJ,mensaje_cpu);
 }
 
