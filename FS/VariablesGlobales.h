@@ -30,7 +30,8 @@ extern pthread_t threadComunicacionConElDMA;
 extern int resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
 extern int tamanioBitmap;
 extern bool finalizarPrograma;
-extern pthread_mutex_t mutexFinalizarPrograma, mutexIniciarConsola;
+extern pthread_mutex_t mutexFinalizarPrograma, mutexIniciarConsola, mutexSistemaDeArchivos,
+	mutexPath;
 extern char* directorioActual;
 
 #endif /* VARIABLESGLOBALES_H_ */

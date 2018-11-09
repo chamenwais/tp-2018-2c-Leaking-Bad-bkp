@@ -53,18 +53,25 @@ int crearDirectorios(){
 	return EXIT_SUCCESS;
 }
 
-int inicializarVariables(){
-	if (pthread_mutex_init(&mutexFinalizarPrograma, NULL) != 0) {
+int inicializarSemaforos(){
+	if(pthread_mutex_init(&mutexFinalizarPrograma, NULL) != 0) {
 		log_error(LOGGER,"No se pudo inicializar el semaforo de la variable para saber si hay que finalizar el programa");
 		return EXIT_FAILURE;
 		}
-	if (pthread_mutex_init(&mutexIniciarConsola, NULL) != 0) {
-		log_error(LOGGER,"No se pudo inicializar el semaforo de la variable para saber si hay que finalizar el programa");
+	if(pthread_mutex_init(&mutexIniciarConsola, NULL) != 0) {
+		log_error(LOGGER,"No se pudo inicializar el semaforo de la consola");
 		return EXIT_FAILURE;
 	}else{
 		pthread_mutex_lock(&mutexIniciarConsola);
 		}
+	if(pthread_mutex_init(&mutexSistemaDeArchivos, NULL) != 0) {
+		log_error(LOGGER,"No se pudo inicializar el semaforo del sistema de archivos");
+		return EXIT_FAILURE;
+		}
+	return EXIT_SUCCESS;
+}
 
+int inicializarVariables(){
 	finalizarPrograma=false;
 	resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_SUCCESS;
 	return EXIT_SUCCESS;
@@ -227,7 +234,7 @@ void *funcionHiloConsola(void *arg){
 		}else{
 		if(strcmp(instruccion[0],"CrearArchivo")==0){
 			if((instruccion[1]!=NULL)&&(instruccion[2]!=NULL)){
-				printf("Voy a crear el archivo: %s con %s bytes\n",instruccion[1],atoi(instruccion[2]));
+				printf("Voy a crear el archivo: %s con %d bytes\n",instruccion[1],atoi(instruccion[2]));
 				crearArchivoDeConsola(instruccion[1],atoi(instruccion[2]));
 			}else{
 				printf("Faltan parametros para poder crear el archivo\n");
@@ -261,6 +268,9 @@ void *funcionHiloConsola(void *arg){
 			printf("Voy a listar todas las instrucciones posibles:\n");
 			man();
 		}else{
+		if(strcmp(instruccion[0],"mostrarbloque")==0){
+			mostrarBloque(atoi(instruccion[1]));
+		}else{
 		if(strcmp(instruccion[0],"pwd")==0){
 			pwd();
 		}else{
@@ -270,8 +280,15 @@ void *funcionHiloConsola(void *arg){
 		if(strcmp(instruccion[0],"bitmap")==0){
 			imprimirEstadoDelBitmap();
 		}else{
+		if(strcmp(instruccion[0],"existeledirectorio")==0){
+			if(instruccion[1]!=NULL){
+				existeElDirectorioDeConsola(instruccion[1]);
+			}else{
+				printf("Faltan parametros\n");
+				}
+		}else{
 		printf("Comando desconocido\n");
-		}}}}}}}}}}}}}}}
+		}}}}}}}}}}}}}}}}}
 		free(linea);
 		//for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
 		//free(instruccion);
@@ -300,6 +317,7 @@ int imprimirEstadoDelBitmap(){
 	printf("Cantidad total de bloques: %d\n",configuracionDeMetadata.cantidadBloques);
 	printf("Imprimiendo estado de los bloques\n");
 	printf("Bloques libres:\n");
+	pthread_mutex_lock(&mutexSistemaDeArchivos);
 	for(i=0;i<configuracionDeMetadata.cantidadBloques;i++){
 		if(!bitarray_test_bit(bitmap,i)){
 			printf("%d; ",i);
@@ -314,6 +332,7 @@ int imprimirEstadoDelBitmap(){
 			}
 		}
 	printf("\n");
+	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 	return EXIT_SUCCESS;
 }
 
@@ -327,7 +346,7 @@ int man(){
 	printf("5) \"cat\" [path del archivo] Muestra el contenido de un archivo por pantalla, como una cadena\n");
 	printf("Comandos propios:\n");
 	printf("6) \"ValidarArchivo\" [Path] deberá validar que el archivo exista\n");
-	printf("7) \"CrearArchivo\" [Path] creará el archivo dentro del path solicitado\n");
+	printf("7) \"CrearArchivo\" [Path][N cantidad de bytes] creará el archivo dentro del path solicitado\n");
 	printf("   El archivo creado deberá tener la cantidad de bloques necesarios para guardar las\n");
 	printf("   líneas indicadas por la operación crear con su contenido vacío\n");
 	printf("8) \"ObtenetDatos\" [Path, Offset, Size]  devolverá del path enviado por parámetro,\n");
@@ -340,6 +359,8 @@ int man(){
 	printf("11) \"bitmap\", muestra el estado de todos los bloques del bitmap\n");
 	printf("12) \"BorrarArchivo\" [Path], borra el archivo solicitado\n");
 	printf("13) \"pwd\", print working directory\n");
+	printf("14) \"mostrarbloque\" [NumeroDeBloque]");
+	printf("15) \"existeledirectorio\" [path], me dice si el directorio que le paso existe o no");
 	return EXIT_SUCCESS;
 }
 
@@ -407,6 +428,8 @@ void liberarRecursos(){
 	pthread_mutex_unlock(&mutexIniciarConsola);
 	pthread_mutex_destroy(&mutexIniciarConsola);
 	pthread_mutex_destroy(&mutexFinalizarPrograma);
+	pthread_mutex_destroy(&mutexPath);
+	pthread_mutex_destroy(&mutexSistemaDeArchivos);
 	printf("PROGRAMA FINALIZADO\n");
 }
 
@@ -419,6 +442,8 @@ int obtenerLongigutDelArchivo(char* path){
 	string_append(&ubicacionDelArchivo, "/Archivos/");
 	string_append(&ubicacionDelArchivo, path);
 	log_info(LOGGER,"Buscando el archivo %s",ubicacionDelArchivo);
+
+	pthread_mutex_lock(&mutexSistemaDeArchivos);
 	t_config* configuracion = config_create(ubicacionDelArchivo);
 
 	if(configuracion!=NULL){
@@ -427,16 +452,19 @@ int obtenerLongigutDelArchivo(char* path){
 		if(!config_has_property(configuracion,"TAMANIO")) {
 			log_error(LOGGER,"No esta el valor TAMANIO en el archivo");
 			config_destroy(configuracion);
+			pthread_mutex_unlock(&mutexSistemaDeArchivos);
 			return longitudDelArchivo;
 			}
 		longitudDelArchivo = config_get_int_value(configuracion,"TAMANIO");
 		log_info(LOGGER,"El tamaño del archivo fue recuperado: %d",longitudDelArchivo);
 	}else{
 		log_error(LOGGER,"No existe el archivo %s",ubicacionDelArchivo);
+		pthread_mutex_unlock(&mutexSistemaDeArchivos);
 		return longitudDelArchivo;
 		}
 	log_info(LOGGER,"Cerrando el archivo %s, info recuperada",ubicacionDelArchivo);
 	config_destroy(configuracion);
+	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 	return longitudDelArchivo;
 }
 
@@ -448,6 +476,7 @@ unsigned char digest[16];{
 }
 
 int generarMD5(char* pathDelArchivo){
+
 	int longitudDelArchivo=obtenerLongigutDelArchivo(pathDelArchivo);
 	t_datosObtenidos datosObtenidos = obtenerDatos(pathDelArchivo,0,longitudDelArchivo);
 	char*content=datosObtenidos.datos;
@@ -473,6 +502,23 @@ int generarMD5(char* pathDelArchivo){
 	return EXIT_SUCCESS;
 }
 
+int mostrarBloque(int numeroDeBloque){
+	char *archivoDeBloque=string_new();
+	string_append(&archivoDeBloque,configuracionDelFS.punto_montaje);
+	string_append(&archivoDeBloque, "/Bloques/");
+	string_append(&archivoDeBloque, string_itoa(numeroDeBloque));
+	log_info(LOGGER,"Mostrando el bloque: %d que esta en el archivo: %s",numeroDeBloque,archivoDeBloque);
+	pthread_mutex_lock(&mutexSistemaDeArchivos);
+	FILE * archivo = fopen(archivoDeBloque,"rb+");
+	char caracter;
+	if(archivo!=NULL){
+		while((caracter = fgetc(archivo)) != EOF) printf("%c",caracter);
+		}
+	printf("\n");
+	pthread_mutex_unlock(&mutexSistemaDeArchivos);
+	return EXIT_SUCCESS;
+}
+
 int funcionDeConsolacat(char* path){
 	printf("Mostrando el contenido del archivo %s por pantalla\n",path);
 	int longitudDelArchivo=obtenerLongigutDelArchivo(path);
@@ -492,6 +538,7 @@ int funcionDeConsolacd(char* path){
 	char* nuevoDirectorio=string_new();
 	char** pathPartido = string_split(path, "/");
 	char* copiaDelDirectorioActual=string_new();
+	pthread_mutex_lock(&mutexPath);
 	string_append(&copiaDelDirectorioActual,directorioActual);
 
 	int i;
@@ -509,31 +556,34 @@ int funcionDeConsolacd(char* path){
 
 	if(existeElDirectorio(directorioActual)){
 		printf("Cambiando al directorio %s\n",directorioActual);
+		pthread_mutex_unlock(&mutexPath);
 		return EXIT_SUCCESS;
 	}else{
 		printf("Error no existe el directorio %s\n",directorioActual);
 		directorioActual=string_new();
 		string_append(&directorioActual,copiaDelDirectorioActual);
 		printf("Volviendo al directorio %s\n",directorioActual);
+		pthread_mutex_unlock(&mutexPath);
 		return EXIT_FAILURE;
 		}
 }
 
 void volverUnaCarpetaParaAtras(){
+	log_info(LOGGER,"Volviendo una carpeta para atras");
 	char** pathPartido = string_split(directorioActual, "/");
+	free(directorioActual);
 	directorioActual=string_new();
-	for(int i=0;pathPartido[i]!=NULL;i++){
-		if(i!=0){
-			string_append(&directorioActual,pathPartido[i]);
-			if(pathPartido[i+1]!=NULL){
-				string_append(&directorioActual,"/");
-				}
-			}//ver q pasa con el primero
+	for(int i=0;pathPartido[i+1]!=NULL;i++){
+		string_append(&directorioActual,pathPartido[i]);
+		if(pathPartido[i+2]!=NULL){
+			string_append(&directorioActual,"/");
+			}
+		//ver q pasa con el primero
 		}
-
 	}
 
 void agregarCarpetaAlDirectorioActual(char* carpeta){
+	log_info(LOGGER,"Agregando la capeta %s al directorio actual",carpeta);
 	string_append(&directorioActual,"/");
 	string_append(&directorioActual,carpeta);
 }
@@ -584,12 +634,18 @@ int listarDirectorioConParametro(char* path){
 	string_append(&directorio, "/Archivos/");
 	string_append(&directorio, path);
 	printf("Listando directorio pasado por parametro, %s\n",directorio);
-	return listarDirectorio(directorio);
+	pthread_mutex_lock(&mutexPath);
+	int resultado = listarDirectorio(directorio);
+	pthread_mutex_lock(&mutexPath);
+	return resultado;
 }
 
 int listarDirectorioActual(){
 	printf("Listando directorio actual, %s\n",directorioActual);
-	return listarDirectorio(directorioActual);
+	pthread_mutex_lock(&mutexPath);
+	int resultado=listarDirectorio(directorioActual);
+	pthread_mutex_unlock(&mutexPath);
+	return resultado;
 }
 
 
@@ -647,6 +703,16 @@ int levantarMetadataBin(){
 	return EXIT_SUCCESS;
 }
 
+bool existeElDirectorioDeConsola(char* path){
+	bool resultado = existeElDirectorio(path);
+	if(resultado){
+		printf("El directorio \"%s\" existe",path);
+	}else{
+		printf("El directorio \"%s\" no existe",path);
+		}
+	return resultado;
+}
+
 bool existeElDirectorio(char* path){
 	DIR * directorio = opendir(path);
 	if(directorio==NULL){
@@ -665,6 +731,7 @@ bool existeElArchivo(char *directorioDelArchivo){
 	 * sino lo hago asi cuando abro un directorio me dice q esta todo bien
 	 * "r+": Opens a file to update both reading and writing. The file must exist.
 	 * */
+
 	FILE *fd=fopen(directorioDelArchivo, "r+");
 	if(fd==NULL){
 		log_info(LOGGER,"No existe el archivo %s",directorioDelArchivo);
@@ -917,16 +984,18 @@ int validarArchivo(char *ubicacionDelArchivo){
 	string_append(&path, configuracionDelFS.punto_montaje);
 	string_append(&path, "/Archivos/");
 	string_append(&path, ubicacionDelArchivo);
+	pthread_mutex_lock(&mutexSistemaDeArchivos);
 	log_info(LOGGER,"Voy a ver si existe el archivo: %s",path);
 	if(existeElArchivo(path)){
 		return ElArchivoExiste;
 	}else{
 		return ElArchivoNoExiste;
 		}
+	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 }
 
 int crearArchivoDeConsola(char *path, int cantidadDeBytes){
-	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",path);
+	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo, con %d bytes",path,cantidadDeBytes);
 	char*ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Archivos/");
@@ -977,11 +1046,12 @@ int crearCarpetas(char *carpetasACrear){
 }
 
 int crearArchivo(char *ubicacionDelArchivo, int cantidadDeBytes, char *path){
-	/* Parámetros​: [Path]
-	 * Descripción​: Cuando el El Diego reciba la operación de crear un archivo deberá llamar a esta
-	 * operación que creará el archivo dentro del path solicitado. El archivo creado deberá tener la
-	 * cantidad de bloques necesarios para guardar las líneas indicadas por la operación crear con su
-	 * contenido vacío.
+	/* Parámetros: [Path, N cantidad de bytes]
+	 * Descripción: Cuando el El Diego reciba la operación de crear un archivo deberá crear
+	 * el archivo dentro del path solicitado con la cantidad de bloques necesarios para guardar
+	 * la N cantidad de bytes pasados por parámetro. Además, el archivo nuevo deberá estar
+	 * creado con "N" cantidad de caracteres "\n". Cabe aclarar que los archivos pueden crecer
+	 * en bytes pero no en líneas.
 	 * Ejemplo del contenido del archivo [Punto_Montaje]/Archivos/[PathDelArchivo] :
 	 * TAMANIO=250
 	 * BLOQUES=[40,21,82,3]
@@ -990,25 +1060,43 @@ int crearArchivo(char *ubicacionDelArchivo, int cantidadDeBytes, char *path){
 	 * path: carpeta/asd.txt
 	 * ubicacionDelArchivo: montaje/Archivos/carpeta/asd.txt
 	 * */
-	log_info(LOGGER,"Voy a crear el archivo en: %s, path:%s",ubicacionDelArchivo,path);
 
+	if(cantidadDeBytes<0){
+		log_error(LOGGER,"Error, la cantidad de bytes es menor que 0, es: %d",cantidadDeBytes);
+		return ArchivoNoCreado;
+		}
+	pthread_mutex_lock(&mutexSistemaDeArchivos);
+	log_info(LOGGER,"Voy a crear el archivo en: %s, path:%s",ubicacionDelArchivo,path);
 	if(!existeElArchivo(ubicacionDelArchivo)){
+		//(cantidadDeBytes/configuracionDeMetadata.tamanioBloques)
 		crearCarpetas(path);
 		FILE *archivo=fopen(ubicacionDelArchivo, "w");
 		if(archivo!=NULL){
-			fprintf(archivo,"%s","TAMANIO=0\n");
-			fprintf(archivo,"%s","BLOQUES=[]\n");
+			fprintf(archivo,"TAMANIO=0\n");
+			fprintf(archivo,"BLOQUES=[]\n");
 			fclose(archivo);
 			log_info(LOGGER,"Archivo %s creado",ubicacionDelArchivo);
+			if(cantidadDeBytes>0){
+				log_info(LOGGER,"Ahora tengo que agregar los saltos de linea");
+				char *buffer = string_new();
+				for(int p=0;p<cantidadDeBytes;p++)
+					string_append(&buffer,"\n");
+				guardarDatos(path, 0, cantidadDeBytes, buffer);
+				free(buffer);
+				}
+			pthread_mutex_unlock(&mutexSistemaDeArchivos);
 			return ArchivoCreado;
 		}else{
+			pthread_mutex_unlock(&mutexSistemaDeArchivos);
 			log_info(LOGGER,"No se pudo crear el archivo %s",ubicacionDelArchivo);
 			return ArchivoNoCreado;
 			}
 	}else{
+		pthread_mutex_unlock(&mutexSistemaDeArchivos);
 		log_info(LOGGER,"El archivo ya existe");
 		return ArchivoNoCreado;
 	}
+	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 }
 
 int borrarArchivoDeConsola(char *path){
@@ -1029,6 +1117,7 @@ int borrarArchivo(char *path){
 	string_append(&ubicacionDelArchivoDeMetadata,configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivoDeMetadata, "/Archivos/");
 	string_append(&ubicacionDelArchivoDeMetadata,path);
+	pthread_mutex_lock(&mutexSistemaDeArchivos);
 	if(existeElArchivo(ubicacionDelArchivoDeMetadata)){
 		tp_metadata metadata = recuperarMetaData(ubicacionDelArchivoDeMetadata);
 		log_info(LOGGER,"Tamaño del archivo a borrar:",metadata->tamanio);
@@ -1040,15 +1129,19 @@ int borrarArchivo(char *path){
 			}
 		if(remove(ubicacionDelArchivoDeMetadata)==0){
 			log_info(LOGGER,"Se elimino el archivo de metadata: %s",ubicacionDelArchivoDeMetadata);
+			pthread_mutex_unlock(&mutexSistemaDeArchivos);
 			return ArchivoBorrado;
 		}else{
 			log_error(LOGGER,"No se pudo eliminar el archivo de metadata: %s",ubicacionDelArchivoDeMetadata);
+			pthread_mutex_unlock(&mutexSistemaDeArchivos);
 			return ArchivoNoBorrado;
 			}
 	}else{
 		log_error(LOGGER,"El archivo %s de metadata no existe, no lo puedo borrar",ubicacionDelArchivoDeMetadata);
+		pthread_mutex_unlock(&mutexSistemaDeArchivos);
 		return ArchivoNoBorrado;
 		}
+	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 }
 
 int obtenerDatosDeConsola(char *path, int offset, int Size){
@@ -1088,6 +1181,7 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 	string_append(&ubicacionDelArchivoDeMetadata,configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivoDeMetadata, "/Archivos/");
 	string_append(&ubicacionDelArchivoDeMetadata,path);
+	pthread_mutex_lock(&mutexSistemaDeArchivos);
 	if(size>0){
 		if(offset>=0){
 			if(existeElArchivo(ubicacionDelArchivoDeMetadata)){
@@ -1104,8 +1198,6 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 				log_info(LOGGER,"El numero de bloque de inicio de lectura es: %d",numeroDeBloqueDeInicioDeLectura);
 				log_info(LOGGER,"El numero de bloque de fin de lectura es: %d",numeroDeBloqueDeFinDeLectura);
 
-
-
 				for(int i=numeroDeBloqueDeInicioDeLectura;i<=numeroDeBloqueDeFinDeLectura;i++){
 					int numeroDeBloque;
 					char *archivoDeBloque=string_new();
@@ -1119,6 +1211,7 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 						log_error(LOGGER,"No me coincide el numero de bloque qeu quiero leer con la cantidad total de bloques que tiene el archivo");
 						datosObtendios.resultado=ArchivoNoEncontrado;
 						free(datosObtendios.datos);
+						pthread_mutex_unlock(&mutexSistemaDeArchivos);
 						return datosObtendios;
 						}
 					log_info(LOGGER,"Abriendo el bloque %s para leer",archivoDeBloque);
@@ -1148,12 +1241,14 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 						log_error(LOGGER,"No se pudo abrir el archivo %s para leer",archivoDeBloque);
 						datosObtendios.resultado=ArchivoNoEncontrado;
 						free(datosObtendios.datos);
+						pthread_mutex_unlock(&mutexSistemaDeArchivos);
 						return datosObtendios;
 						}
 					}
 
 				log_info(LOGGER,"Se pudo recuperar todo el archivo %s devolviendo datos",ubicacionDelArchivoDeMetadata);
 				datosObtendios.resultado=DatosObtenidos;
+				pthread_mutex_unlock(&mutexSistemaDeArchivos);
 				return datosObtendios;
 			}else{
 				log_error(LOGGER,"No se pudo encontrar el archivo: %s",path);
@@ -1166,12 +1261,16 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 		}
 	datosObtendios.resultado=ArchivoNoEncontrado;
 	free(datosObtendios.datos);
+	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 	return datosObtendios;
 }
 
 
 int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer){
+	log_info(LOGGER,"Buffer: %s",Buffer);
+	pthread_mutex_lock(&mutexSistemaDeArchivos);
 	guardarDatos(path, offset, size, Buffer);
+	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 	return EXIT_SUCCESS;
 }
 
@@ -1180,7 +1279,9 @@ int guardarDatosDeDMA(int fileDescriptorActual){
 	tp_obtenerDatos datos = prot_recibir_FS_DMA_guardarDatos(fileDescriptorActual);
 	log_info(LOGGER,"Path:%s | Offset:%d | Size:%d | Buffer:%s",
 			datos->path,datos->offset,datos->size,datos->buffer);
+	pthread_mutex_lock(&mutexSistemaDeArchivos);
 	guardarDatos(datos->path,datos->offset,datos->size,datos->buffer);
+	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 	return EXIT_SUCCESS;
 }
 
@@ -1207,7 +1308,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 				int numeroDeBloqueDeFinDeEscritura=(offset+size)/configuracionDeMetadata.tamanioBloques;
 				int escribirEnPrimerArchivoDesde=offset%configuracionDeMetadata.tamanioBloques;
 				int bytesAEscribir;
-				int bytesEscritos=0;
+				int bytesEscritos=offset;
 				int cantidadTotalDeBloquesCreados=list_size(metadata->bloques);
 				int bloqueActual=numeroDeBloqueDeInicioDeEscritura;
 				log_info(LOGGER,"Voy a escribir en el primer bloque desde: %d",escribirEnPrimerArchivoDesde);
@@ -1237,6 +1338,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 							log_info(LOGGER,"Creando el archivo de bloque%s",archivoDeBloque);
 							FILE * archivoTemp = fopen(archivoDeBloque,"wb");
 							fclose(archivoTemp);
+							hayQueActualziarMetadataDelArchivo=true;
 						}else{
 							log_error(LOGGER,"No hay mas bloques libres");
 							return EXIT_FAILURE;///no hay mas bloques libres
@@ -1247,20 +1349,32 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 					FILE * archivo = fopen(archivoDeBloque,"rb+");
 					//fwrite recibe: puntero a los datos, el tamaño de los registros, numero de registros, archivo
 					if(archivo!=NULL){
-						if((i!=numeroDeBloqueDeFinDeEscritura)&&(i!=0)){
+						if((i!=numeroDeBloqueDeFinDeEscritura)&&(i!=numeroDeBloqueDeInicioDeEscritura)){
 							bytesAEscribir=configuracionDeMetadata.tamanioBloques;
 						}else{
-							if(i==0){
+							if(i==numeroDeBloqueDeInicioDeEscritura){
 								//Primer bloque
-								bytesAEscribir=configuracionDeMetadata.tamanioBloques-escribirEnPrimerArchivoDesde;
+								if(size>=configuracionDeMetadata.tamanioBloques){
+									bytesAEscribir=configuracionDeMetadata.tamanioBloques;
+								}else{
+									bytesAEscribir=(size%configuracionDeMetadata.tamanioBloques);
+									}
+								log_info(LOGGER,"Bytes a escribir del primer bloque: %d",bytesAEscribir);
 								fseek(archivo, escribirEnPrimerArchivoDesde, SEEK_SET);
+								log_info(LOGGER,"Posicionando el puntero del archivo en %d",escribirEnPrimerArchivoDesde);
 							}else{
 								//Ultimo bloque
 								bytesAEscribir=size-bytesEscritos;
 								}
 							}
-						log_info(LOGGER,"Escribiendo en el archivo %s",archivoDeBloque);
+						log_info(LOGGER,"Escribiendo en el archivo %s, desde %d, %d bytes",
+								archivoDeBloque,bytesEscritos,bytesAEscribir);
 						fwrite(&Buffer[bytesEscritos],sizeof(char),bytesAEscribir,archivo);
+						char * bufferParaLog = string_new();
+						for(int o=bytesEscritos;o<(bytesAEscribir+bytesEscritos);o++)
+							string_append_with_format(&bufferParaLog, "%c", Buffer[o]);
+						log_info(LOGGER,"Escribiendo en el FS: %s",bufferParaLog);
+						free(bufferParaLog);
 						bytesEscritos=bytesAEscribir+bytesEscritos;
 						bloqueActual++;
 						log_info(LOGGER,"Flusheando");
@@ -1274,6 +1388,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 				if(escribiHasta>metadata->tamanio){
 					//tengo que actualizar la cantidad de datos q tiene el archivo
 					metadata->tamanio=escribiHasta;
+					hayQueActualziarMetadataDelArchivo=true;
 					}
 				if(hayQueActualziarMetadataDelArchivo){
 					actualizarMetaData(ubicacionDelArchivoDeMetadata,metadata);
