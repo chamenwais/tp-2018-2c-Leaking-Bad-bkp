@@ -335,16 +335,64 @@ void cerrar_sockets(int server_FM9, int socket_cpu, int cliente_DAM) {
 	close(cliente_DAM);
 }
 
+bool es_el_proceso_actual(void * entrada){
+	return (*(t_tabla_segmentos*)entrada).pid==proceso_actualmente_cargandose;
+}
+
+bool tiene_el_proceso_actual_tabla_segmentos(void * tabla_de_segmentos){
+	return list_any_satisfy((t_list*)tabla_de_segmentos,&es_el_proceso_actual);
+}
+
+void agregar_entrada_tabla_segmentos(tp_cargarEnMemoria nombre_archivo, t_list* entradas_segmentos) {
+	t_entrada_tabla_segmentos* nueva_entrada_segmento;
+	//TODO actualizar con la base y segmento que resulta de agregar en la memoria fisica
+	nueva_entrada_segmento->base = 0;
+	nueva_entrada_segmento->limite = 0;
+	nueva_entrada_segmento->archivo = nombre_archivo->path;
+	list_add(entradas_segmentos, &nueva_entrada_segmento);
+}
+
+void crear_nueva_entrada_tabla_de_segmentos(tp_cargarEnMemoria parte_archivo) {
+	//Crea nueva entrada en la tabla de segmentos
+	//TODO validar que la lista de entradas de segmentos no este vacia
+	t_tabla_segmentos* tabla_segmentos = list_find(tablas_de_segmentos,
+			&es_el_proceso_actual);
+	agregar_entrada_tabla_segmentos(parte_archivo, tabla_segmentos->entradas);
+}
+
+int tiene_el_proceso_tabla_de_segmentos() {
+	return !list_is_empty(tablas_de_segmentos)
+			&& list_any_satisfy(tablas_de_segmentos,
+					&tiene_el_proceso_actual_tabla_segmentos);
+}
+
+void agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo) {
+	//Crea tabla de segmentos para el nuevo proceso y lo agrega a la lista
+	t_list* nuevas_entradas_segmentos = list_create();
+	agregar_entrada_tabla_segmentos(parte_archivo, nuevas_entradas_segmentos);
+	t_tabla_segmentos nueva_tabla_segmentos;
+	nueva_tabla_segmentos.pid = parte_archivo->pid;
+	nueva_tabla_segmentos.entradas = nuevas_entradas_segmentos;
+	list_add(tablas_de_segmentos, &nueva_tabla_segmentos);
+}
+
 void cargar_parte_archivo_en_segmento(int DAM_fd){
 	tp_cargarEnMemoria parte_archivo=prot_recibir_DMA_FM9_cargarEnMemoria(DAM_fd);
+	proceso_actualmente_cargandose=parte_archivo->pid;
+	if (tiene_el_proceso_tabla_de_segmentos()) {
+		crear_nueva_entrada_tabla_de_segmentos(parte_archivo);
+	} else {
+		agregar_nueva_tabla_segmentos_para_proceso(parte_archivo);
+	}
 
-	//TODO recibir pid y usar la funcion que corresponda al esquema
+	//TODO
 	//Ír cargando el buffer_archivo con lo que viene en la parte_archivo
-	//Al principio hay que hacer un malloc y luego ir agrandando el heap con realloc
+	//Al principio hay que hacer un malloc para el tamanio de la parte y luego ir agrandando el heap con realloc
+	//por ser el tamanio variable y no conocer la cantidad de antemano
 	//(tener cuidado de los comportamientos de realloc)
 	//si se termina la carga del archivo, liberar el buffer_archivo
 
-	//Buscar pid en la tabla de segmentos para ver si ya existía, si no crearle la tabla. Actualizarla con la info de lo que
+	//recibir pid y buscarlo en la tabla de segmentos para ver si ya existía, si no crearle la tabla. Actualizarla con la info de lo que
 	//se esta cargando
 
 	//Cuando ya se tenga todo el archivo en el buffer, hay que desmenuzarlo en líneas, cargarlo en el malloc gigante
@@ -383,6 +431,7 @@ void destruir_estructuras_esquema_segmentacion_paginada(){
 }
 
 void destruir_estructuras_esquema_paginacion_invertida(){
+	//TODO ver como borrar las listas de entradas de una tabla de segmentos
 	list_destroy(tablas_de_segmentos);
 }
 

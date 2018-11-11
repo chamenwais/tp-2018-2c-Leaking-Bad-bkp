@@ -78,18 +78,44 @@ void inicializar_funciones_variables_por_segmento();
 
 /*** Funciones y variables necesarias a intercambiar segun el esquema de memoria utilizado ***/
 void (*crear_estructuras_esquema[3])();
-t_list * tablas_de_segmentos;
-void crear_estructuras_esquema_segmentacion();
-void crear_estructuras_esquema_segmentacion_paginada();
-void crear_estructuras_esquema_paginacion_invertida();
-char * buffer_archivo;
 void (*cargar_parte_archivo[3])(int);
-void cargar_parte_archivo_en_segmento(int DAM_fd);
-void cargar_parte_archivo_en_segmento_paginado(int DAM_fd);
-void cargar_parte_archivo_en_pagina_invertida(int DAM_fd);
 void (*destruir_estructuras_esquema[3])();
+
+/*** Segmentacion pura ***/
+struct entrada_tabla_segmentos{
+	int base;
+	int limite;
+	char * archivo;
+};
+typedef struct entrada_tabla_segmentos t_entrada_tabla_segmentos;
+
+struct tabla_segmentos{
+	int pid;
+	t_list * entradas;
+};
+typedef struct tabla_segmentos t_tabla_segmentos;
+
+t_list * tablas_de_segmentos;
+bool es_el_proceso_actual(void * entrada);
+bool tiene_el_proceso_actual_tabla_segmentos(void * tabla_de_segmentos);
+void agregar_entrada_tabla_segmentos(tp_cargarEnMemoria nombre_archivo, t_list* entradas_segmentos);
+int tiene_el_proceso_tabla_de_segmentos();
+void agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo);
+void crear_estructuras_esquema_segmentacion();
+char * buffer_archivo;
+int proceso_actualmente_cargandose;
+void cargar_parte_archivo_en_segmento(int DAM_fd);
 void destruir_estructuras_esquema_segmentacion();
+
+/*** Segmentacion paginada ***/
+
+void crear_estructuras_esquema_segmentacion_paginada();
+void cargar_parte_archivo_en_segmento_paginado(int DAM_fd);
 void destruir_estructuras_esquema_segmentacion_paginada();
+
+/*** Paginacion invertida ***/
+void crear_estructuras_esquema_paginacion_invertida();
+void cargar_parte_archivo_en_pagina_invertida(int DAM_fd);
 void destruir_estructuras_esquema_paginacion_invertida();
 
 #endif /* FUNESMEMORY9_FUNESMEMORY9_H_ */

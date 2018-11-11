@@ -134,7 +134,7 @@ tp_abrirPath prot_recibir_CPU_DMA_abrirPath(int sock){
 	return recibido;
 }
 
-void prot_enviar_DMA_FM9_cargarEnMemoria(int pid, char* path, void* buffer, int offset, int size, int sock){
+void prot_enviar_DMA_FM9_cargarEnMemoria(int pid, char* path, char* buffer, int offset, int size, int sock){
 	//6 envia
 	int path_size = sizeof(&path);
 	int buffer_size = sizeof(&buffer);
