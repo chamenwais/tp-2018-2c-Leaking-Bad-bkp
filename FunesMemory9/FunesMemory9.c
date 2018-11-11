@@ -338,15 +338,20 @@ void cerrar_sockets(int server_FM9, int socket_cpu, int cliente_DAM) {
 void cargar_parte_archivo_en_segmento(int DAM_fd){
 	tp_cargarEnMemoria parte_archivo=prot_recibir_DMA_FM9_cargarEnMemoria(DAM_fd);
 
-	//int cantidad_de_lineas= TAMANIO_MEMORIA / TAMANIO_MAX_LINEA;
-
-	char * direccion_linea_3 = MEMORIA_FISICA + (3*TAMANIO_MAX_LINEA);
-
 	//TODO recibir pid y usar la funcion que corresponda al esquema
 	//Ír cargando el buffer_archivo con lo que viene en la parte_archivo
 	//Al principio hay que hacer un malloc y luego ir agrandando el heap con realloc
 	//(tener cuidado de los comportamientos de realloc)
 	//si se termina la carga del archivo, liberar el buffer_archivo
+
+	//Buscar pid en la tabla de segmentos para ver si ya existía, si no crearle la tabla. Actualizarla con la info de lo que
+	//se esta cargando
+
+	//Cuando ya se tenga todo el archivo en el buffer, hay que desmenuzarlo en líneas, cargarlo en el malloc gigante
+
+	//int cantidad_de_lineas= TAMANIO_MEMORIA / TAMANIO_MAX_LINEA;
+
+	char * direccion_linea_3 = MEMORIA_FISICA + (3*TAMANIO_MAX_LINEA);
 }
 
 void cargar_parte_archivo_en_segmento_paginado(int DAM_fd){
@@ -357,10 +362,40 @@ void cargar_parte_archivo_en_pagina_invertida(int DAM_fd){
 
 }
 
+void crear_estructuras_esquema_segmentacion(){
+	tablas_de_segmentos=list_create();
+}
+
+void crear_estructuras_esquema_segmentacion_paginada(){
+
+}
+
+void crear_estructuras_esquema_paginacion_invertida(){
+
+}
+
+void destruir_estructuras_esquema_segmentacion(){
+
+}
+
+void destruir_estructuras_esquema_segmentacion_paginada(){
+
+}
+
+void destruir_estructuras_esquema_paginacion_invertida(){
+	list_destroy(tablas_de_segmentos);
+}
+
 void inicializar_funciones_variables_por_segmento(){
+	crear_estructuras_esquema[SEGMENTACION_PURA]=&crear_estructuras_esquema_segmentacion;
+	crear_estructuras_esquema[SEGMENTACION_PAGINADA]=&crear_estructuras_esquema_segmentacion_paginada;
+	crear_estructuras_esquema[TABLA_PAGINAS_INVERTIDA]=&crear_estructuras_esquema_paginacion_invertida;
 	cargar_parte_archivo[SEGMENTACION_PURA]=&cargar_parte_archivo_en_segmento;
 	cargar_parte_archivo[SEGMENTACION_PAGINADA]=&cargar_parte_archivo_en_segmento_paginado;
 	cargar_parte_archivo[TABLA_PAGINAS_INVERTIDA]=&cargar_parte_archivo_en_pagina_invertida;
+	destruir_estructuras_esquema[SEGMENTACION_PURA]=&destruir_estructuras_esquema_segmentacion;
+	destruir_estructuras_esquema[SEGMENTACION_PAGINADA]=&destruir_estructuras_esquema_segmentacion_paginada;
+	destruir_estructuras_esquema[TABLA_PAGINAS_INVERTIDA]=&destruir_estructuras_esquema_paginacion_invertida;
 }
 
 int main(int argc, char **argv){
@@ -375,6 +410,8 @@ int main(int argc, char **argv){
 
 	inicializar_funciones_variables_por_segmento();
 
+	(crear_estructuras_esquema[MODO_EJECUCION])();
+
 	cliente_DAM = comunicarse_con_dam(server_FM9);
 
 	crear_hilo_conexion(cliente_DAM, escuchar_al_diego);
@@ -388,6 +425,8 @@ int main(int argc, char **argv){
 	}
 
 	cerrar_sockets(server_FM9, socket_cpu, cliente_DAM);
+
+	(destruir_estructuras_esquema[MODO_EJECUCION])();
 
 	finalizar_funesMemory9();
 }

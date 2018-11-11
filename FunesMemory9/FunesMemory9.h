@@ -21,13 +21,13 @@
 #include <commons/log.h>    // Para Logger
 #include <commons/string.h> // Para manejo de strings
 #include <commons/config.h> // Para Archivo de configuración
+#include <commons/collections/list.h>	// Para manejo de listas
 #include <signal.h>			// Para manejo de señales
 #include <lqvg/com.h>		// Para manejo de comunicaciones
 #include <lqvg/protocolo.h>		// Para el protocolo de comunicaciones
 
 /*** Defines ***/
 #define MAX_CLIENTES 20
-
 
 /*** Nombres claves de archivo de configuración ***/
 #define ARCH_CONFIG_MODO_EJECUCION "modo_ejecucion"
@@ -36,7 +36,6 @@
 #define ARCH_CONFIG_TAMANIO_MAX_LINEA "tamanio_max_linea"
 #define ARCH_CONFIG_TAMANIO_PAGINA "tamanio_pagina"
 
-
 /*** Modos de ejecucion ***/
 #define SEGMENTACION_PURA 0
 #define TABLA_PAGINAS_INVERTIDA 1
@@ -44,7 +43,6 @@
 
 /*** Enums ***/
 enum tipo_logueo { escribir, loguear, escribir_loguear, l_trace, l_debug, l_info, l_warning, l_error};
-
 
 /*** Variables ***/
 int MODO_EJECUCION;
@@ -56,7 +54,6 @@ t_log * logger;
 int total_hilos = 0;
 int GLOBAL_SEGUIR = 1;
 char * MEMORIA_FISICA;
-
 
 /*** Funciones ***/
 int iniciar_servidor(char * port);
@@ -79,11 +76,20 @@ void interpretar_mensaje_del_diego(enum MENSAJES mensaje, int DMA_socket);
 void cerrar_sockets(int server_FM9, int socket_cpu, int cliente_DAM);
 void inicializar_funciones_variables_por_segmento();
 
-/*** Funciones y variables necesarias a intercambiar segun el esquema de memoria ***/
+/*** Funciones y variables necesarias a intercambiar segun el esquema de memoria utilizado ***/
+void (*crear_estructuras_esquema[3])();
+t_list * tablas_de_segmentos;
+void crear_estructuras_esquema_segmentacion();
+void crear_estructuras_esquema_segmentacion_paginada();
+void crear_estructuras_esquema_paginacion_invertida();
 char * buffer_archivo;
+void (*cargar_parte_archivo[3])(int);
 void cargar_parte_archivo_en_segmento(int DAM_fd);
 void cargar_parte_archivo_en_segmento_paginado(int DAM_fd);
 void cargar_parte_archivo_en_pagina_invertida(int DAM_fd);
-void (*cargar_parte_archivo[3])(int);
+void (*destruir_estructuras_esquema[3])();
+void destruir_estructuras_esquema_segmentacion();
+void destruir_estructuras_esquema_segmentacion_paginada();
+void destruir_estructuras_esquema_paginacion_invertida();
 
 #endif /* FUNESMEMORY9_FUNESMEMORY9_H_ */
