@@ -95,17 +95,25 @@ struct tabla_segmentos{
 };
 typedef struct tabla_segmentos t_tabla_segmentos;
 
+struct hueco{
+	int base;
+	int limite;
+};
+typedef struct hueco t_hueco;
+
 t_list * tablas_de_segmentos;
-bool es_el_proceso_actual(void * entrada);
-bool tiene_el_proceso_actual_tabla_segmentos(void * tabla_de_segmentos);
+t_list * lista_de_huecos;
+void inicializar_lista_de_huecos();
+bool es_del_proceso_actual(void * tabla_segmentos);
 void agregar_entrada_tabla_segmentos(tp_cargarEnMemoria nombre_archivo, t_list* entradas_segmentos);
-int tiene_el_proceso_tabla_de_segmentos();
+int el_proceso_tiene_tabla_de_segmentos();
 void agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo);
 void crear_estructuras_esquema_segmentacion();
 char * buffer_archivo;
 int proceso_actualmente_cargandose;
 void cargar_parte_archivo_en_segmento(int DAM_fd);
 void destruir_estructuras_esquema_segmentacion();
+void eliminar_lista_de_entradas(void * tabla_segmentos);
 
 /*** Segmentacion paginada ***/
 
