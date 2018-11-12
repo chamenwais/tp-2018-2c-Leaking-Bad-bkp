@@ -335,35 +335,31 @@ void cerrar_sockets(int server_FM9, int socket_cpu, int cliente_DAM) {
 	close(cliente_DAM);
 }
 
-bool es_el_proceso_actual(void * entrada){
-	return (*(t_tabla_segmentos*)entrada).pid==proceso_actualmente_cargandose;
-}
-
-bool tiene_el_proceso_actual_tabla_segmentos(void * tabla_de_segmentos){
-	return list_any_satisfy((t_list*)tabla_de_segmentos,&es_el_proceso_actual);
+bool es_del_proceso_actual(void * tabla_segmentos){
+	return (*(t_tabla_segmentos*)tabla_segmentos).pid==proceso_actualmente_cargandose;
 }
 
 void agregar_entrada_tabla_segmentos(tp_cargarEnMemoria nombre_archivo, t_list* entradas_segmentos) {
-	t_entrada_tabla_segmentos* nueva_entrada_segmento;
+	t_entrada_tabla_segmentos nueva_entrada_segmento;
 	//TODO actualizar con la base y segmento que resulta de agregar en la memoria fisica
-	nueva_entrada_segmento->base = 0;
-	nueva_entrada_segmento->limite = 0;
-	nueva_entrada_segmento->archivo = nombre_archivo->path;
+	nueva_entrada_segmento.base = 0;
+	nueva_entrada_segmento.limite = 0;
+	nueva_entrada_segmento.archivo = nombre_archivo->path;
 	list_add(entradas_segmentos, &nueva_entrada_segmento);
 }
 
 void crear_nueva_entrada_tabla_de_segmentos(tp_cargarEnMemoria parte_archivo) {
 	//Crea nueva entrada en la tabla de segmentos
 	//TODO validar que la lista de entradas de segmentos no este vacia
-	t_tabla_segmentos* tabla_segmentos = list_find(tablas_de_segmentos,
-			&es_el_proceso_actual);
-	agregar_entrada_tabla_segmentos(parte_archivo, tabla_segmentos->entradas);
+	t_tabla_segmentos* p_tabla_segmentos = list_find(tablas_de_segmentos,
+			&es_del_proceso_actual);
+	agregar_entrada_tabla_segmentos(parte_archivo, (*p_tabla_segmentos).entradas);
 }
 
-int tiene_el_proceso_tabla_de_segmentos() {
+int el_proceso_tiene_tabla_de_segmentos() {
 	return !list_is_empty(tablas_de_segmentos)
 			&& list_any_satisfy(tablas_de_segmentos,
-					&tiene_el_proceso_actual_tabla_segmentos);
+					&es_del_proceso_actual);
 }
 
 void agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo) {
@@ -379,7 +375,9 @@ void agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo
 void cargar_parte_archivo_en_segmento(int DAM_fd){
 	tp_cargarEnMemoria parte_archivo=prot_recibir_DMA_FM9_cargarEnMemoria(DAM_fd);
 	proceso_actualmente_cargandose=parte_archivo->pid;
-	if (tiene_el_proceso_tabla_de_segmentos()) {
+	//TODO hay que mantener una lista con los segmentos asignados en memoria y huecos libres
+	//de ahí saldra la base y límite
+	if (el_proceso_tiene_tabla_de_segmentos()) {
 		crear_nueva_entrada_tabla_de_segmentos(parte_archivo);
 	} else {
 		agregar_nueva_tabla_segmentos_para_proceso(parte_archivo);
@@ -396,10 +394,7 @@ void cargar_parte_archivo_en_segmento(int DAM_fd){
 	//se esta cargando
 
 	//Cuando ya se tenga todo el archivo en el buffer, hay que desmenuzarlo en líneas, cargarlo en el malloc gigante
-
-	//int cantidad_de_lineas= TAMANIO_MEMORIA / TAMANIO_MAX_LINEA;
-
-	char * direccion_linea_3 = MEMORIA_FISICA + (3*TAMANIO_MAX_LINEA);
+	//con algo como: char * direccion_linea_3 = MEMORIA_FISICA + (3*TAMANIO_MAX_LINEA);
 }
 
 void cargar_parte_archivo_en_segmento_paginado(int DAM_fd){
@@ -410,8 +405,17 @@ void cargar_parte_archivo_en_pagina_invertida(int DAM_fd){
 
 }
 
+void inicializar_lista_de_huecos() {
+	lista_de_huecos = list_create();
+	t_hueco hueco_inicial;
+	hueco_inicial.base=0;
+	hueco_inicial.limite=TAMANIO_MEMORIA / TAMANIO_MAX_LINEA;
+	list_add(lista_de_huecos,&hueco_inicial);
+}
+
 void crear_estructuras_esquema_segmentacion(){
 	tablas_de_segmentos=list_create();
+	inicializar_lista_de_huecos();
 }
 
 void crear_estructuras_esquema_segmentacion_paginada(){
@@ -430,9 +434,13 @@ void destruir_estructuras_esquema_segmentacion_paginada(){
 
 }
 
+void eliminar_lista_de_entradas(void * tabla_segmentos){
+	list_destroy((*(t_tabla_segmentos*)tabla_segmentos).entradas);
+}
+
 void destruir_estructuras_esquema_paginacion_invertida(){
-	//TODO ver como borrar las listas de entradas de una tabla de segmentos
-	list_destroy(tablas_de_segmentos);
+	list_destroy_and_destroy_elements(tablas_de_segmentos,&eliminar_lista_de_entradas);
+	list_destroy(lista_de_huecos);
 }
 
 void inicializar_funciones_variables_por_segmento(){
