@@ -231,6 +231,30 @@ void iniciar_funes_memory_9(char * path){
 	configurar_signals();
 }
 
+t_list* list_filter_comparing(t_list* self, bool(*condition_equal_to)(void*, int), int to_compare){
+	t_list* filtered = list_create();
+
+	void _add_if_apply(void* element) {
+		if (condition_equal_to(element, to_compare)) {
+			list_add(filtered, element);
+		}
+	}
+
+	list_iterate(self, _add_if_apply);
+	return filtered;
+}
+
+int list_count_satisfying_comparing(t_list* self, bool(*condition_equal_to)(void*, int), int to_compare){
+	t_list *satisfying = list_filter_comparing(self, condition_equal_to, to_compare);
+	int result = satisfying->elements_count;
+	list_destroy(satisfying);
+	return result;
+}
+
+bool list_any_satisfy_comparing(t_list* self, bool(*condition_equal_to)(void*, int), int to_compare){
+	return list_count_satisfying_comparing(self, condition_equal_to, to_compare) > 0;
+}
+
 int atender_nuevo_cpu(int serv_socket){
 	struct sockaddr_in client_addr;
 
@@ -335,8 +359,12 @@ void cerrar_sockets(int server_FM9, int socket_cpu, int cliente_DAM) {
 	close(cliente_DAM);
 }
 
-bool es_del_proceso_actual(void * tabla_segmentos){
-	return (*(t_tabla_segmentos*)tabla_segmentos).pid==proceso_actualmente_cargandose;
+bool el_proceso_tiene_archivo_cargandose(void * archivo_cargandose, int pid){
+	return (*(t_archivo_cargandose*)archivo_cargandose).pid==pid;
+}
+
+bool es_un_proceso_conocido(void * tabla_segmentos){
+	return list_any_satisfy_comparing(archivos_cargandose, &el_proceso_tiene_archivo_cargandose, (*(t_tabla_segmentos*)tabla_segmentos).pid);
 }
 
 void agregar_entrada_tabla_segmentos(tp_cargarEnMemoria nombre_archivo, t_list* entradas_segmentos) {
@@ -352,14 +380,14 @@ void crear_nueva_entrada_tabla_de_segmentos(tp_cargarEnMemoria parte_archivo) {
 	//Crea nueva entrada en la tabla de segmentos
 	//TODO validar que la lista de entradas de segmentos no este vacia
 	t_tabla_segmentos* p_tabla_segmentos = list_find(tablas_de_segmentos,
-			&es_del_proceso_actual);
+			&es_un_proceso_conocido);
 	agregar_entrada_tabla_segmentos(parte_archivo, (*p_tabla_segmentos).entradas);
 }
 
 int el_proceso_tiene_tabla_de_segmentos() {
 	return !list_is_empty(tablas_de_segmentos)
 			&& list_any_satisfy(tablas_de_segmentos,
-					&es_del_proceso_actual);
+					&es_un_proceso_conocido);
 }
 
 void agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo) {
@@ -372,11 +400,34 @@ void agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo
 	list_add(tablas_de_segmentos, &nueva_tabla_segmentos);
 }
 
+void separar_en_lineas(char * trozo_de_archivo, char ** buffer_de_lineas){
+	double trozo_dividido_linea=sizeof(&trozo_de_archivo)/TAMANIO_MAX_LINEA;
+	if(trozo_dividido_linea>1){
+		//TODO ir copiando desde el trozo de archivo al buffer de lineas de a tamanios de linea con memcpy
+		//hasta que te quede un pedazo menor al tamanio de una linea, completar con $
+	} else if (trozo_dividido_linea<1){
+		//TODO como el tamanio del pedazo menor al tamanio de una linea, completar con $
+	} else {
+		//TODO simplemente copiar el pedazo de archivo al buffer porque es igual a una linea
+	}
+}
+
 void cargar_parte_archivo_en_segmento(int DAM_fd){
 	tp_cargarEnMemoria parte_archivo=prot_recibir_DMA_FM9_cargarEnMemoria(DAM_fd);
-	proceso_actualmente_cargandose=parte_archivo->pid;
+	t_archivo_cargandose archivo_de_proceso_cargandose;
+	archivo_de_proceso_cargandose.pid=parte_archivo->pid;
+	separar_en_lineas(parte_archivo->buffer, &(archivo_de_proceso_cargandose.buffer_archivo));
+	//TODO DAM va a mandar un pedazo de archivo= true
+	while(/* TODO DAM va a mandar un pedazo de archivo y todavia le falta mandar*/){
+		//TODO recibo el pedazo y cargo el buffer
+		//TODO pregunto si DAM mando otro pedazo de archivo
+	}
+	//TODO si DAM mando a cargar un pedazo de archivo actualizamos la tabla de segmentos, si no que fluya
+
 	//TODO hay que mantener una lista con los segmentos asignados en memoria y huecos libres
 	//de ahí saldra la base y límite
+
+	//Hacer esto una vez que se cargue el segmento en un hueco
 	if (el_proceso_tiene_tabla_de_segmentos()) {
 		crear_nueva_entrada_tabla_de_segmentos(parte_archivo);
 	} else {
@@ -416,6 +467,7 @@ void inicializar_lista_de_huecos() {
 void crear_estructuras_esquema_segmentacion(){
 	tablas_de_segmentos=list_create();
 	inicializar_lista_de_huecos();
+	archivos_cargandose=list_create();
 }
 
 void crear_estructuras_esquema_segmentacion_paginada(){
@@ -439,8 +491,15 @@ void eliminar_lista_de_entradas(void * tabla_segmentos){
 }
 
 void destruir_estructuras_esquema_paginacion_invertida(){
-	list_destroy_and_destroy_elements(tablas_de_segmentos,&eliminar_lista_de_entradas);
-	list_destroy(lista_de_huecos);
+	if(tablas_de_segmentos!=NULL){
+		list_destroy_and_destroy_elements(tablas_de_segmentos,&eliminar_lista_de_entradas);
+	}
+	if(lista_de_huecos!=NULL){
+		list_destroy(lista_de_huecos);
+	}
+	if(archivos_cargandose!=NULL){
+		list_destroy(archivos_cargandose);
+	}
 }
 
 void inicializar_funciones_variables_por_segmento(){
