@@ -75,6 +75,9 @@ int atender_nuevo_cpu(int serv_socket);
 void interpretar_mensaje_del_diego(enum MENSAJES mensaje, int DMA_socket);
 void cerrar_sockets(int server_FM9, int socket_cpu, int cliente_DAM);
 void inicializar_funciones_variables_por_segmento();
+int list_count_satisfying_comparing(t_list* self, bool(*condition_equal_to)(void*, int), int to_compare);
+bool list_any_satisfy_comparing(t_list* self, bool(*condition_equal_to)(void*, int), int to_compare);
+t_list* list_filter_comparing(t_list* self, bool(*condition_equal_to)(void*, int), int to_compare);
 
 /*** Funciones y variables necesarias a intercambiar segun el esquema de memoria utilizado ***/
 void (*crear_estructuras_esquema[3])();
@@ -101,16 +104,21 @@ struct hueco{
 };
 typedef struct hueco t_hueco;
 
-t_list * tablas_de_segmentos;
-t_list * lista_de_huecos;
+struct archivo_cargandose{
+	int pid;
+	char * buffer_archivo;
+};
+typedef struct archivo_cargandose t_archivo_cargandose;
+
+t_list * tablas_de_segmentos=NULL;
+t_list * lista_de_huecos=NULL;
+t_list * archivos_cargandose=NULL;
 void inicializar_lista_de_huecos();
-bool es_del_proceso_actual(void * tabla_segmentos);
+bool es_un_proceso_conocido(void * tabla_segmentos);
 void agregar_entrada_tabla_segmentos(tp_cargarEnMemoria nombre_archivo, t_list* entradas_segmentos);
 int el_proceso_tiene_tabla_de_segmentos();
 void agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo);
 void crear_estructuras_esquema_segmentacion();
-char * buffer_archivo;
-int proceso_actualmente_cargandose;
 void cargar_parte_archivo_en_segmento(int DAM_fd);
 void destruir_estructuras_esquema_segmentacion();
 void eliminar_lista_de_entradas(void * tabla_segmentos);

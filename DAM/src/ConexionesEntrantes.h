@@ -48,9 +48,10 @@ int * adaptar_sockets_para_hilo(int CPU_Fd, int fm9_Fd, int Safa_fd, int filesys
 t_cabecera validar_archivo(int socket_mdj, tp_abrirPath mensaje_cpu);
 bool validar_fragmento_archivo(tp_datosObtenidosDeProtocolo fragmento_archivo, int socket_safa, tp_abrirPath mensaje_cpu);
 void informar_carga_en_memoria_erronea(int socket_safa, tp_abrirPath mensaje_cpu);
-int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, char* parte_archivo);
+int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, tp_datosObtenidosDeProtocolo parte_archivo);
 void loguear_no_obtencion_de_fragmento_archivo();
 tp_datosObtenidosDeProtocolo pedir_datos_a_Mdj(char * ruta, int offset_Mdj, int socket_mdj);
 void tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath path_y_pid, int socket_safa);
 void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath path_y_pid, int socket_mdj, int socket_fm9, int socket_safa);
+bool todavia_no_se_recibio_todo_el_archivo(int tamanio_parcial_archivo, tp_datosObtenidosDeProtocolo parte_archivo);
 #endif /* CONEXIONESENTRANTES_H_ */

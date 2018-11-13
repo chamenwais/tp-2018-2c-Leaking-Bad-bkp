@@ -221,10 +221,11 @@ tp_datosObtenidosDeProtocolo pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int s
 	return datos;
 }
 
-int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, char* parte_archivo) {
+int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, tp_datosObtenidosDeProtocolo parte_archivo) {
 	pthread_mutex_lock(&MX_MEMORIA);
 	enviarCabecera(socket_fm9, CargarParteEnMemoria, sizeof(CargarParteEnMemoria));
-	prot_enviar_DMA_FM9_cargarEnMemoria(info_cpu->pid, info_cpu->path, parte_archivo, offset_Fm9, transfer_size, socket_fm9);
+	prot_enviar_DMA_FM9_cargarEnMemoria(info_cpu->pid, info_cpu->path, parte_archivo->buffer
+			, offset_Fm9, transfer_size, parte_archivo->size, socket_fm9);
 	free(parte_archivo);
 	int direccion_logica = prot_recibir_FM9_DMA_cargaEnMemoria(socket_fm9);
 	pthread_mutex_unlock(&MX_MEMORIA);
@@ -248,6 +249,10 @@ void loguear_no_obtencion_de_fragmento_archivo() {
 	logger_DAM(escribir_loguear, l_error, "No se obtuvo el fragmento de archivo desde el FS");
 }
 
+bool todavia_no_se_recibio_todo_el_archivo(int tamanio_parcial_archivo, tp_datosObtenidosDeProtocolo parte_archivo) {
+	return tamanio_parcial_archivo <= parte_archivo->tamanio_total_archivo;
+}
+
 void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath info_cpu, int socket_mdj, int socket_fm9, int socket_safa){
 	if(ElArchivoExiste==(respuesta_validez_archivo.tipoDeMensaje)){
 		int offset_Mdj=0;
@@ -260,10 +265,10 @@ void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath i
 		}
 		int tamanio_parcial_archivo=0;
 		int direccion_de_memoria;
-		while(tamanio_parcial_archivo <= parte_archivo->tamanio_total_archivo){
+		while (todavia_no_se_recibio_todo_el_archivo(tamanio_parcial_archivo, parte_archivo)) {
 			logger_DAM(escribir_loguear, l_trace,"Se recibio un fragmento de archivo de %d bytes",parte_archivo->size);
 			offset_Mdj+=parte_archivo->size;
-			direccion_de_memoria = cargar_datos_en_Fm9(socket_fm9, info_cpu, offset_Fm9, parte_archivo->buffer);
+			direccion_de_memoria = cargar_datos_en_Fm9(socket_fm9, info_cpu, offset_Fm9, parte_archivo);
 			if(direccion_de_memoria==-1){
 				informar_carga_en_memoria_erronea(socket_safa, info_cpu);
 				return;
