@@ -119,10 +119,23 @@ int liberarMemoria(){
 	return EXIT_SUCCESS;
 }
 
- void *funcionHiloComDMA(void *arg){//TODO: ver que hace
+ void *funcionHiloComDMA(void *arg){//TODO:
 		//Trabajar con el Diegote eeeehhhhhh
-		log_info(LOG_SAFA,"Handshake exitoso con el Diego");
-		//t_cabecera cabecera = recibirCabecera(fd_DMA);
+	log_info(LOG_SAFA,"Handshake exitoso con el Diego");
+	log_info(LOG_SAFA,"Espero cabecera del DMA");
+	t_cabecera cabecera = recibirCabecera(fd_DMA);
+	switch(cabecera){
+		case AbrirPathNoFinalizado:
+			log_info(LOG_SAFA,"Recibi cabecera: AbrirPathNoFinalizado");
+			tp_datosEnMemoria datos_recibidos = prot_recibir_DMA_SAFA_datosEnMemoria(fd_DMA);
+			//ver que es lo que me manda DAM
+			break;
+		case AbrirPathFinalizadoOk:
+			log_info(LOG_SAFA,"Recibi cabecera: AbrirPathFinalizadoOk");
+			tp_datosEnMemoria datos_recibidos = prot_recibir_DMA_SAFA_datosEnMemoria(fd_DMA);
+			//ver que es lo que me manda DAM
+			break;
+	}
 	resultadoComElDiego=EXIT_SUCCESS;
 	return resultadoComElDiego;
 }

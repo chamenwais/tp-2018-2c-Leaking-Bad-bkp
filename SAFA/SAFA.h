@@ -20,7 +20,9 @@
 #include "funcionesSafa.h"
 //#include "lqvg/com.h"
 //#include "//usr/include/lqvg/com.h"
-#include "../COM/lqvg/com.h"
+//#include "../COM/lqvg/com.h"
+#include <lqvg/com.h>
+#include <lqvg/protocolo.h>
 #include <commons/collections/list.h>
 
 extern t_log* LOG_SAFA;
