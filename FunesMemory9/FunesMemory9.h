@@ -107,6 +107,7 @@ typedef struct hueco t_hueco;
 struct archivo_cargandose{
 	int pid;
 	char * buffer_archivo;
+	int recibido_actualmente;
 };
 typedef struct archivo_cargandose t_archivo_cargandose;
 
@@ -122,6 +123,14 @@ void crear_estructuras_esquema_segmentacion();
 void cargar_parte_archivo_en_segmento(int DAM_fd);
 void destruir_estructuras_esquema_segmentacion();
 void eliminar_lista_de_entradas(void * tabla_segmentos);
+t_archivo_cargandose* cargar_buffer_archivo(tp_cargarEnMemoria parte_archivo);
+void informar_espacio_insuficiente(int DAM_fd);
+t_hueco* tomar_hueco_con_limite_mas_grande();
+size_t archivo_mas_grande_que_hueco(const t_archivo_cargandose* archivo_de_proceso_cargandose,const t_hueco* hueco);
+size_t archivo_igual_al_hueco(const t_archivo_cargandose* archivo_cargado,const t_hueco* hueco_usado);
+t_hueco* tomar_hueco();
+void actualizar_info_tabla_de_huecos(size_t tamanio_archivo_en_memoria,t_archivo_cargandose* archivo_de_proceso_cargandose, t_hueco* hueco);
+char * separar_en_lineas(char * buffer_archivo);
 
 /*** Segmentacion paginada ***/
 

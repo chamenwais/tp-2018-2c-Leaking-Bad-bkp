@@ -368,20 +368,22 @@ bool es_un_proceso_conocido(void * tabla_segmentos){
 }
 
 void agregar_entrada_tabla_segmentos(tp_cargarEnMemoria nombre_archivo, t_list* entradas_segmentos) {
-	t_entrada_tabla_segmentos nueva_entrada_segmento;
-	//TODO actualizar con la base y segmento que resulta de agregar en la memoria fisica
-	nueva_entrada_segmento.base = 0;
-	nueva_entrada_segmento.limite = 0;
-	nueva_entrada_segmento.archivo = nombre_archivo->path;
-	list_add(entradas_segmentos, &nueva_entrada_segmento);
+	if(entradas_segmentos!=NULL){
+		t_entrada_tabla_segmentos nueva_entrada_segmento;
+		//TODO actualizar con la base y segmento que resulta de agregar en la memoria fisica
+		nueva_entrada_segmento.base = 0;
+		nueva_entrada_segmento.limite = 0;
+		nueva_entrada_segmento.archivo = nombre_archivo->path;
+		list_add(entradas_segmentos, &nueva_entrada_segmento);
+	}
 }
 
 void crear_nueva_entrada_tabla_de_segmentos(tp_cargarEnMemoria parte_archivo) {
 	//Crea nueva entrada en la tabla de segmentos
-	//TODO validar que la lista de entradas de segmentos no este vacia
-	t_tabla_segmentos* p_tabla_segmentos = list_find(tablas_de_segmentos,
-			&es_un_proceso_conocido);
-	agregar_entrada_tabla_segmentos(parte_archivo, (*p_tabla_segmentos).entradas);
+	t_tabla_segmentos* p_tabla_segmentos = list_find(tablas_de_segmentos, &es_un_proceso_conocido);
+	if(p_tabla_segmentos!=NULL){
+		agregar_entrada_tabla_segmentos(parte_archivo, (*p_tabla_segmentos).entradas);
+	}
 }
 
 int el_proceso_tiene_tabla_de_segmentos() {
@@ -400,52 +402,137 @@ void agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo
 	list_add(tablas_de_segmentos, &nueva_tabla_segmentos);
 }
 
-void separar_en_lineas(char * trozo_de_archivo, char ** buffer_de_lineas){
-	double trozo_dividido_linea=sizeof(&trozo_de_archivo)/TAMANIO_MAX_LINEA;
-	if(trozo_dividido_linea>1){
-		//TODO ir copiando desde el trozo de archivo al buffer de lineas de a tamanios de linea con memcpy
-		//hasta que te quede un pedazo menor al tamanio de una linea, completar con $
-	} else if (trozo_dividido_linea<1){
-		//TODO como el tamanio del pedazo menor al tamanio de una linea, completar con $
+char * separar_en_lineas(char * buffer_archivo){
+	char * archivo_separado_en_lineas=NULL;
+	//TODO ir sacando lineas desde el buffer del archivo.
+	//Por cada linea, reservar memoria, y copiar la linea al buffer del archivo separado en lineas de a tamanios de linea con memcpy
+	//hasta que te quede un pedazo menor al tamanio de una linea, el cual tambien se debe copiar.
+	free(buffer_archivo);
+	return archivo_separado_en_lineas;
+}
+
+bool todavia_falta_mandar_pedazo_de_archivo(tp_cargarEnMemoria pedazo_actual, t_archivo_cargandose * archivo_cargandose){
+	return archivo_cargandose->recibido_actualmente<pedazo_actual->file_size;
+}
+
+bool el_archivo_ya_se_estaba_cargando(tp_cargarEnMemoria process_id) {
+	return list_any_satisfy_comparing(archivos_cargandose,
+			&el_proceso_tiene_archivo_cargandose, process_id->pid);
+}
+
+void obtener_archivo_en_curso_de_carga(tp_cargarEnMemoria parte_archivo,
+		t_archivo_cargandose** archivo_de_proceso_cargandose) {
+	t_list* archivo_cargandose_filtrado = list_filter_comparing(
+			archivos_cargandose, &el_proceso_tiene_archivo_cargandose,
+			parte_archivo->pid);
+	*archivo_de_proceso_cargandose = list_get(archivo_cargandose_filtrado, 0);
+}
+
+t_archivo_cargandose * cargar_buffer_archivo(tp_cargarEnMemoria parte_archivo) {
+	t_archivo_cargandose * archivo_de_proceso_cargandose;
+	size_t tamanio_parte_archivo = sizeof(&(parte_archivo->buffer));
+	if (el_archivo_ya_se_estaba_cargando(parte_archivo)) {
+		//El pedazo de archivo es conocido, hay que obtener la info que ya veníamos cargando
+		obtener_archivo_en_curso_de_carga(parte_archivo, &archivo_de_proceso_cargandose);
+		//TODO agregar algunas validaciones para no tener efectos adversos en el realloc
+		size_t tamanio_archivo_cargandose= sizeof(&(archivo_de_proceso_cargandose->buffer_archivo));
+		archivo_de_proceso_cargandose->buffer_archivo=realloc(archivo_de_proceso_cargandose->buffer_archivo,
+				tamanio_archivo_cargandose+tamanio_parte_archivo);
 	} else {
-		//TODO simplemente copiar el pedazo de archivo al buffer porque es igual a una linea
+		//El pedazo de archivo es nuevo, hay que crear el structure del mismo
+		archivo_de_proceso_cargandose->pid = parte_archivo->pid;
+		archivo_de_proceso_cargandose->recibido_actualmente=0;
+		archivo_de_proceso_cargandose->buffer_archivo=malloc(tamanio_parte_archivo);
+	}
+	archivo_de_proceso_cargandose->recibido_actualmente +=tamanio_parte_archivo;
+	memcpy(archivo_de_proceso_cargandose->buffer_archivo, parte_archivo->buffer,tamanio_parte_archivo);
+	free(parte_archivo->buffer);
+	return archivo_de_proceso_cargandose;
+}
+
+void informar_espacio_insuficiente(int DAM_fd) {
+	logger_funesMemory9(escribir_loguear, l_warning,
+			"\nEspacio insuficiente para albergar el archivo. Error 1002\n");
+	prot_enviar_FM9_DMA_cargaEnMemoria(-1, DAM_fd);
+}
+
+bool colocar_primero_hueco_de_limite_mayor(void * primer_hueco, void * segundo_hueco){
+	return (*(t_hueco*)primer_hueco).limite>(*(t_hueco*)segundo_hueco).limite;
+}
+
+t_hueco *  tomar_hueco_con_limite_mas_grande(){
+	list_sort(lista_de_huecos, &colocar_primero_hueco_de_limite_mayor);
+	return list_get(lista_de_huecos,0);
+}
+
+size_t archivo_mas_grande_que_hueco(
+		const t_archivo_cargandose* archivo_de_proceso_cargandose,
+		const t_hueco* hueco) {
+	return sizeof(&(archivo_de_proceso_cargandose->buffer_archivo))
+			> hueco->limite;
+}
+
+size_t archivo_igual_al_hueco(
+		const t_archivo_cargandose* archivo_cargado,
+		const t_hueco* hueco_usado) {
+	return sizeof(&(archivo_cargado->buffer_archivo))
+			== hueco_usado->limite;
+}
+
+t_hueco * tomar_hueco() {
+	t_hueco * hueco;
+	if (list_size(lista_de_huecos) == 1) {
+		hueco = list_get(lista_de_huecos, 0);
+	} else {
+		hueco = tomar_hueco_con_limite_mas_grande();
+	}
+	return hueco;
+}
+
+void actualizar_info_tabla_de_huecos(size_t tamanio_archivo_en_memoria,
+		t_archivo_cargandose* archivo_de_proceso_cargandose, t_hueco* hueco) {
+	if (archivo_igual_al_hueco(archivo_de_proceso_cargandose, hueco)) {
+		list_remove(lista_de_huecos, 0);
+	} else {
+		hueco->base += tamanio_archivo_en_memoria;
+		hueco->limite -= tamanio_archivo_en_memoria;
 	}
 }
 
 void cargar_parte_archivo_en_segmento(int DAM_fd){
 	tp_cargarEnMemoria parte_archivo=prot_recibir_DMA_FM9_cargarEnMemoria(DAM_fd);
-	t_archivo_cargandose archivo_de_proceso_cargandose;
-	archivo_de_proceso_cargandose.pid=parte_archivo->pid;
-	separar_en_lineas(parte_archivo->buffer, &(archivo_de_proceso_cargandose.buffer_archivo));
-	//TODO DAM va a mandar un pedazo de archivo= true
-	while(/* TODO DAM va a mandar un pedazo de archivo y todavia le falta mandar*/){
-		//TODO recibo el pedazo y cargo el buffer
-		//TODO pregunto si DAM mando otro pedazo de archivo
+	t_archivo_cargandose * archivo_de_proceso_cargandose = cargar_buffer_archivo(parte_archivo);
+	//TODO agregar validaciones de posibles errores
+	if(todavia_falta_mandar_pedazo_de_archivo(parte_archivo, archivo_de_proceso_cargandose)){
+		logger_funesMemory9(escribir_loguear, l_trace,"\nSe acumulo una parte del archivo en un buffer\n");
+		return;
 	}
-	//TODO si DAM mando a cargar un pedazo de archivo actualizamos la tabla de segmentos, si no que fluya
+	logger_funesMemory9(escribir_loguear, l_trace,"\nYa se obtuvo el archivo y se intentara agregar el segmento en la memoria principal\n");
+	if(lista_de_huecos==NULL||list_is_empty(lista_de_huecos)){
+		informar_espacio_insuficiente(DAM_fd);
+		return;
+	}
+	t_hueco * hueco = tomar_hueco();
+	if (archivo_mas_grande_que_hueco(archivo_de_proceso_cargandose, hueco)) {
+		informar_espacio_insuficiente(DAM_fd);
+		return;
+	}
+	char * archivo_separado_en_lineas=separar_en_lineas(archivo_de_proceso_cargandose->buffer_archivo);
+	size_t tamanio_archivo_en_memoria =
+			sizeof(&archivo_separado_en_lineas);
+	memcpy(MEMORIA_FISICA + hueco->base,
+			archivo_separado_en_lineas,
+			tamanio_archivo_en_memoria);
 
-	//TODO hay que mantener una lista con los segmentos asignados en memoria y huecos libres
-	//de ahí saldra la base y límite
+	actualizar_info_tabla_de_huecos(tamanio_archivo_en_memoria,
+			archivo_de_proceso_cargandose, hueco);
 
-	//Hacer esto una vez que se cargue el segmento en un hueco
 	if (el_proceso_tiene_tabla_de_segmentos()) {
 		crear_nueva_entrada_tabla_de_segmentos(parte_archivo);
 	} else {
 		agregar_nueva_tabla_segmentos_para_proceso(parte_archivo);
 	}
 
-	//TODO
-	//Ír cargando el buffer_archivo con lo que viene en la parte_archivo
-	//Al principio hay que hacer un malloc para el tamanio de la parte y luego ir agrandando el heap con realloc
-	//por ser el tamanio variable y no conocer la cantidad de antemano
-	//(tener cuidado de los comportamientos de realloc)
-	//si se termina la carga del archivo, liberar el buffer_archivo
-
-	//recibir pid y buscarlo en la tabla de segmentos para ver si ya existía, si no crearle la tabla. Actualizarla con la info de lo que
-	//se esta cargando
-
-	//Cuando ya se tenga todo el archivo en el buffer, hay que desmenuzarlo en líneas, cargarlo en el malloc gigante
-	//con algo como: char * direccion_linea_3 = MEMORIA_FISICA + (3*TAMANIO_MAX_LINEA);
 }
 
 void cargar_parte_archivo_en_segmento_paginado(int DAM_fd){
@@ -460,7 +547,7 @@ void inicializar_lista_de_huecos() {
 	lista_de_huecos = list_create();
 	t_hueco hueco_inicial;
 	hueco_inicial.base=0;
-	hueco_inicial.limite=TAMANIO_MEMORIA / TAMANIO_MAX_LINEA;
+	hueco_inicial.limite=(int)TAMANIO_MEMORIA / TAMANIO_MAX_LINEA;
 	list_add(lista_de_huecos,&hueco_inicial);
 }
 
