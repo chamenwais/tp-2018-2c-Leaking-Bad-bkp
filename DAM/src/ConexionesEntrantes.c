@@ -215,6 +215,7 @@ void tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath
 
 tp_datosObtenidosDeProtocolo pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int socket_mdj) {
 	pthread_mutex_lock(&MX_FS);
+	enviarCabecera(socket_mdj, ObtenerDatos, sizeof(ObtenerDatos));
 	prot_enviar_DMA_FS_obtenerDatos(ruta, offset_Mdj, transfer_size, socket_mdj);
 	tp_datosObtenidosDeProtocolo datos = prot_recibir_FS_DMA_datosObtenidos(socket_mdj);
 	pthread_mutex_unlock(&MX_FS);
