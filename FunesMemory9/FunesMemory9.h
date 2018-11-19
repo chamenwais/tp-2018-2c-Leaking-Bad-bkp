@@ -130,7 +130,7 @@ size_t archivo_mas_grande_que_hueco(const t_archivo_cargandose* archivo_de_proce
 size_t archivo_igual_al_hueco(const t_archivo_cargandose* archivo_cargado,const t_hueco* hueco_usado);
 t_hueco* tomar_hueco();
 void actualizar_info_tabla_de_huecos(size_t tamanio_archivo_en_memoria,t_archivo_cargandose* archivo_de_proceso_cargandose, t_hueco* hueco);
-char * separar_en_lineas(char * buffer_archivo);
+char * separar_en_lineas(t_archivo_cargandose * archivo_cargado);
 
 /*** Segmentacion paginada ***/
 
