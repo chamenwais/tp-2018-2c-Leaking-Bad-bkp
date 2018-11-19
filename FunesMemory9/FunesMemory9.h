@@ -78,6 +78,7 @@ void inicializar_funciones_variables_por_segmento();
 int list_count_satisfying_comparing(t_list* self, bool(*condition_equal_to)(void*, int), int to_compare);
 bool list_any_satisfy_comparing(t_list* self, bool(*condition_equal_to)(void*, int), int to_compare);
 t_list* list_filter_comparing(t_list* self, bool(*condition_equal_to)(void*, int), int to_compare);
+void informar_espacio_insuficiente(int DAM_fd);
 
 /*** Funciones y variables necesarias a intercambiar segun el esquema de memoria utilizado ***/
 void (*crear_estructuras_esquema[3])();
@@ -116,21 +117,24 @@ t_list * lista_de_huecos=NULL;
 t_list * archivos_cargandose=NULL;
 void inicializar_lista_de_huecos();
 bool es_un_proceso_conocido(void * tabla_segmentos);
-void agregar_entrada_tabla_segmentos(tp_cargarEnMemoria nombre_archivo, t_list* entradas_segmentos);
+int agregar_entrada_tabla_segmentos(tp_cargarEnMemoria nombre_archivo, t_list* entradas_segmentos, int nueva_base, int nuevo_limite);
 int el_proceso_tiene_tabla_de_segmentos();
-void agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo);
+int agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo, int nueva_base, int nuevo_limite);
 void crear_estructuras_esquema_segmentacion();
 void cargar_parte_archivo_en_segmento(int DAM_fd);
 void destruir_estructuras_esquema_segmentacion();
 void eliminar_lista_de_entradas(void * tabla_segmentos);
 t_archivo_cargandose* cargar_buffer_archivo(tp_cargarEnMemoria parte_archivo);
-void informar_espacio_insuficiente(int DAM_fd);
 t_hueco* tomar_hueco_con_limite_mas_grande();
-size_t archivo_mas_grande_que_hueco(const t_archivo_cargandose* archivo_de_proceso_cargandose,const t_hueco* hueco);
-size_t archivo_igual_al_hueco(const t_archivo_cargandose* archivo_cargado,const t_hueco* hueco_usado);
+bool archivo_mas_grande_que_hueco(int tamanio_en_lineas_archivo,const t_hueco* hueco);
+bool archivo_igual_al_hueco(int tamanio_archivo_en_linas,const t_hueco* hueco_usado);
 t_hueco* tomar_hueco();
-void actualizar_info_tabla_de_huecos(size_t tamanio_archivo_en_memoria,t_archivo_cargandose* archivo_de_proceso_cargandose, t_hueco* hueco);
-char * separar_en_lineas(t_archivo_cargandose * archivo_cargado);
+void actualizar_info_tabla_de_huecos(int tamanio_archivo_en_memoria, t_hueco* hueco);
+int separar_en_lineas(t_archivo_cargandose * archivo_cargado, char** archivo_separado_en_lineas);
+int actualizar_tabla_segmentos(tp_cargarEnMemoria parte_archivo, int nueva_base, int nuevo_limite);
+void copiar_archivo_a_memoria_fisica(size_t tamanio_archivo_en_memoria, t_hueco* hueco, char* archivo_separado_en_lineas);
+int crear_nueva_entrada_tabla_de_segmentos(tp_cargarEnMemoria parte_archivo, int nueva_base, int nuevo_limite);
+void informar_carga_segmento_exitosa(int indice_entrada_archivo_en_tabla_segmentos, tp_cargarEnMemoria parte_archivo, int DAM_fd);
 
 /*** Segmentacion paginada ***/
 
