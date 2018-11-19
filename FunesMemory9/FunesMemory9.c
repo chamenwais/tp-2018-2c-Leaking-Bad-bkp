@@ -402,12 +402,39 @@ void agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo
 	list_add(tablas_de_segmentos, &nueva_tabla_segmentos);
 }
 
-char * separar_en_lineas(char * buffer_archivo){
+/**
+ * @DESC:Va sacando lineas desde el buffer del archivo.
+ * Por cada linea, reservar memoria, y copia la linea al buffer del archivo separado en lineas de a tamanios de linea
+ * hasta que queda un pedazo menor al tamanio de una linea, el cual tambien copia.
+ */
+char * separar_en_lineas(t_archivo_cargandose * archivo_cargado){
 	char * archivo_separado_en_lineas=NULL;
-	//TODO ir sacando lineas desde el buffer del archivo.
-	//Por cada linea, reservar memoria, y copiar la linea al buffer del archivo separado en lineas de a tamanios de linea con memcpy
-	//hasta que te quede un pedazo menor al tamanio de una linea, el cual tambien se debe copiar.
-	free(buffer_archivo);
+	//Convierto el stream a string para poder usar funciones de string de las commons
+	archivo_cargado->buffer_archivo=realloc(archivo_cargado->buffer_archivo, archivo_cargado->recibido_actualmente+1);
+	archivo_cargado->buffer_archivo[archivo_cargado->recibido_actualmente]='\0';
+	char ** lineas=string_split(archivo_cargado->buffer_archivo,"\n");
+	for(int i=0;lineas[i]!=NULL;i++){
+		if(i==0){
+			//se esta creando la primer linea, se usa malloc
+			archivo_separado_en_lineas=malloc(TAMANIO_MAX_LINEA);
+		} else {
+			//no es la primer linea, hay que usar realloc
+			archivo_separado_en_lineas=realloc(archivo_separado_en_lineas,TAMANIO_MAX_LINEA);
+		}
+		string_append(&archivo_separado_en_lineas,lineas[i]);
+		int tamanio_linea_separada = string_length(lineas[i]);
+		if (tamanio_linea_separada < TAMANIO_MAX_LINEA) {
+			int cantidad_sobrante=TAMANIO_MAX_LINEA-tamanio_linea_separada;
+			char * relleno_sobrante=string_repeat('$',cantidad_sobrante);
+			string_append(&archivo_separado_en_lineas,relleno_sobrante);
+		} else if (tamanio_linea_separada>TAMANIO_MAX_LINEA){
+			logger_funesMemory9(escribir_loguear, l_warning,
+						"\nSe exedio el tamanio de una linea\n");
+			return "error";
+		}
+
+	}
+	free(archivo_cargado->buffer_archivo);
 	return archivo_separado_en_lineas;
 }
 
@@ -517,7 +544,11 @@ void cargar_parte_archivo_en_segmento(int DAM_fd){
 		informar_espacio_insuficiente(DAM_fd);
 		return;
 	}
-	char * archivo_separado_en_lineas=separar_en_lineas(archivo_de_proceso_cargandose->buffer_archivo);
+	char * archivo_separado_en_lineas=separar_en_lineas(archivo_de_proceso_cargandose);
+	if(string_equals_ignore_case(archivo_separado_en_lineas,"error")){
+		informar_espacio_insuficiente(DAM_fd);
+		return;
+	}
 	size_t tamanio_archivo_en_memoria =
 			sizeof(&archivo_separado_en_lineas);
 	memcpy(MEMORIA_FISICA + hueco->base,
