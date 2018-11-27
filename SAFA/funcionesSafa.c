@@ -124,15 +124,16 @@ int liberarMemoria(){
 	log_info(LOG_SAFA,"Handshake exitoso con el Diego");
 	log_info(LOG_SAFA,"Espero cabecera del DMA");
 	t_cabecera cabecera = recibirCabecera(fd_DMA);
+	tp_datosEnMemoria datos_recibidos;
 	switch(cabecera.tipoDeMensaje){
 		case AbrirPathNoFinalizado:
 			log_info(LOG_SAFA,"Recibi cabecera: AbrirPathNoFinalizado");
-			tp_datosEnMemoria datos_recibidos = prot_recibir_DMA_SAFA_datosEnMemoria(fd_DMA);
+			datos_recibidos = prot_recibir_DMA_SAFA_datosEnMemoria(fd_DMA);
 			//ver que es lo que me manda DAM
 			break;
 		case AbrirPathFinalizadoOk:
 			log_info(LOG_SAFA,"Recibi cabecera: AbrirPathFinalizadoOk");
-			tp_datosEnMemoria datos_recibidos = prot_recibir_DMA_SAFA_datosEnMemoria(fd_DMA);
+			datos_recibidos = prot_recibir_DMA_SAFA_datosEnMemoria(fd_DMA);
 			//ver que es lo que me manda DAM
 			break;
 	}
