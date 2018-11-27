@@ -87,7 +87,7 @@ void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 			pthread_create(&hilo_correspondiente_a_pedido,&atributo_detachable,(void *)operacion_abrir_path,
 					adaptar_sockets_para_hilo(socket_CPU_solicitante,socket_fm9,socket_safa,socket_filesystem));
 			break;
-		case GuardarArchivoEnDisco:
+		case FlushDeArchivoADisco:
 			break;
 		case CrearLineasEnArchivo:
 			break;
