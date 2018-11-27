@@ -4,5 +4,5 @@
 
 USER_OBJS :=
 
-LIBS := -llqvg -lreadline -lcommons -lpthread
+LIBS := -llqvg -lreadline -lcommons -lpthread -lcrypto 
 
