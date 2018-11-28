@@ -80,7 +80,7 @@ int bajarADiscoBitmap();
 int iniciarEscuchaConDMA();
 void *funcionHiloComunicacionConElDMA(void *arg);
 bool hayQueFinalizarElPrograma();
-int iniciarTrabajoConElDMA();
+int iniciarTrabajoConElDMA(int cabecera);
 int avisoDeFinalizarPrograma();
 int validarArchivoDeConsola(char *ubicacionDelArchivo);
 int validarArchivoDeDMA(int FDDMA);

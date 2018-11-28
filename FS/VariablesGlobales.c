@@ -15,6 +15,6 @@ pthread_t threadComunicacionConElDMA;
 int resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
 int tamanioBitmap;
 bool finalizarPrograma;
-pthread_mutex_t mutexFinalizarPrograma, mutexIniciarConsola, mutexSistemaDeArchivos,
-	mutexPath;
+pthread_mutex_t mutexFinalizarPrograma, mutexIniciarConsola, mutexSistemaDeArchivos, mutexPath;
+int FDDMA;
 char* directorioActual;

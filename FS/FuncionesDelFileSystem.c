@@ -867,26 +867,16 @@ int iniciarEscuchaConDMA(){
 }
 
 void *hiloDePedidoDeDMA(void* arg){
-	int FD = (int)arg;
-	int resultadoDelTrabajoConElDMA;
-	if(recibirHandshake(FS,DMA,FD) > 0){
-		//Inicio trabajo con el DMA
-		log_info(LOGGER,"Handshake exitoso con el DMA :), por el FD %d",FD);
-		iniciarTrabajoConElDMA(FD);
-		resultadoDelTrabajoConElDMA=EXIT_SUCCESS;
-	}else{
-		log_error(LOGGER,"El proceso no es el esperado por el FD %d",FD);
-		resultadoDelTrabajoConElDMA=EXIT_FAILURE;
-
-		}
+	int cabecera = (int)arg;
+	iniciarTrabajoConElDMA(cabecera);
 	log_info(LOGGER,"Finalizando pedido del DMA");
-	return resultadoDelTrabajoConElDMA;
+	return EXIT_SUCCESS;
 }
 
 void *funcionHiloComunicacionConElDMA(void *arg){
-	int FDDMA;
 	pthread_attr_t attr;
 	pthread_t thread;
+	int * valorDeLaCabecera;
 	log_info(LOGGER,"Esperando conexion entrante del DMA por el puerto: %d", configuracionDelFS.puerto);
 	int port = configuracionDelFS.puerto;
 	int sockDelServer = escucharEn(port); //crea servidor
@@ -899,13 +889,28 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 		exit(EXIT_FAILURE);
 		}
 	pthread_mutex_unlock(&mutexIniciarConsola);
-	while(!hayQueFinalizarElPrograma()){
-		//FDDMA=malloc(sizeof(int));
-		FDDMA = aceptarConexion(sockDelServer);
-		log_info(LOGGER,"Voy a atender una conexion por el FD: %d", FDDMA);
-		pthread_create(&thread, &attr,&hiloDePedidoDeDMA, FDDMA);
+	FDDMA = aceptarConexion(sockDelServer);
+	if(recibirHandshake(FS,DMA,FDDMA) > 0){
+		//hago el handshake
+		log_info(LOGGER,"Handshake exitoso con el DMA :), por el FD %d",FDDMA);
+	}else{
+		log_error(LOGGER,"El proceso no es el esperado por el FD %d",FDDMA);
+		return EXIT_FAILURE;
 		}
 
+	while(!hayQueFinalizarElPrograma()){
+		t_cabecera cabecera;
+		cabecera = recibirCabecera(FDDMA);
+		if(cabecera.tamanio>0){
+			log_info(LOGGER,"Cabecera recibida: %d, cantidad de bytes: %d",
+				cabecera.tipoDeMensaje, cabecera.tamanio);
+			valorDeLaCabecera=malloc(sizeof(int));
+			valorDeLaCabecera=(int)cabecera.tipoDeMensaje;
+		}
+		log_info(LOGGER,"Voy a atender una conexion por el FD: %d", FDDMA);
+		pthread_create(&thread, &attr,&hiloDePedidoDeDMA, valorDeLaCabecera);
+		}
+	cerrarConexion(FDDMA);
 	pthread_attr_destroy(&attr);
 	return EXIT_SUCCESS;
 }
@@ -925,36 +930,30 @@ int avisoDeFinalizarPrograma(){
 	return EXIT_SUCCESS;
 }
 
-int iniciarTrabajoConElDMA(int fileDescriptorActual){
-	t_cabecera cabecera;
-	cabecera = recibirCabecera(fileDescriptorActual);
-	if(cabecera.tamanio>0){
-		log_info(LOGGER,"Cabecera recibida: %d, cantidad de bytes: %d",
-				cabecera.tipoDeMensaje, cabecera.tamanio);
-		switch(cabecera.tipoDeMensaje){
-			case ValidarArchivo:
-				log_info(LOGGER,"Pedido del DMA de \"ValidarArchivo\"");
-				validarArchivoDeDMA(fileDescriptorActual);
-				break;
-			case CrearArchivo:
-				log_info(LOGGER,"Pedido del DMA de \"CrearArchivo\"");
-				crearArchivoDeDMA(fileDescriptorActual);
-				break;
-			case ObtenerDatos:
-				log_info(LOGGER,"Pedido del DMA de \"ObtenerDatos\"");
-				obtenerDatosDeDMA(fileDescriptorActual);
-				break;
-			case GuardarDatos:
-				log_info(LOGGER,"Pedido del DMA de \"GuardarDatos\"");
-				guardarDatosDeDMA(fileDescriptorActual);
-				break;
-			default:
-				log_error(LOGGER,"Error, me llego un tipo de mensaje del DMA desconocido, %d",cabecera.tipoDeMensaje);
-				return EXIT_FAILURE;
-				break;
+int iniciarTrabajoConElDMA(int cabecera){
+	log_info(LOGGER,"La cabecera que recibi es: %d", cabecera);
+	switch(cabecera){
+		case ValidarArchivo:
+			log_info(LOGGER,"Pedido del DMA de \"ValidarArchivo\"");
+			validarArchivoDeDMA(FDDMA);
+			break;
+		case CrearArchivo:
+			log_info(LOGGER,"Pedido del DMA de \"CrearArchivo\"");
+			crearArchivoDeDMA(FDDMA);
+			break;
+		case ObtenerDatos:
+			log_info(LOGGER,"Pedido del DMA de \"ObtenerDatos\"");
+			obtenerDatosDeDMA(FDDMA);
+			break;
+		case GuardarDatos:
+			log_info(LOGGER,"Pedido del DMA de \"GuardarDatos\"");
+			guardarDatosDeDMA(FDDMA);
+			break;
+		default:
+			log_error(LOGGER,"Error, me llego un tipo de mensaje del DMA desconocido, %d",cabecera);
+			return EXIT_FAILURE;
+			break;
 		}//end swith
-		cerrarConexion(fileDescriptorActual);
-	}
 	return EXIT_SUCCESS;
 }
 
@@ -1206,6 +1205,7 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 					if(bloqueActual<cantidadTotalDeBloquesCreados){
 						numeroDeBloque =(int)list_get(metadata->bloques,i);
 						string_append(&archivoDeBloque, string_itoa(numeroDeBloque));
+						string_append(&archivoDeBloque, ".bin");
 						log_info(LOGGER,"Voy a leer en el bloque %s",archivoDeBloque);
 					}else{
 						log_error(LOGGER,"No me coincide el numero de bloque qeu quiero leer con la cantidad total de bloques que tiene el archivo");
@@ -1230,9 +1230,7 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 								bytesALeer=size-bytesLeidos;
 								}
 							}
-
 						log_info(LOGGER,"Leyendo del archivo %s, %d bytes",archivoDeBloque,bytesALeer);
-
 						fread(&datosObtendios.datos[bytesLeidos],sizeof(char),bytesALeer,archivo);
 						bytesLeidos=bytesALeer+bytesLeidos;
 						bloqueActual++;
