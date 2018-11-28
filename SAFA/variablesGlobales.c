@@ -26,5 +26,6 @@ t_list* terminados;
 t_list* auxVirtualRR;
 t_list* cpu_ejecutando;
 t_list* cpu_libres;
+t_list* dtbConEqGrandeAbierto;
 pthread_mutex_t mutexDePausaDePlanificacion;
 

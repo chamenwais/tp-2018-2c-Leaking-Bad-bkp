@@ -104,6 +104,7 @@ int inicializarListas(){
 	auxVirtualRR = list_create();
 	cpu_libres = list_create();
 	cpu_ejecutando = list_create();
+	dtbConEqGrandeAbierto = list_create();
 	return EXIT_SUCCESS;
 }
 
@@ -140,7 +141,7 @@ int liberarMemoria(){
 	resultadoComElDiego=EXIT_SUCCESS;
 	return resultadoComElDiego;
 }
- int esperarFinEscuchaDMA(){
+ /*int esperarFinEscuchaDMA(){
 	pthread_join(hiloComDMA, NULL);
 	log_info(LOG_SAFA,"Finalizando el hilo de comunicacion con DMA");
 	if(resultadoComElDiego==EXIT_FAILURE){
@@ -150,7 +151,7 @@ int liberarMemoria(){
 	}
 	return resultadoComElDiego;
 }
- int iniciarEscuchaCPU(){ //TODO ver si uso hilos o select
+ int iniciarEscuchaCPU(){ //
 	int resultadoHiloCPU = pthread_create(
 			&hiloComCPU, NULL, funcionHiloComCPU, &configSAFA);
 		if(resultadoHiloCPU){
@@ -159,10 +160,11 @@ int liberarMemoria(){
 			}
 		else{
 			log_info(LOG_SAFA,"Se creo el hilo para la comunicacion con la CPU");
+			list_add(cpu_libres, hiloComCPU);
 			return EXIT_SUCCESS;
 			}
 		return EXIT_SUCCESS;
-}
+} */
  void *funcionHiloComCPU(void *arg){//TODO: ver que hace
 	 list_add(cpu_libres, arg);
 
@@ -264,12 +266,15 @@ void *funcionHiloConsola(void *arg){
 			 * El DTB dummy a enviar contendrá el archivo Escriptorio que se desea ejecutar y
 			 * el flag de inicialización en 0, siendo el único DTB que contenga este flag con dicho valor
 			 * (cualquier otro DTB lo tendrá en 1). */
-			if(instruccion[1]!=NULL){
+			if(strcmp(estadoSAFA, "C")==0){
+				log_error(LOG_SAFA, "SAFA se encuentra en estado Corrupto, no se puede continuar");
+				//TODO ver que hacer en este caso
+			}else if(instruccion[1]!=NULL){
 					printf("Creando DTB para escriptorio: %s/n", instruccion[1]);
 					t_DTB* nuevo_DTB = crear_DTB(instruccion[1]);
 					list_add(nuevos, nuevo_DTB);//agregar DTB a cola de NEW
 					log_info(LOG_SAFA, "Se agrega el nuevo DTB a la lista de Nuevos");
-				}else{
+					}else{
 					printf("Falta el path del escriptorio, pediselo a Donofrio y reintenta/n");
 					}
 
@@ -437,6 +442,10 @@ int proximoDTBAPlanificar(){
 				log_info(LOG_SAFA, "El algoritmo de planif es VIRTUAL ROUND ROBIN");
 				idDTBAPlanificar=calcularDTBAPlanificarConVRR();
 			}
+			if(string_equals_ignore_case(configSAFA.algoritmo_planif, "BOAF")){
+							log_info(LOG_SAFA, "El algoritmo de planif es BIG ONE ALWAYS FIRST");
+							idDTBAPlanificar=calcularDTBAPlanificarConBOAF();
+						}
 		log_info(LOG_SAFA,"Proximo DTB a planififcar: %d ",idDTBAPlanificar);
 		return idDTBAPlanificar;
 		}
@@ -456,6 +465,18 @@ int calcularDTBAPlanificarConVRR(){
 	int id;
 	if(list_size(auxVirtualRR)>0){
 		id = obtenerPrimerId(auxVirtualRR);
+	}else{
+		id = obtenerPrimerId(listos);
+	}
+	return id;
+}
+
+int calcularDTBAPlanificarConBOAF(){ /*Priorización de aquellos DTB que tengan abiertos archivos de "equipos grandes".
+	La prioridad comienza una vez que lo abren y no antes.
+	Queda a criterio de cada grupo definir qué equipos se consideran "grandes"*/
+	int id;
+	if(list_size(dtbConEqGrandeAbierto)>0){
+		id = obtenerPrimerId(dtbConEqGrandeAbierto);
 	}else{
 		id = obtenerPrimerId(listos);
 	}
