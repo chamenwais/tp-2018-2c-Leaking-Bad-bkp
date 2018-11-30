@@ -87,15 +87,22 @@ int prot_recibir_int(int sock){
 
 void prot_enviar_DMA_FS_guardarDatos(char *path, int offset, int size, char *buffer, int sock){
 	//4 envia
+	printf("asd");
 	int tam = strlen(path) + 1;
+	printf("asd");
 	enviar(sock,&tam,sizeof(tam));
+	printf("asd");
 	enviar(sock,path,tam);
+	printf("asd");
 	enviar(sock,&offset,sizeof(offset));
+	printf("asd");
 	enviar(sock,&size,sizeof(size));
 	int tam2 = strlen(buffer) + 1;
+	printf("asd");
 	enviar(sock,&tam2,sizeof(tam2));
+	printf("asd");
 	enviar(sock,buffer,tam2);
-	//printf("enviando: %s, size:%d | %d | %d | %s size:%d\n",path,tam,offset,size,buffer,tam2);
+	printf("enviando: %s, size:%d | %d | %d | %s size:%d\n",path,tam,offset,size,buffer,tam2);
 	return;
 }
 
@@ -198,3 +205,24 @@ tp_datosEnMemoria prot_recibir_DMA_SAFA_datosEnMemoria(int sock){
 	recibir(sock,&(recibido->memory_address),sizeof(recibido->memory_address));
 	return recibido;
 }
+
+void prot_enviar_DMA_FS_CrearArchivo(char* path,int longitud,int sock){
+	//10 recibe
+	int tam = sizeof(&path);
+	enviar(sock,&tam,sizeof(tam));
+	enviar(sock,path,tam);
+	enviar(sock,&longitud,sizeof(longitud));
+}
+
+tp_crearArchivo prot_recibir_DMA_FS_CrearArchivo(int sock){
+	//10 envia
+	tp_crearArchivo data = malloc(sizeof(tp_crearArchivo));
+	char* path;
+	int size;
+	recibir(sock,&size,sizeof(size));
+	data->path = malloc(size);
+	recibir(sock,data->path,size);
+	recibir(sock,&(data->size),sizeof(data->size));
+	return data;
+}
+

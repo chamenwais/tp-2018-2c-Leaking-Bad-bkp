@@ -18,6 +18,7 @@ int cargarDirectorioActual(){
 	string_append(&directorioActual, configuracionDelFS.punto_montaje);
 	string_append(&directorioActual, "/Archivos");
 	log_info(LOGGER,"Directorio actual: %s",directorioActual);
+	free(directorioActual);
 	return EXIT_SUCCESS;
 }
 
@@ -31,24 +32,28 @@ int crearDirectorios(){
 	string_append(&path, configuracionDelFS.punto_montaje);
 	mkdir(path,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	log_info(LOGGER,"Directorio %s creado",path);
+	free(path);
 
 	path=string_new();
 	string_append(&path, configuracionDelFS.punto_montaje);
 	string_append(&path, "/Archivos/");
 	mkdir(path,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	log_info(LOGGER,"Directorio %s creado",path);
+	free(path);
 
 	path=string_new();
 	string_append(&path, configuracionDelFS.punto_montaje);
 	string_append(&path, "/Bloques/");
 	mkdir(path,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	log_info(LOGGER,"Directorio %s creado",path);
+	free(path);
 
 	path=string_new();
 	string_append(&path, configuracionDelFS.punto_montaje);
 	string_append(&path, "/Metadata/");
 	mkdir(path,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	log_info(LOGGER,"Directorio %s creado",path);
+	free(path);
 
 	return EXIT_SUCCESS;
 }
@@ -379,6 +384,9 @@ char* directorioDeUsuario(){
 			}
 		if(strcmp(pathPartido[i],"Archivos")==0)
 			encontreArchivo=true;
+		}
+	for(i=0;pathPartido[i]!=NULL;i++){
+		free(pathPartido[i]);
 		}
 	return directorio;
 }
@@ -899,9 +907,13 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 		return EXIT_FAILURE;
 		}
 
+	log_info(LOGGER,"Me pongo a esperar pedidos");
+
 	while(!hayQueFinalizarElPrograma()){
 		t_cabecera cabecera;
+		log_info(LOGGER,"Esperando alguna cabecera");
 		cabecera = recibirCabecera(FDDMA);
+		log_info(LOGGER,"Recibi un dato");
 		if(cabecera.tamanio>0){
 			log_info(LOGGER,"Cabecera recibida: %d, cantidad de bytes: %d",
 				cabecera.tipoDeMensaje, cabecera.tamanio);
@@ -1009,14 +1021,15 @@ int crearArchivoDeConsola(char *path, int cantidadDeBytes){
 int crearArchivoDeDMA(int FDDMA){
 	/* Recibe del DMA los valores: path
 	 */
-	char*path=prot_recibir_DMA_FS_path(FDDMA);
+	tp_crearArchivo dataParaCrearElArchivo=prot_recibir_DMA_FS_CrearArchivo(FDDMA);
 	int cantidadDeBytes=0; //modificar
-	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",path);
+	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",dataParaCrearElArchivo->path);
 	char*ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Archivos/");
-	string_append(&ubicacionDelArchivo, path);
-	int resultadoDeCrearElArchivo=crearArchivo(ubicacionDelArchivo, cantidadDeBytes, path);
+	string_append(&ubicacionDelArchivo, dataParaCrearElArchivo->path);
+	int resultadoDeCrearElArchivo=crearArchivo(ubicacionDelArchivo, dataParaCrearElArchivo->size,
+			dataParaCrearElArchivo->path);
 	enviarCabecera(FDDMA, resultadoDeCrearElArchivo, 1);
 	return resultadoDeCrearElArchivo;
 }
@@ -1342,6 +1355,8 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 							hayQueActualziarMetadataDelArchivo=true;
 						}else{
 							log_error(LOGGER,"No hay mas bloques libres");
+							free(archivoDeBloque);
+							free(ubicacionDelArchivoDeMetadata);
 							return EXIT_FAILURE;///no hay mas bloques libres
 							}
 						reservarBloqueYCrearEstructuras(numeroDeBloqueLibre);
@@ -1384,6 +1399,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 					}else{
 						log_error(LOGGER,"No se pudo abrir el archivo %s para modificar",archivoDeBloque);
 						}
+					free(archivoDeBloque);
 					}
 				escribiHasta=offset+size;
 				if(escribiHasta>metadata->tamanio){
@@ -1394,6 +1410,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 				if(hayQueActualziarMetadataDelArchivo){
 					actualizarMetaData(ubicacionDelArchivoDeMetadata,metadata);
 					}
+				free(ubicacionDelArchivoDeMetadata);
 				return DatosGuardados;
 			}else{
 				log_error(LOGGER,"No se pudo encontrar el archivo: %s",path);
@@ -1404,6 +1421,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 	}else{
 		log_error(LOGGER,"El size que quiero escribir es menor o igual a 0: %d",size);
 		}
+	free(ubicacionDelArchivoDeMetadata);
 	return ArchivoNoEncontrado;
 }
 
@@ -1417,7 +1435,7 @@ int actualizarMetaData(char* ubicacionDelArchivoDeMetadata,tp_metadata metadata)
 	for(i=0;i<(list_size(metadata->bloques)-1);i++){
 		log_info(LOGGER,"	Guardando el bloque: %d",(int)list_get(metadata->bloques,i));
 		fprintf(archivoTemp,"%d,",(int)list_get(metadata->bloques,i));
-	}
+		}
 	log_info(LOGGER,"	Guardando el bloque: %d",(int)list_get(metadata->bloques,i));
 	fprintf(archivoTemp,"%d",(int)list_get(metadata->bloques,i));
 	fprintf(archivoTemp,"]");
