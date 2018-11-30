@@ -32,6 +32,7 @@ enum MENSAJES {
 	CrearArchivo,
 	ObtenerDatos,
 	GuardarDatos,
+	BorrarArchivo,
 	ElArchivoNoExiste,
 	ElArchivoExiste,
 	ArchivoCreado,

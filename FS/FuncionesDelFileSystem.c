@@ -160,10 +160,8 @@ int iniciarConsola(){
 			}
 		else{
 			log_info(LOGGER,"La consola se creo exitosamente");
-			avisoDeFinalizarPrograma();
 			return EXIT_SUCCESS;
 			}
-	avisoDeFinalizarPrograma();
 	return EXIT_SUCCESS;
 }
 
@@ -196,6 +194,7 @@ void *funcionHiloConsola(void *arg){
 			free(linea);
 			log_info(LOGGER,"Cerrando consola");
 			resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
+			avisoDeFinalizarPrograma();
 			return ret;
 			//pthread_exit(ret);
 			}else{
@@ -923,7 +922,9 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 		log_info(LOGGER,"Voy a atender una conexion por el FD: %d", FDDMA);
 		pthread_create(&thread, &attr,&hiloDePedidoDeDMA, valorDeLaCabecera);
 		}
+	log_info(LOGGER,"Cierro la conexion");
 	cerrarConexion(FDDMA);
+	log_info(LOGGER,"Destruyo el hilo");
 	pthread_attr_destroy(&attr);
 	return EXIT_SUCCESS;
 }
@@ -940,6 +941,7 @@ int avisoDeFinalizarPrograma(){
 	pthread_mutex_lock(&mutexFinalizarPrograma);
 	finalizarPrograma=true;
 	pthread_mutex_unlock(&mutexFinalizarPrograma);
+	log_warning(LOGGER,"Hay que finalizar el programa");
 	return EXIT_SUCCESS;
 }
 
@@ -961,6 +963,10 @@ int iniciarTrabajoConElDMA(int cabecera){
 		case GuardarDatos:
 			log_info(LOGGER,"Pedido del DMA de \"GuardarDatos\"");
 			guardarDatosDeDMA(FDDMA);
+			break;
+		case BorrarArchivo:
+			log_info(LOGGER,"Pedido del DMA de \"BorrarArchivo\"");
+			borrarArchivoDeDMA(FDDMA);
 			break;
 		default:
 			log_error(LOGGER,"Error, me llego un tipo de mensaje del DMA desconocido, %d",cabecera);
