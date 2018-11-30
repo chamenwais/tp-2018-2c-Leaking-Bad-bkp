@@ -154,10 +154,6 @@ void buscar_informacion_administrativa_esquema_paginacion_invertida(){
 
 }
 
-void buscar_memoria_real_contenido_relacionado(int id){
-
-}
-
 void inicializar_funciones_variables_por_segmento(){
 	crear_estructuras_esquema[SEGMENTACION_PURA]=&crear_estructuras_esquema_segmentacion;
 	crear_estructuras_esquema[SEGMENTACION_PAGINADA]=&crear_estructuras_esquema_segmentacion_paginada;
@@ -221,12 +217,13 @@ void *funcionHiloConsola(void *arg){
 void realizar_dump(int id){
 
 	switch(MODO_EJECUCION){
-		case 0: &buscar_informacion_administrativa_esquema_segmentacion;
+		case 0: &buscar_informacion_administrativa_esquema_segmentacion_y_mem_real;
+				break;
 		case 1: &buscar_informacion_administrativa_esquema_segmentacion_paginada;
+				break;
 		case 2: &buscar_informacion_administrativa_esquema_paginacion_invertida;
+				break;
 	}
-
-	buscar_memoria_real_contenido_relacionado(id);
 }
 
 void iniciar_consola(){

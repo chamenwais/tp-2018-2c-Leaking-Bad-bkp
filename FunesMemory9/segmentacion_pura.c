@@ -81,14 +81,12 @@ int actualizar_tabla_segmentos(tp_cargarEnMemoria parte_archivo, int nueva_base,
 
 void copiar_archivo_a_memoria_fisica(size_t tamanio_archivo_en_memoria,
 		t_hueco* hueco, char* archivo_separado_en_lineas) {
-	memcpy(MEMORIA_FISICA + hueco->base, archivo_separado_en_lineas,
+	memcpy(MEMORIA_FISICA + (hueco->base*TAMANIO_MAX_LINEA), archivo_separado_en_lineas,
 			tamanio_archivo_en_memoria);
 	free(archivo_separado_en_lineas);
 }
 
-void informar_carga_segmento_exitosa(
-		int indice_entrada_archivo_en_tabla_segmentos,
-		tp_cargarEnMemoria parte_archivo, int DAM_fd) {
+void informar_carga_segmento_exitosa(int indice_entrada_archivo_en_tabla_segmentos, tp_cargarEnMemoria parte_archivo, int DAM_fd) {
 	logger_funesMemory9(escribir_loguear, l_info,
 			"\nSe creo el segmento %d para el archivo %s\n",
 			indice_entrada_archivo_en_tabla_segmentos, parte_archivo->path);
@@ -214,8 +212,36 @@ void eliminar_lista_de_entradas(void * tabla_segmentos){
 	list_destroy((*(t_tabla_segmentos*)tabla_segmentos).entradas);
 }
 
-void buscar_informacion_administrativa_esquema_segmentacion(int id){
+void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id){
+	t_entrada_tabla_segmentos * entrada_segmento;
+	t_hueco * hueco;
+	t_tabla_segmentos * tabla_segmentos = list_find(tablas_de_segmentos, &es_un_proceso_conocido);
 
+	int cant_entradas = list_size(tabla_segmentos->entradas);
+	logger_funesMemory9(escribir_loguear, l_info, "Utilizando el esquema de segmentacion pura y dado el ID del DTB indicado, el proceso tiene una tabla de "
+			"segmentos con %d entradas\n", cant_entradas);
+
+	if(tabla_segmentos->pid == id){
+		for(int i = 0; i++; i<cant_entradas){
+			logger_funesMemory9(escribir_loguear, l_info, "En la entrada %d, se encuentra la sgte informacion: \n",i);
+			entrada_segmento = list_get(tabla_segmentos,i);
+			logger_funesMemory9(escribir_loguear, l_info, "El limite del segmento es %d. \n",entrada_segmento->limite);
+			logger_funesMemory9(escribir_loguear, l_info, "Contiene el archivo %s. \n\n",entrada_segmento->archivo);
+			logger_funesMemory9(escribir_loguear, l_info, "La base del segmento es %d. \n",entrada_segmento->base);
+
+			int tamanio_archivo = (entrada_segmento->limite)*TAMANIO_MAX_LINEA;
+			char * puntero_al_archivo = malloc(sizeof(tamanio_archivo)+1);
+			puntero_al_archivo[tamanio_archivo]='\0';
+
+			memcpy(MEMORIA_FISICA + (entrada_segmento->base*TAMANIO_MAX_LINEA),puntero_al_archivo,tamanio_archivo);
+
+			logger_funesMemory9(escribir_loguear, l_info, "La información contenida en la memoria fisica para la entrada correspondiente es:"
+					" %s \n",&puntero_al_archivo);
+		}
+
+	}else{
+		logger_funesMemory9(escribir_loguear, l_warning, "No hay información administrativa para el ID %d del DTB indicado. \n",id);
+	}
 }
 
 void destruir_estructuras_esquema_segmentacion(){

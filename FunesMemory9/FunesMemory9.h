@@ -30,7 +30,6 @@ void *funcionHiloConsola(void *arg);
 void realizar_dump();
 void buscar_informacion_administrativa_esquema_segmentacion_paginada();
 void buscar_informacion_administrativa_esquema_paginacion_invertida();
-void buscar_memoria_real_contenido_relacionado(int id);
 
 /*** Funciones y variables necesarias a intercambiar segun el esquema de memoria utilizado ***/
 void (*crear_estructuras_esquema[3])();

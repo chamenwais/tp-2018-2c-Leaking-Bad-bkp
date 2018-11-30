@@ -54,7 +54,7 @@ int actualizar_tabla_segmentos(tp_cargarEnMemoria parte_archivo, int nueva_base,
 void copiar_archivo_a_memoria_fisica(size_t tamanio_archivo_en_memoria, t_hueco* hueco, char* archivo_separado_en_lineas);
 int crear_nueva_entrada_tabla_de_segmentos(tp_cargarEnMemoria parte_archivo, int nueva_base, int nuevo_limite);
 void informar_carga_segmento_exitosa(int indice_entrada_archivo_en_tabla_segmentos, tp_cargarEnMemoria parte_archivo, int DAM_fd);
-void buscar_informacion_administrativa_esquema_segmentacion(int id);
+void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id);
 int todavia_falta_mandar_pedazo_de_archivo(tp_cargarEnMemoria pedazo_actual, t_archivo_cargandose * archivo_cargandose);
 
 
