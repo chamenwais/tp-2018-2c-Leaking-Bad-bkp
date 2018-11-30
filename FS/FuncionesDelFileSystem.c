@@ -18,6 +18,7 @@ int cargarDirectorioActual(){
 	string_append(&directorioActual, configuracionDelFS.punto_montaje);
 	string_append(&directorioActual, "/Archivos");
 	log_info(LOGGER,"Directorio actual: %s",directorioActual);
+	free(directorioActual);
 	return EXIT_SUCCESS;
 }
 
@@ -31,24 +32,28 @@ int crearDirectorios(){
 	string_append(&path, configuracionDelFS.punto_montaje);
 	mkdir(path,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	log_info(LOGGER,"Directorio %s creado",path);
+	free(path);
 
 	path=string_new();
 	string_append(&path, configuracionDelFS.punto_montaje);
 	string_append(&path, "/Archivos/");
 	mkdir(path,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	log_info(LOGGER,"Directorio %s creado",path);
+	free(path);
 
 	path=string_new();
 	string_append(&path, configuracionDelFS.punto_montaje);
 	string_append(&path, "/Bloques/");
 	mkdir(path,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	log_info(LOGGER,"Directorio %s creado",path);
+	free(path);
 
 	path=string_new();
 	string_append(&path, configuracionDelFS.punto_montaje);
 	string_append(&path, "/Metadata/");
 	mkdir(path,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	log_info(LOGGER,"Directorio %s creado",path);
+	free(path);
 
 	return EXIT_SUCCESS;
 }
@@ -155,10 +160,8 @@ int iniciarConsola(){
 			}
 		else{
 			log_info(LOGGER,"La consola se creo exitosamente");
-			avisoDeFinalizarPrograma();
 			return EXIT_SUCCESS;
 			}
-	avisoDeFinalizarPrograma();
 	return EXIT_SUCCESS;
 }
 
@@ -191,6 +194,7 @@ void *funcionHiloConsola(void *arg){
 			free(linea);
 			log_info(LOGGER,"Cerrando consola");
 			resultadoDeLaFinalizacionDeLaComunicacionConElDMA=EXIT_FAILURE;
+			avisoDeFinalizarPrograma();
 			return ret;
 			//pthread_exit(ret);
 			}else{
@@ -380,6 +384,9 @@ char* directorioDeUsuario(){
 		if(strcmp(pathPartido[i],"Archivos")==0)
 			encontreArchivo=true;
 		}
+	for(i=0;pathPartido[i]!=NULL;i++){
+		free(pathPartido[i]);
+		}
 	return directorio;
 }
 
@@ -507,6 +514,7 @@ int mostrarBloque(int numeroDeBloque){
 	string_append(&archivoDeBloque,configuracionDelFS.punto_montaje);
 	string_append(&archivoDeBloque, "/Bloques/");
 	string_append(&archivoDeBloque, string_itoa(numeroDeBloque));
+	string_append(&archivoDeBloque, ".bin");
 	log_info(LOGGER,"Mostrando el bloque: %d que esta en el archivo: %s",numeroDeBloque,archivoDeBloque);
 	pthread_mutex_lock(&mutexSistemaDeArchivos);
 	FILE * archivo = fopen(archivoDeBloque,"rb+");
@@ -898,9 +906,13 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 		return EXIT_FAILURE;
 		}
 
+	log_info(LOGGER,"Me pongo a esperar pedidos");
+
 	while(!hayQueFinalizarElPrograma()){
 		t_cabecera cabecera;
+		log_info(LOGGER,"Esperando alguna cabecera");
 		cabecera = recibirCabecera(FDDMA);
+		log_info(LOGGER,"Recibi un dato");
 		if(cabecera.tamanio>0){
 			log_info(LOGGER,"Cabecera recibida: %d, cantidad de bytes: %d",
 				cabecera.tipoDeMensaje, cabecera.tamanio);
@@ -910,7 +922,9 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 		log_info(LOGGER,"Voy a atender una conexion por el FD: %d", FDDMA);
 		pthread_create(&thread, &attr,&hiloDePedidoDeDMA, valorDeLaCabecera);
 		}
+	log_info(LOGGER,"Cierro la conexion");
 	cerrarConexion(FDDMA);
+	log_info(LOGGER,"Destruyo el hilo");
 	pthread_attr_destroy(&attr);
 	return EXIT_SUCCESS;
 }
@@ -927,6 +941,7 @@ int avisoDeFinalizarPrograma(){
 	pthread_mutex_lock(&mutexFinalizarPrograma);
 	finalizarPrograma=true;
 	pthread_mutex_unlock(&mutexFinalizarPrograma);
+	log_warning(LOGGER,"Hay que finalizar el programa");
 	return EXIT_SUCCESS;
 }
 
@@ -948,6 +963,10 @@ int iniciarTrabajoConElDMA(int cabecera){
 		case GuardarDatos:
 			log_info(LOGGER,"Pedido del DMA de \"GuardarDatos\"");
 			guardarDatosDeDMA(FDDMA);
+			break;
+		case BorrarArchivo:
+			log_info(LOGGER,"Pedido del DMA de \"BorrarArchivo\"");
+			borrarArchivoDeDMA(FDDMA);
 			break;
 		default:
 			log_error(LOGGER,"Error, me llego un tipo de mensaje del DMA desconocido, %d",cabecera);
@@ -1008,14 +1027,15 @@ int crearArchivoDeConsola(char *path, int cantidadDeBytes){
 int crearArchivoDeDMA(int FDDMA){
 	/* Recibe del DMA los valores: path
 	 */
-	char*path=prot_recibir_DMA_FS_path(FDDMA);
+	tp_crearArchivo dataParaCrearElArchivo=prot_recibir_DMA_FS_CrearArchivo(FDDMA);
 	int cantidadDeBytes=0; //modificar
-	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",path);
+	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",dataParaCrearElArchivo->path);
 	char*ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Archivos/");
-	string_append(&ubicacionDelArchivo, path);
-	int resultadoDeCrearElArchivo=crearArchivo(ubicacionDelArchivo, cantidadDeBytes, path);
+	string_append(&ubicacionDelArchivo, dataParaCrearElArchivo->path);
+	int resultadoDeCrearElArchivo=crearArchivo(ubicacionDelArchivo, dataParaCrearElArchivo->size,
+			dataParaCrearElArchivo->path);
 	enviarCabecera(FDDMA, resultadoDeCrearElArchivo, 1);
 	return resultadoDeCrearElArchivo;
 }
@@ -1278,8 +1298,9 @@ int guardarDatosDeDMA(int fileDescriptorActual){
 	log_info(LOGGER,"Path:%s | Offset:%d | Size:%d | Buffer:%s",
 			datos->path,datos->offset,datos->size,datos->buffer);
 	pthread_mutex_lock(&mutexSistemaDeArchivos);
-	guardarDatos(datos->path,datos->offset,datos->size,datos->buffer);
+	int resultadoDeGuardarDatos=guardarDatos(datos->path,datos->offset,datos->size,datos->buffer);
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
+	enviarCabecera(FDDMA, resultadoDeGuardarDatos, 1);
 	return EXIT_SUCCESS;
 }
 
@@ -1320,6 +1341,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 					if(bloqueActual<cantidadTotalDeBloquesCreados){
 						numeroDeBloque =(int)list_get(metadata->bloques,i);
 						string_append(&archivoDeBloque, string_itoa(numeroDeBloque));
+						string_append(&archivoDeBloque, ".bin");
 						log_info(LOGGER,"Voy a escribir en el bloque %s que ya esta creado",archivoDeBloque);
 					}else{
 						log_info(LOGGER,"El bloque para escribir no existe, lo tengo que crear");
@@ -1339,6 +1361,8 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 							hayQueActualziarMetadataDelArchivo=true;
 						}else{
 							log_error(LOGGER,"No hay mas bloques libres");
+							free(archivoDeBloque);
+							free(ubicacionDelArchivoDeMetadata);
 							return EXIT_FAILURE;///no hay mas bloques libres
 							}
 						reservarBloqueYCrearEstructuras(numeroDeBloqueLibre);
@@ -1381,6 +1405,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 					}else{
 						log_error(LOGGER,"No se pudo abrir el archivo %s para modificar",archivoDeBloque);
 						}
+					free(archivoDeBloque);
 					}
 				escribiHasta=offset+size;
 				if(escribiHasta>metadata->tamanio){
@@ -1391,6 +1416,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 				if(hayQueActualziarMetadataDelArchivo){
 					actualizarMetaData(ubicacionDelArchivoDeMetadata,metadata);
 					}
+				free(ubicacionDelArchivoDeMetadata);
 				return DatosGuardados;
 			}else{
 				log_error(LOGGER,"No se pudo encontrar el archivo: %s",path);
@@ -1401,6 +1427,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 	}else{
 		log_error(LOGGER,"El size que quiero escribir es menor o igual a 0: %d",size);
 		}
+	free(ubicacionDelArchivoDeMetadata);
 	return ArchivoNoEncontrado;
 }
 
@@ -1414,7 +1441,7 @@ int actualizarMetaData(char* ubicacionDelArchivoDeMetadata,tp_metadata metadata)
 	for(i=0;i<(list_size(metadata->bloques)-1);i++){
 		log_info(LOGGER,"	Guardando el bloque: %d",(int)list_get(metadata->bloques,i));
 		fprintf(archivoTemp,"%d,",(int)list_get(metadata->bloques,i));
-	}
+		}
 	log_info(LOGGER,"	Guardando el bloque: %d",(int)list_get(metadata->bloques,i));
 	fprintf(archivoTemp,"%d",(int)list_get(metadata->bloques,i));
 	fprintf(archivoTemp,"]");

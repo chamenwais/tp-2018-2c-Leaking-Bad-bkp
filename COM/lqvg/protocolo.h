@@ -18,6 +18,12 @@ typedef struct stru_obtenerDatos{
 } t_obtenerDatos;
 typedef t_obtenerDatos* tp_obtenerDatos;
 
+typedef struct stru_crearArchivo{
+	char* path;
+	int size;
+} t_crearArchivo;
+typedef t_crearArchivo* tp_crearArchivo;
+
 typedef struct datosObtenidos{
 	int tamanio_total_archivo;
 	char* buffer;
