@@ -226,3 +226,38 @@ tp_crearArchivo prot_recibir_DMA_FS_CrearArchivo(int sock){
 	return data;
 }
 
+void prot_enviar_CPU_DMA_flush(char* path, int pid, int memory_address, int sock){
+
+}
+
+tp_datosEnMemoria prot_recibir_CPU_DMA_flush(int sock){
+	tp_datosEnMemoria datos_flush;
+	return datos_flush;
+}
+
+void prot_enviar_DMA_FM9_obtenerArchivo(char* path, int pid, int memory_address, int offset, int size, int sock){
+
+}
+
+tp_obtenerArchivo prot_recibir_DMA_FM9_obtenerArchivo(int sock){
+	tp_obtenerArchivo obtener_archivo;
+	return obtener_archivo;
+}
+
+void prot_enviar_FM9_DMA_devolverDatos(char* datos, int tamanio_trozo, int tamanio_total_archivo, int sock){
+
+}
+
+tp_datosObtenidosDeProtocolo prot_recibir_FM9_DMA_devolverDatos(int sock){
+	tp_datosObtenidosDeProtocolo devolver_datos;
+	return devolver_datos;
+}
+
+void prot_enviar_DMA_SAFA_finFlush(char* path, int pid, int sock){
+
+}
+
+tp_pathPid prot_recibir_DMA_SAFA_finFlush(int sock){
+	tp_pathPid fin_flush;
+	return fin_flush;
+}
