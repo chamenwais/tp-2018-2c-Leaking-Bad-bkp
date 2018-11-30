@@ -507,6 +507,7 @@ int mostrarBloque(int numeroDeBloque){
 	string_append(&archivoDeBloque,configuracionDelFS.punto_montaje);
 	string_append(&archivoDeBloque, "/Bloques/");
 	string_append(&archivoDeBloque, string_itoa(numeroDeBloque));
+	string_append(&archivoDeBloque, ".bin");
 	log_info(LOGGER,"Mostrando el bloque: %d que esta en el archivo: %s",numeroDeBloque,archivoDeBloque);
 	pthread_mutex_lock(&mutexSistemaDeArchivos);
 	FILE * archivo = fopen(archivoDeBloque,"rb+");
@@ -1278,8 +1279,9 @@ int guardarDatosDeDMA(int fileDescriptorActual){
 	log_info(LOGGER,"Path:%s | Offset:%d | Size:%d | Buffer:%s",
 			datos->path,datos->offset,datos->size,datos->buffer);
 	pthread_mutex_lock(&mutexSistemaDeArchivos);
-	guardarDatos(datos->path,datos->offset,datos->size,datos->buffer);
+	int resultadoDeGuardarDatos=guardarDatos(datos->path,datos->offset,datos->size,datos->buffer);
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
+	enviarCabecera(FDDMA, resultadoDeGuardarDatos, 1);
 	return EXIT_SUCCESS;
 }
 
@@ -1320,6 +1322,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 					if(bloqueActual<cantidadTotalDeBloquesCreados){
 						numeroDeBloque =(int)list_get(metadata->bloques,i);
 						string_append(&archivoDeBloque, string_itoa(numeroDeBloque));
+						string_append(&archivoDeBloque, ".bin");
 						log_info(LOGGER,"Voy a escribir en el bloque %s que ya esta creado",archivoDeBloque);
 					}else{
 						log_info(LOGGER,"El bloque para escribir no existe, lo tengo que crear");
