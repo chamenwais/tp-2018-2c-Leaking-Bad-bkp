@@ -911,6 +911,7 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 	while(!hayQueFinalizarElPrograma()){
 		t_cabecera cabecera;
 		log_info(LOGGER,"Esperando alguna cabecera");
+		pthread_mutex_lock(&mutexUsoDelCanalDeComunicacionDelDMA);
 		cabecera = recibirCabecera(FDDMA);
 		log_info(LOGGER,"Recibi un dato");
 		if(cabecera.tamanio>0){
@@ -920,6 +921,7 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 			valorDeLaCabecera=(int)cabecera.tipoDeMensaje;
 		}
 		log_info(LOGGER,"Voy a atender una conexion por el FD: %d", FDDMA);
+
 		pthread_create(&thread, &attr,&hiloDePedidoDeDMA, valorDeLaCabecera);
 		}
 	log_info(LOGGER,"Cierro la conexion");
@@ -970,9 +972,11 @@ int iniciarTrabajoConElDMA(int cabecera){
 			break;
 		default:
 			log_error(LOGGER,"Error, me llego un tipo de mensaje del DMA desconocido, %d",cabecera);
+			pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 			return EXIT_FAILURE;
 			break;
 		}//end swith
+	pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	return EXIT_SUCCESS;
 }
 
