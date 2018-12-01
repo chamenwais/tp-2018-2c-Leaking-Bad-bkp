@@ -54,4 +54,5 @@ tp_datosObtenidosDeProtocolo pedir_datos_a_Mdj(char * ruta, int offset_Mdj, int 
 void tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath path_y_pid, int socket_safa);
 void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath path_y_pid, int socket_mdj, int socket_fm9, int socket_safa);
 bool todavia_no_se_recibio_todo_el_archivo(int tamanio_parcial_archivo, tp_datosObtenidosDeProtocolo parte_archivo);
+void operacion_flush_archivo(int * sockets);
 #endif /* CONEXIONESENTRANTES_H_ */

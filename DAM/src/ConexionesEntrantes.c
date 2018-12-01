@@ -88,6 +88,8 @@ void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 					adaptar_sockets_para_hilo(socket_CPU_solicitante,socket_fm9,socket_safa,socket_filesystem));
 			break;
 		case FlushDeArchivoADisco:
+			pthread_create(&hilo_correspondiente_a_pedido,&atributo_detachable,(void *)operacion_flush_archivo,
+					adaptar_sockets_para_hilo(socket_CPU_solicitante,socket_fm9,socket_safa,socket_filesystem));
 			break;
 		case CrearLineasEnArchivo:
 			break;
@@ -227,9 +229,9 @@ int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, t
 	enviarCabecera(socket_fm9, CargarParteEnMemoria, sizeof(CargarParteEnMemoria));
 	prot_enviar_DMA_FM9_cargarEnMemoria(info_cpu->pid, info_cpu->path, parte_archivo->buffer
 			, offset_Fm9, transfer_size, parte_archivo->size, socket_fm9);
-	free(parte_archivo);
 	int direccion_logica = prot_recibir_FM9_DMA_cargaEnMemoria(socket_fm9);
 	pthread_mutex_unlock(&MX_MEMORIA);
+	free(parte_archivo);
 	return direccion_logica;
 }
 
@@ -286,4 +288,13 @@ void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath i
 		free(parte_archivo->buffer);
 		free(parte_archivo);
 	}
+}
+
+void operacion_flush_archivo(int * sockets){
+	int socket_CPU=sockets[0];
+	int socket_fm9=sockets[1];
+	int socket_safa=sockets[2];
+	int socket_mdj=sockets[3];
+	free(sockets);
+	tp_datosEnMemoria pedido_flush=prot_recibir_CPU_DMA_flush(socket_CPU);
 }

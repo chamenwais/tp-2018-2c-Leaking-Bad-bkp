@@ -54,6 +54,21 @@ typedef struct stru_datosEnMemoria{
 } t_datosEnMemoria;
 typedef t_datosEnMemoria* tp_datosEnMemoria;
 
+typedef struct stru_obtenerArchivo{
+	char* path;
+	int pid;
+	int memory_address;
+	int offset;
+	int size;
+} t_obtenerArchivo;
+typedef t_obtenerArchivo* tp_obtenerArchivo;
+
+typedef struct stru_pathPid{
+	char* path;
+	int pid;
+} t_pathPid;
+typedef t_pathPid* tp_pathPid;
+
 void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTotalDelArchivo, int sock);
 tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos(int sock);
 void prot_enviar_DMA_FS_path(char* path,int sock);
@@ -70,5 +85,13 @@ void prot_enviar_FM9_DMA_cargaEnMemoria(int memory_address, int sock);
 int prot_recibir_FM9_DMA_cargaEnMemoria(int sock);
 void prot_enviar_DMA_SAFA_datosEnMemoria(char* path, int pid, int memory_address, int sock);
 tp_datosEnMemoria prot_recibir_DMA_SAFA_datosEnMemoria(int sock);
+void prot_enviar_CPU_DMA_flush(char* path, int pid, int memory_address, int sock);
+tp_datosEnMemoria prot_recibir_CPU_DMA_flush(int sock);
+void prot_enviar_DMA_FM9_obtenerArchivo(char* path, int pid, int memory_address, int offset, int size, int sock);
+tp_obtenerArchivo prot_recibir_DMA_FM9_obtenerArchivo(int sock);
+void prot_enviar_FM9_DMA_devolverDatos(char* datos, int tamanio_trozo, int tamanio_total_archivo, int sock);
+tp_datosObtenidosDeProtocolo prot_recibir_FM9_DMA_devolverDatos(int sock);
+void prot_enviar_DMA_SAFA_finFlush(char* path, int pid, int sock);
+tp_pathPid prot_recibir_DMA_SAFA_finFlush(int sock);
 
 #endif /* LQVG_PROTOCOLO_H_ */
