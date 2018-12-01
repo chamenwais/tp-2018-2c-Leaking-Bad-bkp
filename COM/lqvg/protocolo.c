@@ -227,37 +227,104 @@ tp_crearArchivo prot_recibir_DMA_FS_CrearArchivo(int sock){
 }
 
 void prot_enviar_CPU_DMA_flush(char* path, int pid, int memory_address, int sock){
-
+	int tam_path = strlen(path);
+	int size_of_int=sizeof(int);
+	int tamanio_paquete_flush = tam_path + (3 * size_of_int);
+	char * paquete_flush = malloc(tamanio_paquete_flush);
+	paquete_flush[0]=tam_path;
+	memcpy(paquete_flush+4,path,tam_path);
+	paquete_flush[4+tam_path]=pid;
+	paquete_flush[4+tam_path+4]=memory_address;
+	enviar(sock,paquete_flush,tamanio_paquete_flush);
+	free(paquete_flush);
 }
 
 tp_datosEnMemoria prot_recibir_CPU_DMA_flush(int sock){
 	tp_datosEnMemoria datos_flush;
+	int tam_path;
+	recibir(sock,&tam_path,sizeof(int));
+	datos_flush->path=malloc(tam_path+1);
+	recibir(sock,datos_flush->path,tam_path);
+	(datos_flush->path)[tam_path]='\0';
+	recibir(sock,&(datos_flush->pid),sizeof(int));
+	recibir(sock,&(datos_flush->memory_address),sizeof(int));
 	return datos_flush;
 }
 
 void prot_enviar_DMA_FM9_obtenerArchivo(char* path, int pid, int memory_address, int offset, int size, int sock){
+	int tam_path = strlen(path);
+	int size_of_int=sizeof(int);
+	int tamanio_paquete_obtener = tam_path + (5 * size_of_int);
+	char * paquete_obtener = malloc(tamanio_paquete_obtener);
+	paquete_obtener[0]=tam_path;
+	memcpy(paquete_obtener+4,path,tam_path);
+	paquete_obtener[4+tam_path]=pid;
+	paquete_obtener[4+tam_path+4]=memory_address;
+	paquete_obtener[4+tam_path+4+4]=offset;
+	paquete_obtener[4+tam_path+4+4+4]=size;
+	enviar(sock,paquete_obtener,tamanio_paquete_obtener);
+	free(paquete_obtener);
 
 }
 
 tp_obtenerArchivo prot_recibir_DMA_FM9_obtenerArchivo(int sock){
 	tp_obtenerArchivo obtener_archivo;
+	int tam_path;
+	recibir(sock,&tam_path,sizeof(int));
+	obtener_archivo->path=malloc(tam_path+1);
+	recibir(sock,obtener_archivo->path,tam_path);
+	(obtener_archivo->path)[tam_path]='\0';
+	recibir(sock,&(obtener_archivo->pid),sizeof(int));
+	recibir(sock,&(obtener_archivo->memory_address),sizeof(int));
+	recibir(sock,&(obtener_archivo->offset),sizeof(int));
+	recibir(sock,&(obtener_archivo->size),sizeof(int));
 	return obtener_archivo;
 }
 
 void prot_enviar_FM9_DMA_devolverDatos(char* datos, int tamanio_trozo, int tamanio_total_archivo, int sock){
-
+	int tam_datos = strlen(datos);
+	int size_of_int=sizeof(int);
+	int tamanio_paquete_devolver = tam_datos + (3 * size_of_int);
+	char * paquete_devolver = malloc(tamanio_paquete_devolver);
+	paquete_devolver[0]=tam_datos;
+	memcpy(paquete_devolver+4,datos,tam_datos);
+	paquete_devolver[4+tam_datos]=tamanio_trozo;
+	paquete_devolver[4+tam_datos+4]=tamanio_total_archivo;
+	enviar(sock,paquete_devolver,tamanio_paquete_devolver);
+	free(paquete_devolver);
 }
 
 tp_datosObtenidosDeProtocolo prot_recibir_FM9_DMA_devolverDatos(int sock){
 	tp_datosObtenidosDeProtocolo devolver_datos;
+	int tam_datos;
+	recibir(sock,&tam_datos,sizeof(int));
+	devolver_datos->buffer=malloc(tam_datos+1);
+	recibir(sock,devolver_datos->buffer,tam_datos);
+	(devolver_datos->buffer)[tam_datos]='\0';
+	recibir(sock,&(devolver_datos->size),sizeof(int));
+	recibir(sock,&(devolver_datos->tamanio_total_archivo),sizeof(int));
 	return devolver_datos;
 }
 
 void prot_enviar_DMA_SAFA_finFlush(char* path, int pid, int sock){
-
+	int tam_path = strlen(path);
+	int size_of_int=sizeof(int);
+	int tamanio_paquete_flush = tam_path + (2 * size_of_int);
+	char * paquete_flush = malloc(tamanio_paquete_flush);
+	paquete_flush[0]=tam_path;
+	memcpy(paquete_flush+4,path,tam_path);
+	paquete_flush[4+tam_path]=pid;
+	enviar(sock,paquete_flush,tamanio_paquete_flush);
+	free(paquete_flush);
 }
 
 tp_pathPid prot_recibir_DMA_SAFA_finFlush(int sock){
 	tp_pathPid fin_flush;
+	int tam_path;
+	recibir(sock,&tam_path,sizeof(int));
+	fin_flush->path=malloc(tam_path+1);
+	recibir(sock,fin_flush->path,tam_path);
+	(fin_flush->path)[tam_path]='\0';
+	recibir(sock,&(fin_flush->pid),sizeof(int));
 	return fin_flush;
 }
