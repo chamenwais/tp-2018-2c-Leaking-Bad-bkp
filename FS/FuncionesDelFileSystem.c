@@ -992,8 +992,9 @@ int validarArchivoDeConsola(char *path){
 
 int validarArchivoDeDMA(int FDDMA){
 	char*path=prot_recibir_DMA_FS_path(FDDMA);
-	log_info(LOGGER,"Recibiendo el path: %s, para validar el archivo",path);
+	log_info(LOGGER,"Recibiendo el path: \"%s\", para validar el archivo",path);
 	enviarCabecera(FDDMA, validarArchivo(path), 1);
+	log_info(LOGGER,"Enviando respuesta de validar archivo al DMA");
 	return EXIT_SUCCESS;
 }
 
@@ -1033,7 +1034,7 @@ int crearArchivoDeDMA(int FDDMA){
 	 */
 	tp_crearArchivo dataParaCrearElArchivo=prot_recibir_DMA_FS_CrearArchivo(FDDMA);
 	int cantidadDeBytes=0; //modificar
-	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",dataParaCrearElArchivo->path);
+	log_info(LOGGER,"Recibiendo el path: \"%s\", para crear el archivo",dataParaCrearElArchivo->path);
 	char*ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Archivos/");
@@ -1041,6 +1042,7 @@ int crearArchivoDeDMA(int FDDMA){
 	int resultadoDeCrearElArchivo=crearArchivo(ubicacionDelArchivo, dataParaCrearElArchivo->size,
 			dataParaCrearElArchivo->path);
 	enviarCabecera(FDDMA, resultadoDeCrearElArchivo, 1);
+	log_info(LOGGER,"Enviando respuesta de crear archivo al DMA (%d)",resultadoDeCrearElArchivo);
 	return resultadoDeCrearElArchivo;
 }
 
@@ -1189,6 +1191,7 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 	int tamanioTotalDelArchivo=obtenerLongigutDelArchivo(parametrosDeObtenerDatos->path);
 	prot_enviar_FS_DMA_datosObtenidos(datosObtenidos.datos, tamanioTotalDelArchivo,
 			datosObtenidos.resultado, fileDescriptorActual);
+	log_info(LOGGER,"Enviando respuesta de datos obtenidos al DMA");
 	return EXIT_SUCCESS;
 }
 
@@ -1305,6 +1308,7 @@ int guardarDatosDeDMA(int fileDescriptorActual){
 	int resultadoDeGuardarDatos=guardarDatos(datos->path,datos->offset,datos->size,datos->buffer);
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 	enviarCabecera(FDDMA, resultadoDeGuardarDatos, 1);
+	log_info(LOGGER,"Enviando respuesta de guardar datos al DMA");
 	return EXIT_SUCCESS;
 }
 
