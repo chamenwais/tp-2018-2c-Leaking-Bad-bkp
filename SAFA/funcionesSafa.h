@@ -23,7 +23,7 @@ int finalizarTodo();
 void *funcionHiloComDMA(void *arg);
 int esperarFinEscuchaDMA();
 int iniciarEscuchaCPU();
-void *funcionHiloComCPU(void *arg);
+void *funcionHiloComCPU(void *sockCPU);
 int escuchar();
 int iniciarConsola();
 void *funcionHiloConsola(void *arg);

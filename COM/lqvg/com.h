@@ -59,7 +59,8 @@ enum MENSAJES {
 	CargarParteEnMemoria,
 	ArchivoBorrado,
 	ArchivoNoBorrado,
-	FinDeQuantum
+	FinDeQuantum,
+	BloquearDTB
 };
 
 typedef struct {

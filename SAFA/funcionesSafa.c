@@ -131,6 +131,7 @@ int liberarMemoria(){
 			log_info(LOG_SAFA,"Recibi cabecera: AbrirPathNoFinalizado");
 			datos_recibidos = prot_recibir_DMA_SAFA_datosEnMemoria(fd_DMA);
 			//ver que es lo que me manda DAM
+
 			break;
 		case AbrirPathFinalizadoOk:
 			log_info(LOG_SAFA,"Recibi cabecera: AbrirPathFinalizadoOk");
@@ -165,9 +166,24 @@ int liberarMemoria(){
 			}
 		return EXIT_SUCCESS;
 } */
- void *funcionHiloComCPU(void *arg){//TODO: ver que hace
-	 list_add(cpu_libres, arg);
-
+ void *funcionHiloComCPU(void *sockCPU){//TODO: ver que hace
+	 list_add(cpu_libres, sockCPU);
+	 log_info(LOG_SAFA,"Handshake exitoso con CPU");
+	 log_info(LOG_SAFA,"Espero cabecera de la CPU");
+	 t_cabecera cabecera = recibirCabecera(sockCPU);
+	 t_DTB* id_DTB; //tengo que hacer malloc? TODO
+	 //TODO: CPU me manda el DTB a bloquear, tengo q crear la variable INT? CHAR?
+	 switch (cabecera.tipoDeMensaje){
+	 	 case BloquearDTB:
+	 		 log_info(LOG_SAFA, "CPU me pide bloquear el DTB %i");
+	 		 bool coincideID(void* node) {
+	 		 return ((((t_DTB*) node)->id_GDT)==id_DTB->id_GDT);
+	 		 }
+	 		 id_DTB=list_remove_by_condition(ejecutando, coincideID);
+	 		 list_add(bloqueados, id_DTB);
+	 		 log_info(LOG_SAFA, "Se bloqueo el DTB %i", id_DTB->id_GDT);
+	 	 break;
+	 }
 	return EXIT_SUCCESS;
 }
 
@@ -322,7 +338,7 @@ t_DTB* crear_DTB(char* path){
 	log_info(LOG_SAFA, "DTB %i creado", id);
 	id++;
 	strcpy(new_DTB->escriptorio, path);
-	new_DTB->iniGDT = 0;
+	new_DTB->iniGDT = 0;// TODO solo uno tiene q enviarse con cero?
 	new_DTB->program_counter = 0;
 	new_DTB->tabla_dir_archivos = list_create();
 	new_DTB->quantum = configSAFA.quantum;
@@ -511,6 +527,8 @@ int enviarDTBaCPU(t_DTB * dtb, int sockCPU) {
 	msj.tabla_dir_archivos = dtb->tabla_dir_archivos;
 	int size = sizeof(msj);
 	enviar(sockCPU, &msj, size);
+	list_remove(listos, 0);
+	list_add(ejecutando, dtb);
 	log_debug(LOG_SAFA, "Envia DTB a CPU");
 	return EXIT_SUCCESS;
 }
