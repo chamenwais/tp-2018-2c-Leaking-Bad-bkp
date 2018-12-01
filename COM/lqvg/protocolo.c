@@ -87,20 +87,13 @@ int prot_recibir_int(int sock){
 
 void prot_enviar_DMA_FS_guardarDatos(char *path, int offset, int size, char *buffer, int sock){
 	//4 envia
-	printf("asd");
 	int tam = strlen(path) + 1;
-	printf("asd");
 	enviar(sock,&tam,sizeof(tam));
-	printf("asd");
 	enviar(sock,path,tam);
-	printf("asd");
 	enviar(sock,&offset,sizeof(offset));
-	printf("asd");
 	enviar(sock,&size,sizeof(size));
 	int tam2 = strlen(buffer) + 1;
-	printf("asd");
 	enviar(sock,&tam2,sizeof(tam2));
-	printf("asd");
 	enviar(sock,buffer,tam2);
 	printf("enviando: %s, size:%d | %d | %d | %s size:%d\n",path,tam,offset,size,buffer,tam2);
 	return;
@@ -124,7 +117,7 @@ tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos(int sock){
 
 void prot_enviar_CPU_DMA_abrirPath(char* path, int pid, int sock){
 	//5 envia
-	int tam = sizeof(&path);
+	int tam = strlen(path);
 	enviar(sock,&tam,sizeof(tam));
 	enviar(sock,path,tam);
 	enviar(sock,&pid,sizeof(pid));
@@ -143,8 +136,9 @@ tp_abrirPath prot_recibir_CPU_DMA_abrirPath(int sock){
 
 void prot_enviar_DMA_FM9_cargarEnMemoria(int pid, char* path, char* buffer, int offset, int transfer_size, int file_size, int sock){
 	//6 envia
-	int path_size = sizeof(&path);
-	int buffer_size = sizeof(&buffer);
+	int path_size = strlen(path);
+	//TODO revisar si hay que agregarle el \0 al final para que ande bien strlen
+	int buffer_size = strlen(buffer);
 	enviar(sock,&pid, sizeof(pid));
 	enviar(sock,&path_size,sizeof(path_size));
 	enviar(sock,path,path_size);
@@ -187,7 +181,7 @@ int prot_recibir_FM9_DMA_cargaEnMemoria(int sock){
 
 void prot_enviar_DMA_SAFA_datosEnMemoria(char* path, int pid, int memory_address, int sock){
 	//8 envia
-	int path_size = sizeof(&path);
+	int path_size = strlen(path);
 	enviar(sock,&path_size,sizeof(path_size));
 	enviar(sock,path,path_size);
 	enviar(sock,&pid,sizeof(pid));
