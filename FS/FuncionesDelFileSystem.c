@@ -911,6 +911,7 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 	while(!hayQueFinalizarElPrograma()){
 		t_cabecera cabecera;
 		log_info(LOGGER,"Esperando alguna cabecera");
+		pthread_mutex_lock(&mutexUsoDelCanalDeComunicacionDelDMA);
 		cabecera = recibirCabecera(FDDMA);
 		log_info(LOGGER,"Recibi un dato");
 		if(cabecera.tamanio>0){
@@ -920,6 +921,7 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 			valorDeLaCabecera=(int)cabecera.tipoDeMensaje;
 		}
 		log_info(LOGGER,"Voy a atender una conexion por el FD: %d", FDDMA);
+
 		pthread_create(&thread, &attr,&hiloDePedidoDeDMA, valorDeLaCabecera);
 		}
 	log_info(LOGGER,"Cierro la conexion");
@@ -970,9 +972,11 @@ int iniciarTrabajoConElDMA(int cabecera){
 			break;
 		default:
 			log_error(LOGGER,"Error, me llego un tipo de mensaje del DMA desconocido, %d",cabecera);
+			pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 			return EXIT_FAILURE;
 			break;
 		}//end swith
+	pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	return EXIT_SUCCESS;
 }
 
@@ -988,8 +992,9 @@ int validarArchivoDeConsola(char *path){
 
 int validarArchivoDeDMA(int FDDMA){
 	char*path=prot_recibir_DMA_FS_path(FDDMA);
-	log_info(LOGGER,"Recibiendo el path: %s, para validar el archivo",path);
+	log_info(LOGGER,"Recibiendo el path: \"%s\", para validar el archivo",path);
 	enviarCabecera(FDDMA, validarArchivo(path), 1);
+	log_info(LOGGER,"Enviando respuesta de validar archivo al DMA");
 	return EXIT_SUCCESS;
 }
 
@@ -1029,7 +1034,7 @@ int crearArchivoDeDMA(int FDDMA){
 	 */
 	tp_crearArchivo dataParaCrearElArchivo=prot_recibir_DMA_FS_CrearArchivo(FDDMA);
 	int cantidadDeBytes=0; //modificar
-	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo",dataParaCrearElArchivo->path);
+	log_info(LOGGER,"Recibiendo el path: \"%s\", para crear el archivo",dataParaCrearElArchivo->path);
 	char*ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Archivos/");
@@ -1037,6 +1042,7 @@ int crearArchivoDeDMA(int FDDMA){
 	int resultadoDeCrearElArchivo=crearArchivo(ubicacionDelArchivo, dataParaCrearElArchivo->size,
 			dataParaCrearElArchivo->path);
 	enviarCabecera(FDDMA, resultadoDeCrearElArchivo, 1);
+	log_info(LOGGER,"Enviando respuesta de crear archivo al DMA (%d)",resultadoDeCrearElArchivo);
 	return resultadoDeCrearElArchivo;
 }
 
@@ -1185,6 +1191,7 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 	int tamanioTotalDelArchivo=obtenerLongigutDelArchivo(parametrosDeObtenerDatos->path);
 	prot_enviar_FS_DMA_datosObtenidos(datosObtenidos.datos, tamanioTotalDelArchivo,
 			datosObtenidos.resultado, fileDescriptorActual);
+	log_info(LOGGER,"Enviando respuesta de datos obtenidos al DMA");
 	return EXIT_SUCCESS;
 }
 
@@ -1301,6 +1308,7 @@ int guardarDatosDeDMA(int fileDescriptorActual){
 	int resultadoDeGuardarDatos=guardarDatos(datos->path,datos->offset,datos->size,datos->buffer);
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 	enviarCabecera(FDDMA, resultadoDeGuardarDatos, 1);
+	log_info(LOGGER,"Enviando respuesta de guardar datos al DMA");
 	return EXIT_SUCCESS;
 }
 
