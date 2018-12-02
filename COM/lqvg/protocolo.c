@@ -10,10 +10,8 @@ void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTo
 	//1 envia
 	enviar(sock,&resultado,sizeof(resultado));
 	if(resultado==DatosObtenidos){
-		//enviar(sock,&size,sizeof(size));
 		enviar(sock,&tamanioTotalDelArchivo,sizeof(tamanioTotalDelArchivo));
-		int tam = strlen(datos);//+1;
-		//int tam = sizeof(&datos);
+		int tam = strlen(datos);
 		enviar(sock,&tam,sizeof(tam));
 		enviar(sock,datos,tam);
 	}
@@ -38,7 +36,6 @@ tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos(int sock){
 void prot_enviar_DMA_FS_obtenerDatos(char *path, int offset, int size, int sock){
 	//2 envia
 	int tam = strlen(path)+1;
-	//int tam = sizeof(&path);
 	enviar(sock,&tam,sizeof(tam));
 	enviar(sock,path,tam);
 	enviar(sock,&offset,sizeof(offset));
@@ -61,7 +58,6 @@ tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos(int sock){
 void prot_enviar_DMA_FS_path(char* path,int sock){
 	//3 recibe
 	int tam = strlen(path)+1;
-	//int tam = sizeof(&path);
 	enviar(sock,&tam,sizeof(tam));
 	enviar(sock,path,tam);
 }
@@ -120,7 +116,6 @@ tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos(int sock){
 
 void prot_enviar_CPU_DMA_abrirPath(char* path, int pid, int sock){
 	//5 envia
-	//int tam = sizeof(&path);
 	int tam = strlen(path)+1;
 	enviar(sock,&tam,sizeof(tam));
 	enviar(sock,path,tam);
@@ -140,9 +135,7 @@ tp_abrirPath prot_recibir_CPU_DMA_abrirPath(int sock){
 
 void prot_enviar_DMA_FM9_cargarEnMemoria(int pid, char* path, char* buffer, int offset, int transfer_size, int file_size, int sock){
 	//6 envia
-	//int path_size = sizeof(&path);
 	int path_size = strlen(path)+1;
-	//int buffer_size = sizeof(&buffer);
 	int buffer_size = strlen(buffer);//+1; no mando el /0
 	enviar(sock,&pid, sizeof(pid));
 	enviar(sock,&path_size,sizeof(path_size));
@@ -186,7 +179,6 @@ int prot_recibir_FM9_DMA_cargaEnMemoria(int sock){
 
 void prot_enviar_DMA_SAFA_datosEnMemoria(char* path, int pid, int memory_address, int sock){
 	//8 envia
-	//int path_size = sizeof(&path);
 	int path_size = strlen(path)+1;
 	enviar(sock,&path_size,sizeof(path_size));
 	enviar(sock,path,path_size);
@@ -209,7 +201,6 @@ tp_datosEnMemoria prot_recibir_DMA_SAFA_datosEnMemoria(int sock){
 void prot_enviar_DMA_FS_CrearArchivo(char* path,int longitud,int sock){
 	//10 recibe
 	int tam = strlen(path)+1;
-	//int tam = sizeof(&path);
 	enviar(sock,&tam,sizeof(tam));
 	enviar(sock,path,tam);
 	enviar(sock,&longitud,sizeof(longitud));
@@ -229,7 +220,7 @@ tp_crearArchivo prot_recibir_DMA_FS_CrearArchivo(int sock){
 }
 
 void prot_enviar_CPU_DMA_flush(char* path, int pid, int memory_address, int sock){
-	int tam_path = strlen(path)+1;
+	int tam_path = strlen(path);
 	int size_of_int=sizeof(int);
 	int tamanio_paquete_flush = tam_path + (3 * size_of_int);
 	char * paquete_flush = malloc(tamanio_paquete_flush);
@@ -254,7 +245,7 @@ tp_datosEnMemoria prot_recibir_CPU_DMA_flush(int sock){
 }
 
 void prot_enviar_DMA_FM9_obtenerArchivo(char* path, int pid, int memory_address, int offset, int size, int sock){
-	int tam_path = strlen(path)+1;
+	int tam_path = strlen(path);
 	int size_of_int=sizeof(int);
 	int tamanio_paquete_obtener = tam_path + (5 * size_of_int);
 	char * paquete_obtener = malloc(tamanio_paquete_obtener);
@@ -309,7 +300,7 @@ tp_datosObtenidosDeProtocolo prot_recibir_FM9_DMA_devolverDatos(int sock){
 }
 
 void prot_enviar_DMA_SAFA_finFlush(char* path, int pid, int sock){
-	int tam_path = strlen(path)+1;
+	int tam_path = strlen(path);
 	int size_of_int=sizeof(int);
 	int tamanio_paquete_flush = tam_path + (2 * size_of_int);
 	char * paquete_flush = malloc(tamanio_paquete_flush);
