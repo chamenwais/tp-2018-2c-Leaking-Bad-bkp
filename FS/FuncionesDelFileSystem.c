@@ -951,23 +951,23 @@ int iniciarTrabajoConElDMA(int cabecera){
 	log_info(LOGGER,"La cabecera que recibi es: %d", cabecera);
 	switch(cabecera){
 		case ValidarArchivo:
-			log_info(LOGGER,"Pedido del DMA de \"ValidarArchivo\"");
+			log_warning(LOGGER,"Pedido del DMA de \"ValidarArchivo\"");
 			validarArchivoDeDMA(FDDMA);
 			break;
 		case CrearArchivo:
-			log_info(LOGGER,"Pedido del DMA de \"CrearArchivo\"");
+			log_warning(LOGGER,"Pedido del DMA de \"CrearArchivo\"");
 			crearArchivoDeDMA(FDDMA);
 			break;
 		case ObtenerDatos:
-			log_info(LOGGER,"Pedido del DMA de \"ObtenerDatos\"");
+			log_warning(LOGGER,"Pedido del DMA de \"ObtenerDatos\"");
 			obtenerDatosDeDMA(FDDMA);
 			break;
 		case GuardarDatos:
-			log_info(LOGGER,"Pedido del DMA de \"GuardarDatos\"");
+			log_warning(LOGGER,"Pedido del DMA de \"GuardarDatos\"");
 			guardarDatosDeDMA(FDDMA);
 			break;
 		case BorrarArchivo:
-			log_info(LOGGER,"Pedido del DMA de \"BorrarArchivo\"");
+			log_warning(LOGGER,"Pedido del DMA de \"BorrarArchivo\"");
 			borrarArchivoDeDMA(FDDMA);
 			break;
 		default:
@@ -976,6 +976,7 @@ int iniciarTrabajoConElDMA(int cabecera){
 			return EXIT_FAILURE;
 			break;
 		}//end swith
+	log_warning(LOGGER,"Pedido finalizado");
 	pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	return EXIT_SUCCESS;
 }
@@ -1010,8 +1011,10 @@ int validarArchivo(char *ubicacionDelArchivo){
 	pthread_mutex_lock(&mutexSistemaDeArchivos);
 	log_info(LOGGER,"Voy a ver si existe el archivo: %s",path);
 	if(existeElArchivo(path)){
+		pthread_mutex_unlock(&mutexSistemaDeArchivos);
 		return ElArchivoExiste;
 	}else{
+		pthread_mutex_unlock(&mutexSistemaDeArchivos);
 		return ElArchivoNoExiste;
 		}
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
@@ -1186,6 +1189,7 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 	tp_obtenerDatos parametrosDeObtenerDatos = prot_recibir_DMA_FS_obtenerDatos(fileDescriptorActual);
 	log_info(LOGGER,"Path:%s | Offset:%d | Size:%d",
 		parametrosDeObtenerDatos->path,parametrosDeObtenerDatos->offset,parametrosDeObtenerDatos->size);
+	log_info(LOGGER,"Llamo a la funcion para obtener los datos");
 	t_datosObtenidos datosObtenidos = obtenerDatos(parametrosDeObtenerDatos->path,
 		parametrosDeObtenerDatos->offset,parametrosDeObtenerDatos->size);
 	int tamanioTotalDelArchivo=obtenerLongigutDelArchivo(parametrosDeObtenerDatos->path);
@@ -1200,6 +1204,8 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 	 * Descripción​: Ante un pedido de datos File System devolverá del path enviado por parámetro,
 	 * la cantidad de bytes definidos por el Size a partir del offset solicitado.
 	 */
+	log_info(LOGGER,"Obteniendo datos con los parametros: path \"%s\" | offset \"%d\" | size \"%d\" ",
+			path, offset, size);
 	t_datosObtenidos datosObtendios;
 	int bytesLeidos=0;
 	datosObtendios.datos=malloc(sizeof(char)*size);
@@ -1211,6 +1217,7 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 	if(size>0){
 		if(offset>=0){
 			if(existeElArchivo(ubicacionDelArchivoDeMetadata)){
+				log_info(LOGGER,"El archivo \"%s\" existe",ubicacionDelArchivoDeMetadata);
 				tp_metadata metadata = recuperarMetaData(ubicacionDelArchivoDeMetadata);
 				log_info(LOGGER,"Offset: %d, tamaño de bloques %d, size %d",
 						offset, configuracionDeMetadata.tamanioBloques,size);
