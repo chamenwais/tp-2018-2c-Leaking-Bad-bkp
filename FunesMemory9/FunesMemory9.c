@@ -50,6 +50,7 @@ void *escuchar_mensajes_de_cpus(int socket_cpu){
 
     //Si no recibo nada...
     logger_funesMemory9(escribir_loguear, l_info, "\nCerrada la conexión con socket de cpu\n");
+    return EXIT_SUCCESS;
 }
 
 bool cabecera_es_invalida(t_cabecera* cabecera){
@@ -146,11 +147,11 @@ void destruir_estructuras_esquema_paginacion_invertida(){
 	}
 }
 
-void buscar_informacion_administrativa_esquema_segmentacion_paginada(){
+void buscar_informacion_administrativa_esquema_segmentacion_paginada(int pid){
 
 }
 
-void buscar_informacion_administrativa_esquema_paginacion_invertida(){
+void buscar_informacion_administrativa_esquema_paginacion_invertida(int pid){
 
 }
 
@@ -164,6 +165,9 @@ void inicializar_funciones_variables_por_segmento(){
 	destruir_estructuras_esquema[SEGMENTACION_PURA]=&destruir_estructuras_esquema_segmentacion;
 	destruir_estructuras_esquema[SEGMENTACION_PAGINADA]=&destruir_estructuras_esquema_segmentacion_paginada;
 	destruir_estructuras_esquema[TABLA_PAGINAS_INVERTIDA]=&destruir_estructuras_esquema_paginacion_invertida;
+	buscar_informacion_administrativa[SEGMENTACION_PURA]=&buscar_informacion_administrativa_esquema_segmentacion_y_mem_real;
+	buscar_informacion_administrativa[SEGMENTACION_PAGINADA]=&buscar_informacion_administrativa_esquema_segmentacion_paginada;
+	buscar_informacion_administrativa[TABLA_PAGINAS_INVERTIDA]=&buscar_informacion_administrativa_esquema_paginacion_invertida;
 }
 
 char** parser_instruccion(char* linea){
@@ -216,14 +220,7 @@ void *funcionHiloConsola(void *arg){
 
 void realizar_dump(int id){
 
-	switch(MODO_EJECUCION){
-		case 0: &buscar_informacion_administrativa_esquema_segmentacion_y_mem_real;
-				break;
-		case 1: &buscar_informacion_administrativa_esquema_segmentacion_paginada;
-				break;
-		case 2: &buscar_informacion_administrativa_esquema_paginacion_invertida;
-				break;
-	}
+	(buscar_informacion_administrativa[MODO_EJECUCION])(id);
 }
 
 void iniciar_consola(){

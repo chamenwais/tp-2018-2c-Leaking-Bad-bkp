@@ -35,6 +35,7 @@ void buscar_informacion_administrativa_esquema_paginacion_invertida();
 void (*crear_estructuras_esquema[3])();
 void (*cargar_parte_archivo[3])(int);
 void (*destruir_estructuras_esquema[3])();
+void (*buscar_informacion_administrativa[3])(int);
 
 /*** Segmentacion paginada ***/
 

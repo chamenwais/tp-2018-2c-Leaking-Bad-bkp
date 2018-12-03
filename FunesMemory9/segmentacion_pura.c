@@ -96,12 +96,12 @@ void informar_carga_segmento_exitosa(int indice_entrada_archivo_en_tabla_segment
 
 t_archivo_cargandose * cargar_buffer_archivo(tp_cargarEnMemoria parte_archivo) {
 	t_archivo_cargandose * archivo_de_proceso_cargandose;
-	size_t tamanio_parte_archivo = sizeof(&(parte_archivo->buffer));
+	size_t tamanio_parte_archivo = strlen(parte_archivo->buffer);
 	if (el_archivo_ya_se_estaba_cargando(parte_archivo)) {
 		//El pedazo de archivo es conocido, hay que obtener la info que ya veníamos cargando
 		obtener_archivo_en_curso_de_carga(parte_archivo, &archivo_de_proceso_cargandose);
 		//TODO agregar algunas validaciones para no tener efectos adversos en el realloc
-		size_t tamanio_archivo_cargandose= sizeof(&(archivo_de_proceso_cargandose->buffer_archivo));
+		size_t tamanio_archivo_cargandose= strlen(archivo_de_proceso_cargandose->buffer_archivo);
 		archivo_de_proceso_cargandose->buffer_archivo=realloc(archivo_de_proceso_cargandose->buffer_archivo,
 				tamanio_archivo_cargandose+tamanio_parte_archivo);
 	} else {
@@ -142,14 +142,15 @@ void cargar_parte_archivo_en_segmento(int DAM_fd){
 		return;
 	}
 	size_t tamanio_archivo_en_memoria =
-			sizeof(&archivo_separado_en_lineas);
+			strlen(archivo_separado_en_lineas);
 
 	copiar_archivo_a_memoria_fisica(tamanio_archivo_en_memoria, hueco,
 			archivo_separado_en_lineas);
 
 	actualizar_info_tabla_de_huecos(cantidad_de_lineas, hueco);
 
-	int indice_entrada_archivo_en_tabla_segmentos=actualizar_tabla_segmentos(parte_archivo, hueco->base, cantidad_de_lineas);
+	int indice_entrada_archivo_en_tabla_segmentos=actualizar_tabla_segmentos(parte_archivo, hueco->base-cantidad_de_lineas, cantidad_de_lineas);
+	//TODO borrar info del archivo cargandose
 	informar_carga_segmento_exitosa(indice_entrada_archivo_en_tabla_segmentos,
 			parte_archivo, DAM_fd);
 	return;
@@ -177,8 +178,10 @@ int separar_en_lineas(t_archivo_cargandose * archivo_cargado, char** archivo_sep
 		string_append(archivo_separado_en_lineas,lineas[cant_lineas]);
 		//Le tengo que agregar nuevamente el \n porque el split se lo quita
 		string_append(archivo_separado_en_lineas,"\n");
+		//Le sumo uno por el \n que tenia originalmente
 		int tamanio_linea_separada = string_length(lineas[cant_lineas])+1;
 		if (tamanio_linea_separada < TAMANIO_MAX_LINEA) {
+			//Si la linea del archivo es mas chica que el tamanio de linea, completo con $
 			int cantidad_sobrante=TAMANIO_MAX_LINEA-tamanio_linea_separada;
 			char * relleno_sobrante=string_repeat('$',cantidad_sobrante);
 			string_append(archivo_separado_en_lineas,relleno_sobrante);
@@ -214,26 +217,25 @@ void eliminar_lista_de_entradas(void * tabla_segmentos){
 
 void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id){
 	t_entrada_tabla_segmentos * entrada_segmento;
-	t_hueco * hueco;
-	t_tabla_segmentos * tabla_segmentos = list_find(tablas_de_segmentos, &es_un_proceso_conocido);
+	if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,id)){
+		t_tabla_segmentos * tabla_segmentos = (t_tabla_segmentos *)list_filter_comparing(tablas_de_segmentos, &tiene_tabla_de_segmentos,id);
 
-	int cant_entradas = list_size(tabla_segmentos->entradas);
-	logger_funesMemory9(escribir_loguear, l_info, "Utilizando el esquema de segmentacion pura y dado el ID del DTB indicado, el proceso tiene una tabla de "
-			"segmentos con %d entradas\n", cant_entradas);
+		int cant_entradas = list_size(tabla_segmentos->entradas);
+		logger_funesMemory9(escribir_loguear, l_info, "Utilizando el esquema de segmentacion pura y dado el ID del DTB indicado, el proceso tiene una tabla de "
+				"segmentos con %d entradas\n", cant_entradas);
 
-	if(tabla_segmentos->pid == id){
-		for(int i = 0; i++; i<cant_entradas){
+		for(int i = 0; i<cant_entradas; i++){
 			logger_funesMemory9(escribir_loguear, l_info, "En la entrada %d, se encuentra la sgte informacion: \n",i);
-			entrada_segmento = list_get(tabla_segmentos,i);
+			entrada_segmento = list_get(tabla_segmentos->entradas,i);
 			logger_funesMemory9(escribir_loguear, l_info, "El limite del segmento es %d. \n",entrada_segmento->limite);
 			logger_funesMemory9(escribir_loguear, l_info, "Contiene el archivo %s. \n\n",entrada_segmento->archivo);
 			logger_funesMemory9(escribir_loguear, l_info, "La base del segmento es %d. \n",entrada_segmento->base);
 
 			int tamanio_archivo = (entrada_segmento->limite)*TAMANIO_MAX_LINEA;
 			char * puntero_al_archivo = malloc(sizeof(tamanio_archivo)+1);
-			puntero_al_archivo[tamanio_archivo]='\0';
 
-			memcpy(MEMORIA_FISICA + (entrada_segmento->base*TAMANIO_MAX_LINEA),puntero_al_archivo,tamanio_archivo);
+			memcpy(puntero_al_archivo,MEMORIA_FISICA + (entrada_segmento->base*TAMANIO_MAX_LINEA),tamanio_archivo);
+			puntero_al_archivo[tamanio_archivo]='\0';
 
 			logger_funesMemory9(escribir_loguear, l_info, "La información contenida en la memoria fisica para la entrada correspondiente es:"
 					" %s \n",&puntero_al_archivo);
@@ -250,6 +252,10 @@ void destruir_estructuras_esquema_segmentacion(){
 
 bool es_un_proceso_conocido(void * tabla_segmentos){
 	return list_any_satisfy_comparing(archivos_cargandose, &el_proceso_tiene_archivo_cargandose, (*(t_tabla_segmentos*)tabla_segmentos).pid);
+}
+
+bool tiene_tabla_de_segmentos(void * tabla_segmentos, int pid){
+	return pid == (*(t_tabla_segmentos*)tabla_segmentos).pid;
 }
 
 int agregar_entrada_tabla_segmentos(tp_cargarEnMemoria nombre_archivo, t_list* entradas_segmentos, int nueva_base, int nuevo_limite) {

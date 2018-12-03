@@ -9,6 +9,7 @@
 #define UTILIDADES_FM9_H_
 
 #include "contexto.h"
+#include "utilidades_para_listas.h"
 
 int iniciar_servidor(char * port);
 int crear_listen_socket(char * puerto, int max_conexiones);

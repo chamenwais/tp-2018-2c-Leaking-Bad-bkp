@@ -36,6 +36,7 @@ extern t_list * lista_de_huecos;
 
 void inicializar_lista_de_huecos();
 bool es_un_proceso_conocido(void * tabla_segmentos);
+bool tiene_tabla_de_segmentos(void * tabla_segmentos, int pid);
 int agregar_entrada_tabla_segmentos(tp_cargarEnMemoria nombre_archivo, t_list* entradas_segmentos, int nueva_base, int nuevo_limite);
 int el_proceso_tiene_tabla_de_segmentos();
 int agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo, int nueva_base, int nuevo_limite);
