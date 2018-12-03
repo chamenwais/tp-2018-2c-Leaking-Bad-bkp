@@ -228,7 +228,7 @@ int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, t
 	pthread_mutex_lock(&MX_MEMORIA);
 	enviarCabecera(socket_fm9, CargarParteEnMemoria, sizeof(CargarParteEnMemoria));
 	prot_enviar_DMA_FM9_cargarEnMemoria(info_cpu->pid, info_cpu->path, parte_archivo->buffer
-			, offset_Fm9, transfer_size, parte_archivo->size, socket_fm9);
+			, offset_Fm9, transfer_size, parte_archivo->tamanio_total_archivo, socket_fm9);
 	int direccion_logica = prot_recibir_FM9_DMA_cargaEnMemoria(socket_fm9);
 	pthread_mutex_unlock(&MX_MEMORIA);
 	free(parte_archivo);
