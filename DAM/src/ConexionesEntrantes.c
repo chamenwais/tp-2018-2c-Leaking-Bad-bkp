@@ -170,7 +170,9 @@ void operacion_abrir_path(int * sockets){
 	} else {
 		loguear_cabecera_recibida(CONST_NAME_MDJ);
 		//Tratamos la respuesta de la validez o invalidez del path del archivo por abrir
-		tratar_invalidez_archivo(respuesta_validacion_path, mensaje_cpu, socket_safa);
+		if(ElArchivoNoExiste==tratar_invalidez_archivo(respuesta_validacion_path, mensaje_cpu, socket_safa)){
+			return;
+		}
 		tratar_validez_archivo(respuesta_validacion_path, mensaje_cpu, socket_mdj, socket_fm9, socket_safa);
 	}
 }
@@ -205,14 +207,15 @@ void informar_operacion_abrir_exitosa(int socket_safa, tp_abrirPath path_y_pid, 
 			"Se mando a safa la direccion de memoria %d del archivo que se abrio",
 			direccion_de_memoria);
 	free(path_y_pid->path);
-	free(path_y_pid);
 }
 
-void tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath info_cpu, int socket_safa){
-	if(ElArchivoNoExiste==(respuesta_validez_archivo.tipoDeMensaje)){
+enum MENSAJES tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath info_cpu, int socket_safa){
+	enum MENSAJES tipo_de_mensaje = respuesta_validez_archivo.tipoDeMensaje;
+	if (ElArchivoNoExiste == (tipo_de_mensaje)) {
 		logger_DAM(escribir_loguear, l_error,"Dijo Mdj que el path %s no existe. Error 10001",info_cpu->path);
 		informar_operacion_abrir_erronea(socket_safa, info_cpu);
 	}
+	return tipo_de_mensaje;
 }
 
 tp_datosObtenidosDeProtocolo pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int socket_mdj) {
@@ -297,4 +300,50 @@ void operacion_flush_archivo(int * sockets){
 	int socket_mdj=sockets[3];
 	free(sockets);
 	tp_datosEnMemoria pedido_flush=prot_recibir_CPU_DMA_flush(socket_CPU);
+	logger_DAM(escribir_loguear, l_trace,"Voy a hacer flush de [%s] para [%d]",pedido_flush->path,pedido_flush->pid);
+	enviarCabecera(socket_CPU,FlushDeArchivoADiscoEjecutandose,sizeof(FlushDeArchivoADiscoEjecutandose));
+	tp_datosObtenidosDeProtocolo datos_obtenidos=obtener_archivo(socket_fm9,socket_safa,pedido_flush,0);
+	//TODO terminar
+}
+
+tp_datosObtenidosDeProtocolo obtener_archivo(int fm9_sock, int safa_sock, tp_datosEnMemoria datos_flush, int offset){
+	pthread_mutex_lock(&MX_MEMORIA);
+	enviarCabecera(fm9_sock, ObtenerDatos, sizeof(ObtenerDatos));
+	prot_enviar_DMA_FM9_obtenerArchivo(datos_flush->path,datos_flush->pid,datos_flush->memory_address,
+			offset, transfer_size, fm9_sock);
+	t_cabecera respuesta_validacion = recibirCabecera(fm9_sock);
+	pthread_mutex_unlock(&MX_MEMORIA);
+	if(ElArchivoNoExiste==tratar_inexistencia_archivo_mp(respuesta_validacion, datos_flush, safa_sock)){
+		return NULL;
+	}
+	pthread_mutex_lock(&MX_MEMORIA);
+	tp_datosObtenidosDeProtocolo datos_obtenidos=prot_recibir_FM9_DMA_devolverDatos(fm9_sock);
+	pthread_mutex_unlock(&MX_MEMORIA);
+	return datos_obtenidos;
+}
+
+void informar_operacion_flush_erronea(int socket_safa, tp_datosEnMemoria path_y_pid) {
+	pthread_mutex_lock(&MX_SAFA);
+	enviarCabecera(socket_safa, FlushDeArchivoADiscoNoFinalizado, sizeof(FlushDeArchivoADiscoNoFinalizado));
+	prot_enviar_DMA_SAFA_finFlush(path_y_pid->path, path_y_pid->pid, socket_safa);
+	pthread_mutex_unlock(&MX_SAFA);
+}
+
+void informar_operacion_flush_exitosa(int socket_safa, tp_datosEnMemoria path_y_pid) {
+	pthread_mutex_lock(&MX_SAFA);
+	enviarCabecera(socket_safa, FlushDeArchivoADiscoFinalizadoOk, sizeof(FlushDeArchivoADiscoFinalizadoOk));
+	prot_enviar_DMA_SAFA_finFlush(path_y_pid->path, path_y_pid->pid, socket_safa);
+	pthread_mutex_unlock(&MX_SAFA);
+	logger_DAM(escribir_loguear, l_trace,
+			"Se informo a safa que se hizo flush del archivo");
+	free(path_y_pid->path);
+}
+
+enum MENSAJES tratar_inexistencia_archivo_mp(t_cabecera respuesta_validez_archivo, tp_datosEnMemoria info_cpu, int socket_safa){
+	enum MENSAJES tipo_de_mensaje = respuesta_validez_archivo.tipoDeMensaje;
+	if (ElArchivoNoExiste == (tipo_de_mensaje)) {
+		logger_DAM(escribir_loguear, l_error,"Dijo FM9 que el path %s no existe. Error 30001",info_cpu->path);
+		informar_operacion_flush_erronea(socket_safa, info_cpu);
+	}
+	return tipo_de_mensaje;
 }
