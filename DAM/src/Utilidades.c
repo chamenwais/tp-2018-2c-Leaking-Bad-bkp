@@ -149,7 +149,7 @@ void informar_recibimiento_handshake(char* proceso) {
 
 void recibir_handshake_de(int socket_id, enum PROCESO enumProceso, char * proceso){
 	informar_recibimiento_handshake(proceso);
-	if (recibirHandshake(enumProceso, DMA, socket_id) == 0) {
+	if (recibirHandshake(DMA, enumProceso, socket_id) == 0) {
 		informar_handshake_erroneo_y_cerrar(socket_id, proceso);
 	}
 	informar_handksake_exitoso(socket_id, proceso);

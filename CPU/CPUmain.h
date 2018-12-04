@@ -8,37 +8,8 @@
 #ifndef CPUMAIN_H_
 #define CPUMAIN_H_
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdlib.h> // Para malloc
-#include <signal.h>
-#include <sys/socket.h> // Para crear sockets, enviar, recibir, etc
-#include <netdb.h> // Para getaddrinfo
-#include <unistd.h> // Para close
-#include <pthread.h>
-
-#include <commons/log.h>
-#include <commons/collections/list.h>
-#include <commons/config.h>
-#include <commons/error.h>
-
+#include "contextoCPU.h"
 #include "funcionesCPU.h"
-#include "conexionesCPU.h"
-
-
-//Estructuras
-
-
-typedef struct dConfiguracion{
-	char *IPSAFA;
-	int PUERTOSAFA;
-	char *IPELDIEGO;
-	int PUERTOELDIEGO;
-	char *IPMEM;
-	int PUERTOMEM;
-}tConfiguracion;
-
 
 typedef struct defDTB {
 	int id_GDT;
@@ -49,16 +20,18 @@ typedef struct defDTB {
 	int quantum;
 } t_DTB;
 
-
-t_log * LOG_CPU;
-t_config * config;
-tConfiguracion configuracion;
-
-
-
-
-//Funciones
-
+struct addrinfo* crear_addrinfo(char * ip, char * puerto);
+int conectar_MEM(char * ip, char * puerto);
+int conectar_DIEGO(char * ip, char * puerto);
+int conectar_SAFA(char * ip, char * puerto);
+void realizar_handshakes();
+void solicitar_a_DAM_busqueda_dummy(t_DTB * dtb);
+void desalojar_dtb(t_DTB * dtb);
+void iniciar_operacion_dummy(t_DTB * dtb);
+void abrir_script(char *path);
+void parsear_escriptorio(char * linea_del_archivo);
+void proceder_con_lectura_escriptorio(t_DTB * dtb);
+void recibir_dtb_y_delegar(t_DTB * dtb);
 
 #endif /* CPUmain_H_ */
 

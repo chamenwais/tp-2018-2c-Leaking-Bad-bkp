@@ -7,119 +7,111 @@
 
 #include "funcionesCPU.h"
 
+void cargar_archivo_de_config(char *path){
+	if (path != NULL){
 
+		t_config * config_file = config_create(path);
 
-void funciona()
-{
-	printf("Anda hasta aca\n");
+		if (config_has_property(config_file,ARCH_CONFIG_PUERTO_SAFA)){
+			PUERTO_SAFA = strdup(config_get_string_value(config_file, ARCH_CONFIG_PUERTO_SAFA));
+		}
+
+		if (config_has_property(config_file,ARCH_CONFIG_PUERTO_DIEGO)){
+			PUERTO_DIEGO = strdup(config_get_string_value(config_file, ARCH_CONFIG_PUERTO_DIEGO));
+		}
+
+		if (config_has_property(config_file,ARCH_CONFIG_PUERTO_MEM )){
+			PUERTO_MEM = strdup(config_get_string_value(config_file, ARCH_CONFIG_PUERTO_MEM));
+		}
+
+		if (config_has_property(config_file,ARCH_CONFIG_IP_SAFA)){
+			IP_SAFA = strdup(config_get_string_value(config_file, ARCH_CONFIG_IP_SAFA));
+		}
+
+		if (config_has_property(config_file,ARCH_CONFIG_IP_DIEGO)){
+			IP_DIEGO = strdup(config_get_string_value(config_file, ARCH_CONFIG_IP_DIEGO));
+		}
+
+		if (config_has_property(config_file,ARCH_CONFIG_IP_MEM)){
+			IP_MEM = strdup(config_get_string_value(config_file, ARCH_CONFIG_IP_MEM));
+		}
+
+		if (config_has_property(config_file,ARCH_CONFIG_RETARDO)){
+			RETARDO = strdup(config_get_string_value(config_file, ARCH_CONFIG_RETARDO));
+		}
+
+		config_destroy(config_file);
+	}
+	else {
+		logger_CPU(escribir_loguear, l_error,"Error al intertar abrir el archivo de configuracion \n");
+		exit(1);
+	}
 }
 
+void logger_CPU(int tipo_esc, int tipo_log, const char* mensaje, ...){
 
-void levantarArchConfig()
-{
-	config = config_create("CPUConfig.cfg");
+	//Colores (reset,vacio,vacio,cian,verde,vacio,amarillo,rojo)
+	static char *log_colors[8] = {"\x1b[0m","","","\x1b[36m", "\x1b[32m", "", "\x1b[33m", "\x1b[31m" };
+	char *console_buffer=NULL;
 
-	if (!config_has_property(config, "IP_SAFA"))
-	{
-		printf("No se encuentra el parametro IP_SAFA en el archivo de configuracion\n");
-		log_error(LOG_CPU,"No se encuentra el parametro IP_SAFA en el archivo de configuracion");
-		config_destroy(config);
-		//liberarMemoria();
-		exit(-1);
-	}
-	else{
-		configuracion.IPSAFA = string_duplicate(config_get_string_value(config, "IP_SAFA"));
-	}
-	if(!config_has_property(config, "PUERTO_SAFA"))
-	{
-		printf("No se encuentra el parametro PUERTO_SAFA en el archivo de configuracion\n");
-		log_error(LOG_CPU,"No se encuentra el parametro PUERTO_SAFA en el archivo de configuracion");
-		config_destroy(config);
-		//liberarMemoria();
-		exit(-1);
-	}
-	else
-		configuracion.PUERTOSAFA = config_get_int_value(config, "PUERTO_SAFA");
+	char *msj_salida = malloc(sizeof(char) * 256);
 
-	if (!config_has_property(config, "IP_DIEGO"))
-	{
-		printf("No se encuentra el parametro IP_ELDIEGO en el archivo de configuracion\n");
-		log_error(LOG_CPU,"No se encuentra el parametro IP_ELDIEGO en el archivo de configuracion");
-		config_destroy(config);
-		//liberarMemoria();
-		exit(-1);
-	}
-	else
-		configuracion.IPELDIEGO = string_duplicate(config_get_string_value(config, "IP_DIEGO"));
+	//Captura los argumentos en una lista
+	va_list args;
+	va_start(args, mensaje);
 
-	if(!config_has_property(config, "PUERTO_DIEGO"))
-	{
-		printf("No se encuentra el parametro PUERTO_ELDIEGO en el archivo de configuracion\n");
-		log_error(LOG_CPU,"No se encuentra el parametro PUERTO_ELDIEGO en el archivo de configuracion");
-		config_destroy(config);
-		//liberarMemoria();
-		exit(-1);
-	}
-	else
-		configuracion.PUERTOELDIEGO = config_get_int_value(config, "PUERTO_DIEGO");
+	//Arma el mensaje formateado con sus argumentos en msj_salida.
+	vsprintf(msj_salida, mensaje, args);
 
+	//ESCRIBE POR PANTALLA
+	if((tipo_esc == escribir) || (tipo_esc == escribir_loguear)){
+		//printf("%s",msj_salida);
+		//printf("\n");
 
+		console_buffer = string_from_format("%s%s%s",log_colors[tipo_log],msj_salida, log_colors[0]);
+		printf("%s",console_buffer);
+		printf("\n");
+		fflush(stdout);
+		free(console_buffer);
+	}
 
-	if (!config_has_property(config, "IP_MEM"))
-	{
-		printf("No se encuentra el parametro IP_MEM en el archivo de configuracion\n");
-		log_error(LOG_CPU,"No se encuentra el parametro IP_MEM en el archivo de configuracion");
-		config_destroy(config);
-		//liberarMemoria();
-		exit(-1);
-	}
-	else{
-		configuracion.IPMEM = string_duplicate(config_get_string_value(config, "IP_MEM"));
-	}
-	if(!config_has_property(config, "PUERTO_MEM"))
-	{
-		printf("No se encuentra el parametro PUERTO_MEM en el archivo de configuracion\n");
-		log_error(LOG_CPU,"No se encuentra el parametro PUERTO_MEM en el archivo de configuracion");
-		config_destroy(config);
-		//liberarMemoria();
-		exit(-1);
-	}
-	else
-		configuracion.PUERTOMEM = config_get_int_value(config, "PUERTO_MEM");
+	//LOGUEA
+	if((tipo_esc == loguear) || (tipo_esc == escribir_loguear)){
 
-	log_info(LOG_CPU,"Se levanto con exito el archivo de configuracion");
+		if(tipo_log == l_info){
+			log_info(logger, msj_salida);
+		}
+		else if(tipo_log == l_warning){
+			log_warning(logger, msj_salida);
+		}
+		else if(tipo_log == l_error){
+			log_error(logger, msj_salida);
+		}
+		else if(tipo_log == l_debug){
+			log_debug(logger, msj_salida);
+		}
+		else if(tipo_log == l_trace){
+			log_trace(logger, msj_salida);
+		}
+	}
+
+	va_end(args);
+	free(msj_salida);
+
+	return;
 }
 
+void captura_sigpipe(int signo){
 
-
-int configurar_LOG_CPU()
-{
-	LOG_CPU = log_create("CPU.log", "CPU", 1, LOG_LEVEL_INFO);
-	log_info(LOG_CPU, "Creando Archivo de LOG CPU.log");
-	return EXIT_SUCCESS;
-}
-
-int finalizarTodo()
-{
-	log_info(LOG_CPU, "Finalizando CPU");
-	log_info(LOG_CPU, "Liberando estructuras");
-	log_info(LOG_CPU, "Chau CPULog");
-	log_destroy(LOG_CPU);
-
-	exit(1);
-	return EXIT_SUCCESS;
-}
-
-void captura_sigpipe(int signo)
-{
     if(signo == SIGINT)
     {
-    	log_trace(LOG_CPU,"\nFinalizando proceso... Gracias vuelva prontos.\n");
-    	terminar_controladamente(EXIT_FAILURE);
+    	logger_CPU(escribir_loguear, l_warning,"\nApretaste Ctrl+C, por que? No hay polque.\n");
+    	//finalizar_funesMemory9();
+    	exit(EXIT_FAILURE);
     }
     else if(signo == SIGPIPE)
     {
-    	log_error(LOG_CPU,"\n Se desconectó un proceso al que se quizo enviar.\n");
+    	logger_CPU(escribir_loguear, l_error,"\n Se desconectó un proceso al que se quizo enviar.\n");
     }
 
 }
@@ -133,41 +125,18 @@ void configurar_signals(void){
 
 	sigaddset(&signal_struct.sa_mask, SIGPIPE);
     if (sigaction(SIGPIPE, &signal_struct, NULL) < 0)
-    	log_error(LOG_CPU,"\n SIGACTION error \n");
+    {
+    	logger_CPU(escribir_loguear, l_error,"\n SIGACTION error \n");
+    }
 
     sigaddset(&signal_struct.sa_mask, SIGINT);
     if (sigaction(SIGINT, &signal_struct, NULL) < 0)
-    	log_error(LOG_CPU,"\n SIGACTION error \n");
+    {
+    	logger_CPU(escribir_loguear, l_error,"\n SIGACTION error \n");
+    }
 
 }
 
-
-int recibirDTB(t_DTB * dtb, int sockCPU) {
-	t_DTB msjrecv;
-	int size = sizeof(msjrecv);
-	recibir(sockCPU, &msjrecv, size);
-	msjrecv.escriptorio = dtb->escriptorio;
-	msjrecv.id_GDT = dtb->id_GDT;
-	msjrecv.iniGDT = dtb->iniGDT;
-	msjrecv.program_counter = dtb->program_counter;
-	msjrecv.quantum = dtb->quantum;
-	msjrecv.tabla_dir_archivos = dtb->tabla_dir_archivos;
-	log_info(LOG_CPU, "DTB recibido de SAFA");
-	return EXIT_SUCCESS;
+void inicializar_logger(){
+	logger = log_create("Log_CPU.txt", "CPU", false, LOG_LEVEL_TRACE);
 }
-
-
-int enviarDTBaCPU(t_DTB * dtb, int sockCPU) {
-	t_DTB msj;
-	msj.escriptorio = dtb->escriptorio;
-	msj.id_GDT = dtb->id_GDT;
-	msj.iniGDT = dtb->iniGDT;
-	msj.program_counter = dtb->program_counter;
-	msj.quantum = dtb->quantum;
-	msj.tabla_dir_archivos = dtb->tabla_dir_archivos;
-	int size = sizeof(msj);
-	enviar(sockCPU, &msj, size);
-	log_info(LOG_CPU, "Envia DTB a CPU");
-	return EXIT_SUCCESS;
-}
-

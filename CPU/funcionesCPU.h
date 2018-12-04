@@ -9,24 +9,12 @@
 #define FUNCIONESCPU_H_
 
 
-#include "CPUmain.h"
-#include "conexionesCPU.h"
+#include "contextoCPU.h"
 
-
-
-
-
-
-void funciona();
-int configurar_LOG_CPU();
-void levantarArchConfig();
-int finalizarTodo();
+void cargar_archivo_de_config(char *path);
+void logger_CPU(int tipo_esc, int tipo_log, const char* mensaje, ...);
 void captura_sigpipe(int signo);
 void configurar_signals(void);
-
-
-
-
-
+void inicializar_logger();
 
 #endif /* FUNCIONESCPU_H_ */
