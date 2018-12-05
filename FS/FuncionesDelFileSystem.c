@@ -59,6 +59,10 @@ int crearDirectorios(){
 }
 
 int inicializarSemaforos(){
+	if(pthread_mutex_init(&mutexUsoDelCanalDeComunicacionDelDMA, NULL) != 0) {
+		log_error(LOGGER,"No se pudo inicializar el semaforo mutexUsoDelCanalDeComunicacionDelDMA");
+		return EXIT_FAILURE;
+		}
 	if(pthread_mutex_init(&mutexFinalizarPrograma, NULL) != 0) {
 		log_error(LOGGER,"No se pudo inicializar el semaforo de la variable para saber si hay que finalizar el programa");
 		return EXIT_FAILURE;
@@ -911,18 +915,17 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 	log_info(LOGGER,"Me pongo a esperar pedidos");
 
 	while(!hayQueFinalizarElPrograma()){
-		log_info(LOGGER,"Esperando alguna cabecera");
 		pthread_mutex_lock(&mutexUsoDelCanalDeComunicacionDelDMA);
 		cabecera = recibirCabecera(FDDMA);
-		log_info(LOGGER,"Recibi un dato");
 		if(cabecera.tamanio>0){
+			log_info(LOGGER,"Recibi un dato");
 			log_info(LOGGER,"Cabecera recibida: %d, cantidad de bytes: %d",
 				cabecera.tipoDeMensaje, cabecera.tamanio);
 			valorDeLaCabecera=malloc(sizeof(int));
 			valorDeLaCabecera=(int)cabecera.tipoDeMensaje;
+			pthread_create(&thread, &attr,&hiloDePedidoDeDMA, valorDeLaCabecera);
+			log_info(LOGGER,"Voy a atender una conexion por el FD: %d", FDDMA);
 			}
-		log_info(LOGGER,"Voy a atender una conexion por el FD: %d", FDDMA);
-		pthread_create(&thread, &attr,&hiloDePedidoDeDMA, valorDeLaCabecera);
 		}
 	log_info(LOGGER,"Cierro la conexion");
 	cerrarConexion(FDDMA);
@@ -962,10 +965,9 @@ int iniciarTrabajoConElDMA(int cabecera){
 			log_warning(LOGGER,"Pedido del DMA de \"ObtenerDatos\"");
 			obtenerDatosDeDMA(FDDMA);
 			break;
-		case 101:
+		case GuardarDatos:
 			log_warning(LOGGER,"Pedido del DMA de \"GuardarDatos\"");
-			//guardarDatosDeDMA(FDDMA);
-			sleep(1);
+			guardarDatosDeDMA(FDDMA);
 			break;
 		case BorrarArchivo:
 			log_warning(LOGGER,"Pedido del DMA de \"BorrarArchivo\"");
@@ -1004,6 +1006,7 @@ int validarArchivo(char *ubicacionDelArchivo){
 	 * Descripción​: Cuando el El Diego reciba la operación de abrir un archivo deberá validar
 	 * que el archivo exista.
 	 */
+	int resultado;
 	char*path=string_new();
 	string_append(&path, configuracionDelFS.punto_montaje);
 	string_append(&path, "/Archivos/");
@@ -1011,13 +1014,12 @@ int validarArchivo(char *ubicacionDelArchivo){
 	pthread_mutex_lock(&mutexSistemaDeArchivos);
 	log_info(LOGGER,"Voy a ver si existe el archivo: %s",path);
 	if(existeElArchivo(path)){
-		pthread_mutex_unlock(&mutexSistemaDeArchivos);
-		return ElArchivoExiste;
+		resultado = ElArchivoExiste;
 	}else{
-		pthread_mutex_unlock(&mutexSistemaDeArchivos);
-		return ElArchivoNoExiste;
+		resultado = ElArchivoNoExiste;
 		}
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
+	return resultado;
 }
 
 int crearArchivoDeConsola(char *path, int cantidadDeBytes){
@@ -1309,10 +1311,6 @@ int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer){
 int guardarDatosDeDMA(int fileDescriptorActual){
 	log_info(LOGGER,"Voy a recibir los datos a guardar por el FD: %d",fileDescriptorActual);
 	tp_obtenerDatos datos = prot_recibir_FS_DMA_guardarDatos(fileDescriptorActual);
-	datos->buffer="asdsd";
-	datos->path="asdsd";
-	datos->offset=0;
-	datos->size=1;
 	log_info(LOGGER,"Recibi los datos");
 	log_info(LOGGER,"Path:%s | Offset:%d | Size:%d | Buffer:%s",
 			datos->path,datos->offset,datos->size,datos->buffer);
