@@ -91,10 +91,11 @@ void prot_enviar_DMA_FS_guardarDatos(char *path, int offset, int size, char *buf
 	enviar(sock,path,tam);
 	enviar(sock,&offset,sizeof(offset));
 	enviar(sock,&size,sizeof(size));
-	int tam2 = strlen(buffer);//+1;
+	int tam2 = strlen(buffer);
 	enviar(sock,&tam2,sizeof(tam2));
 	enviar(sock,buffer,tam2);
-	printf("enviando: %s, size:%d | %d | %d | %s size:%d\n",path,tam,offset,size,buffer,tam2);
+	printf("Enviando: Path(%d) %s | Offset %d | Size %d | Buffer(%d) %s\n",
+		tam,path,offset,size,tam2,buffer);
 	return;
 }
 
@@ -103,14 +104,21 @@ tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos(int sock){
 	int tam;
 	tp_obtenerDatos datos = malloc(sizeof(t_obtenerDatos));
 	recibir(sock,&tam,sizeof(tam));
-	datos->path = malloc(tam);
-	recibir(sock,(datos->path),tam);
-	recibir(sock,&(datos->offset),sizeof(datos->offset));
-	recibir(sock,&(datos->size),sizeof(datos->size));
+	char*path = malloc(tam);
+	recibir(sock,path,tam);
+	datos->path=path;
+	int size, offset;
+	recibir(sock,&offset,sizeof(offset));
+	datos->offset=offset;
+	recibir(sock,&size,sizeof(size));
+	datos->size=size;
 	int tam2;
 	recibir(sock,&tam2,sizeof(tam2));
-	datos->buffer = malloc(tam2);
-	recibir(sock,(datos->buffer),tam2);
+	char*buffer = malloc(tam2);
+	recibir(sock,buffer,tam2);
+	datos->buffer=buffer;
+	printf("Enviando: Path(%d) %s | Offset %d | Size %d | Buffer(%d) %s\n",
+		tam,path,offset,size,tam2,buffer);
 	return datos;
 }
 

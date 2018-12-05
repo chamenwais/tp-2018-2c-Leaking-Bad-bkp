@@ -1309,6 +1309,7 @@ int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer){
 int guardarDatosDeDMA(int fileDescriptorActual){
 	log_info(LOGGER,"Voy a recibir los datos a guardar por el FD: %d",fileDescriptorActual);
 	tp_obtenerDatos datos = prot_recibir_FS_DMA_guardarDatos(fileDescriptorActual);
+	log_info(LOGGER,"Recibi los datos");
 	log_info(LOGGER,"Path:%s | Offset:%d | Size:%d | Buffer:%s",
 			datos->path,datos->offset,datos->size,datos->buffer);
 	pthread_mutex_lock(&mutexSistemaDeArchivos);
