@@ -62,7 +62,8 @@ enum MENSAJES {
 	FinDeQuantum,
 	BloquearDTB,
 	PedirLineaParaEjecutar,
-	NoHuboProblemaConLaLineaParaCpu
+	NoHuboProblemaConLaLineaParaCpu,
+	NoHayMasBloquesLibres
 };
 
 typedef struct {
