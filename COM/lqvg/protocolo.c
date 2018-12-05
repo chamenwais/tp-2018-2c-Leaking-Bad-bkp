@@ -179,6 +179,16 @@ void prot_enviar_FM9_DMA_cargaEnMemoria(int memory_address, int sock){
 	enviar(sock,&memory_address,sizeof(memory_address));
 }
 
+tp_lineaCPU prot_recibir_CPU_FM9_pedir_linea(int sock){
+	int tam_linea;
+	tp_lineaCPU recibido = malloc(sizeof(tp_lineaCPU));
+	recibir(sock, &tam_linea, sizeof(tam_linea));
+	recibido->linea = malloc(tam_linea);
+	recibir(sock,recibido->linea,tam_linea);
+	recibir(sock,&(recibido->pc),sizeof(recibido->pc));
+	return recibido;
+}
+
 int prot_recibir_FM9_DMA_cargaEnMemoria(int sock){
 	//7 recibe
 	int recibido;
@@ -294,6 +304,19 @@ void prot_enviar_FM9_DMA_devolverDatos(char* datos, int tamanio_trozo, int taman
 	paquete_devolver[4+tam_datos+4]=tamanio_total_archivo;
 	enviar(sock,paquete_devolver,tamanio_paquete_devolver);
 	free(paquete_devolver);
+}
+
+void prot_enviar_CPU_FM9_pedir_linea(char * path, int id, int pc, int sock){
+	int tam_path = strlen(path);
+	int size_of_int=sizeof(int);
+	int tamanio_paquete_devolver = tam_path + (3 * size_of_int);
+	char * paquete_pedir_linea = malloc(tamanio_paquete_devolver);
+	paquete_pedir_linea[0]=tam_path;
+	memcpy(paquete_pedir_linea+4,path,tam_path);
+	paquete_pedir_linea[4+tam_path]=id;
+	paquete_pedir_linea[4+tam_path+4]=pc;
+	enviar(sock,paquete_pedir_linea,tamanio_paquete_devolver);
+	free(paquete_pedir_linea);
 }
 
 tp_datosObtenidosDeProtocolo prot_recibir_FM9_DMA_devolverDatos(int sock){

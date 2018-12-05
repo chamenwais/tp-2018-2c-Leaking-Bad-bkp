@@ -16,5 +16,4 @@ char * PUERTO_MEM;
 char * RETARDO;
 int serverSAFA;
 int serverDIEGO;
-
-FILE * archivo_a_leer_por_el_CPU;
+int serverMEM;

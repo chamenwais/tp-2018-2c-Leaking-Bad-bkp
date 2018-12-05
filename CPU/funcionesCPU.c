@@ -7,6 +7,64 @@
 
 #include "funcionesCPU.h"
 
+t_operacion parsear(char * linea){
+	if(linea == NULL || string_equals_ignore_case(linea, "")){
+		logger_CPU(escribir_loguear, l_warning,"Fin de archivo, se cerrara el script y terminara el programa \n");
+		cerrar_script();
+		finalizar_cpu();
+	}
+
+	t_operacion resultado_de_parsear;
+
+	char* linea_auxiliar = string_duplicate(linea);
+	string_trim(&linea_auxiliar);
+	char** split = string_n_split(linea_auxiliar, 4, " ");
+
+	char* tipo_de_operacion = split[0];
+	char* parametros = split[1];
+
+	resultado_de_parsear.liberar = split;
+
+	if(string_equals_ignore_case(tipo_de_operacion, "#")){
+		logger_CPU(escribir_loguear, l_warning,"Es un comentario, sera ignorado \n");
+		//no se hace nada...
+	}
+
+	if(string_equals_ignore_case(tipo_de_operacion, "abrir")){
+		resultado_de_parsear.tipo_de_operacion = ABRIR;
+		resultado_de_parsear.parametros.abrir.path = split[1];
+	} else if(string_equals_ignore_case(tipo_de_operacion, "concentrar")){
+		resultado_de_parsear.tipo_de_operacion = CONCENTRAR;
+	} else if(string_equals_ignore_case(tipo_de_operacion, "asignar")){
+		resultado_de_parsear.tipo_de_operacion = ASIGNAR;
+		resultado_de_parsear.parametros.asignar.path = split[1];
+		resultado_de_parsear.parametros.asignar.linea = split[2];
+		resultado_de_parsear.parametros.asignar.datos = split[3];
+	} else if(string_equals_ignore_case(tipo_de_operacion, "wait")){
+		resultado_de_parsear.tipo_de_operacion = WAIT;
+		resultado_de_parsear.parametros.wait.recurso = split[1];
+	} else if(string_equals_ignore_case(tipo_de_operacion, "signal")){
+		resultado_de_parsear.tipo_de_operacion = SIGNAL;
+		resultado_de_parsear.parametros.signal.recurso = split[1];
+	} else if(string_equals_ignore_case(tipo_de_operacion, "flush")){
+		resultado_de_parsear.tipo_de_operacion = FLUSH;
+		resultado_de_parsear.parametros.flush.path = split[1];
+	} else if(string_equals_ignore_case(tipo_de_operacion, "close")){
+		resultado_de_parsear.tipo_de_operacion = CLOSE;
+		resultado_de_parsear.parametros.close.path = split[1];
+	} else if(string_equals_ignore_case(tipo_de_operacion, "crear")){
+		resultado_de_parsear.tipo_de_operacion = CREAR;
+		resultado_de_parsear.parametros.crear.path = split[1];
+		resultado_de_parsear.parametros.crear.cantidad_de_lineas = split[2];
+	} else if(string_equals_ignore_case(tipo_de_operacion, "borrar")){
+		resultado_de_parsear.tipo_de_operacion = BORRAR;
+		resultado_de_parsear.parametros.borrar.path = split[1];
+	}
+
+	free(linea_auxiliar);
+	return resultado_de_parsear;
+}
+
 void cargar_archivo_de_config(char *path){
 	if (path != NULL){
 
@@ -46,6 +104,14 @@ void cargar_archivo_de_config(char *path){
 		logger_CPU(escribir_loguear, l_error,"Error al intertar abrir el archivo de configuracion \n");
 		exit(1);
 	}
+}
+
+void cerrar_script(){
+
+}
+
+void finalizar_cpu(){
+
 }
 
 void logger_CPU(int tipo_esc, int tipo_log, const char* mensaje, ...){
@@ -106,7 +172,7 @@ void captura_sigpipe(int signo){
     if(signo == SIGINT)
     {
     	logger_CPU(escribir_loguear, l_warning,"\nApretaste Ctrl+C, por que? No hay polque.\n");
-    	//finalizar_funesMemory9();
+    	finalizar_cpu();
     	exit(EXIT_FAILURE);
     }
     else if(signo == SIGPIPE)

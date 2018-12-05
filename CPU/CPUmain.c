@@ -156,51 +156,121 @@ void iniciar_operacion_dummy(t_DTB * dtb){
 	}
 }
 
-void abrir_script(char *path){
-	if(path != NULL){
-		archivo_a_leer_por_el_CPU = fopen(path, "r");
+void solicitar_a_FM9_la_sentencia(t_DTB * dtb){
+	enviarCabecera(serverMEM, PedirLineaParaEjecutar, sizeof(PedirLineaParaEjecutar));
+	prot_enviar_CPU_FM9_pedir_linea(dtb->escriptorio, dtb->id_GDT, dtb->program_counter, serverMEM);
+	logger_CPU(escribir_loguear, l_info,"Le he pedido a FM9 la sentencia que debo ejecutar...\n");
+}
+
+tp_lineaCPU * recibir_de_FM9_linea_a_parsear(t_DTB * dtb){
+	t_cabecera respuesta_de_FM9 = recibirCabecera(serverMEM);
+	tp_lineaCPU linea_pedida;
+
+	if(respuesta_de_FM9.tipoDeMensaje == NoHuboProblemaConLaLineaParaCpu){
+		linea_pedida = prot_recibir_CPU_FM9_pedir_linea(serverMEM);
+		logger_CPU(escribir_loguear, l_info,"Sentencia recibida.\n");
+	}else{
+		logger_CPU(escribir_loguear, l_error, "Hubo un problema con FM9\n");
+		abortar(dtb);
+		finalizar_cpu();
 	}
 
-	if(archivo_a_leer_por_el_CPU == NULL){
-		logger_CPU(escribir_loguear, l_error,"Error al intentar abrir el archivo a leer.\n");
-		exit(EXIT_FAILURE);
+	return linea_pedida;
+}
+
+void abortar(t_DTB * dtb){
+
+}
+
+void actualizar_program_counter(t_DTB * dtb, int pc){
+	pc++;
+	dtb->program_counter = pc;
+	logger_CPU(escribir_loguear, l_info,"Actualizado el program counter del dtb.\n");
+}
+
+void abrir_nuevo_archivo_para_escriptorio(){
+//ya se puede hacer
+}
+
+void correr_una_unidad_de_tiempo_del_quantum(){
+	sleep(RETARDO);
+}
+
+void asignar_datos_a_linea(){
+
+}
+
+void retener_recurso(){
+
+}
+
+void liberar_recurso(){
+
+}
+
+void guardar_contenido_de_fm9_en_mdj(){
+
+}
+
+void liberar_archivo_abierto(){
+
+}
+
+void crear_nuevo_archivo_en_mdj(){
+
+}
+
+void eliminar_archivo_de_mdj(){
+
+}
+
+void realizar_la_operacion_que_corresponda_segun(t_operacion resultado_del_parseado){
+	switch(resultado_del_parseado.tipo_de_operacion){
+		case ABRIR:
+			abrir_nuevo_archivo_para_escriptorio();
+			break;
+		case CONCENTRAR:
+			correr_una_unidad_de_tiempo_del_quantum();
+			break;
+		case ASIGNAR:
+			asignar_datos_a_linea();
+			break;
+		case WAIT:
+			retener_recurso();
+			break;
+		case SIGNAL:
+			liberar_recurso();
+			break;
+		case FLUSH:
+			guardar_contenido_de_fm9_en_mdj();
+			break;
+		case CLOSE:
+			liberar_archivo_abierto();
+			break;
+		case CREAR:
+			crear_nuevo_archivo_en_mdj();
+			break;
+		case BORRAR:
+			eliminar_archivo_de_mdj();
+			break;
 	}
 }
 
-void parsear_escriptorio(char * linea_del_archivo){
-
-
-}
 
 void proceder_con_lectura_escriptorio(t_DTB * dtb){
 	int unidad_de_tiempo = dtb->quantum;
-	char * path = dtb->escriptorio;
 
-	abrir_script(path);
+	for(int i=0;i++;i<unidad_de_tiempo){
 
-	char * linea_a_parsear = NULL;
-	size_t direccion_de_la_linea_a_parsear = 0;
-	ssize_t read = 0;
+		solicitar_a_FM9_la_sentencia(dtb);
+		tp_lineaCPU paquete_linea = recibir_de_FM9_linea_a_parsear(dtb);
+		actualizar_program_counter(dtb, paquete_linea->pc);
+		t_operacion resultado_del_parseado = parsear(paquete_linea->linea);
+		realizar_la_operacion_que_corresponda_segun(resultado_del_parseado);
+		sleep(RETARDO);
 
-	while(!feof(archivo_a_leer_por_el_CPU)){
-		read = getline(&linea_a_parsear, &direccion_de_la_linea_a_parsear, archivo_a_leer_por_el_CPU);
-
-		if(read == -1){
-			//Se llegó al fin del archivo,
-			break;
-		}
-
-		/*
-		 * Lo que está a continuación se me hace que está super MAL,
-		 * pero no se me ocurre otra manera de hacerlo, no entendí
-		 * bien lo del retardo. HELP WANTED HERE
-		 */
-
-		for(int i = 0; i++; i<unidad_de_tiempo){
-			parsear_escriptorio(linea_a_parsear);
-			sleep(RETARDO);
-		}
 	}
+
 }
 
 void recibir_dtb_y_delegar(t_DTB * dtb) {

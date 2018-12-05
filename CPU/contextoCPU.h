@@ -10,12 +10,12 @@
 
 #include <stdio.h>
 #include <stdlib.h> // Para malloc
-#include <signal.h>
 #include <string.h>
 #include <stdbool.h>
+#include <signal.h>
+#include <unistd.h>
 #include <sys/socket.h> // Para crear sockets, enviar, recibir, etc
 #include <netdb.h> // Para getaddrinfo
-#include <unistd.h> // Para close
 #include <pthread.h>
 #include <commons/log.h>
 #include <commons/collections/list.h>
@@ -43,11 +43,56 @@ extern char * PUERTO_DIEGO;
 extern char * IP_MEM;
 extern char * PUERTO_MEM;
 extern char * RETARDO;
-extern FILE * archivo_a_leer_por_el_CPU;
 
 extern int serverSAFA;
 extern int serverDIEGO;
+extern int serverMEM;
 t_log * logger;
+
+typedef struct {
+	enum {
+		ABRIR,
+		CONCENTRAR,
+		ASIGNAR,
+		WAIT,
+		SIGNAL,
+		FLUSH,
+		CLOSE,
+		CREAR,
+		BORRAR
+	} tipo_de_operacion;
+	union {
+		struct {
+			char* path;
+		} abrir;
+		struct {
+			char* path;
+			char* linea;
+			char* datos;
+		} asignar;
+		struct {
+			char* recurso;
+		} wait;
+		struct {
+			char* recurso;
+		} signal;
+		struct {
+			char* path;
+		} flush;
+		struct {
+			char* path;
+		} close;
+		struct {
+			char* path;
+			int cantidad_de_lineas;
+		} crear;
+		struct {
+			char* path;
+		} borrar;
+
+	} parametros;
+		char** liberar; //Para uso de la liberación
+} t_operacion;
 
 /*** Enums ***/
 enum tipo_logueo { escribir, loguear, escribir_loguear, l_trace, l_debug, l_info, l_warning, l_error};
