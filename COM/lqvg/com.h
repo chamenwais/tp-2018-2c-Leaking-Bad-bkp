@@ -60,7 +60,9 @@ enum MENSAJES {
 	ArchivoBorrado,
 	ArchivoNoBorrado,
 	FinDeQuantum,
-	BloquearDTB
+	BloquearDTB,
+	PedirLineaParaEjecutar,
+	NoHuboProblemaConLaLineaParaCpu
 };
 
 typedef struct {

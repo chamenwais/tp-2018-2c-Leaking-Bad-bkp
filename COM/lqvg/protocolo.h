@@ -69,6 +69,12 @@ typedef struct stru_pathPid{
 } t_pathPid;
 typedef t_pathPid* tp_pathPid;
 
+typedef struct stru_lineaParaCPU{
+	char* linea;
+	int pc;
+} t_lineaCPU;
+typedef t_lineaCPU* tp_lineaCPU;
+
 void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTotalDelArchivo, int sock);
 tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos(int sock);
 void prot_enviar_DMA_FS_path(char* path,int sock);
@@ -93,5 +99,7 @@ void prot_enviar_FM9_DMA_devolverDatos(char* datos, int tamanio_trozo, int taman
 tp_datosObtenidosDeProtocolo prot_recibir_FM9_DMA_devolverDatos(int sock);
 void prot_enviar_DMA_SAFA_finFlush(char* path, int pid, int sock);
 tp_pathPid prot_recibir_DMA_SAFA_finFlush(int sock);
+void prot_enviar_CPU_FM9_pedir_linea(char * path, int id, int pc, int sock);
+tp_lineaCPU prot_recibir_CPU_FM9_pedir_linea(int sock);
 
 #endif /* LQVG_PROTOCOLO_H_ */
