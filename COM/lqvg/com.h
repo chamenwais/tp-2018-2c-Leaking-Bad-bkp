@@ -27,11 +27,10 @@ enum PROCESO {
 };
 
 enum MENSAJES {
-	FinalizarTrabajoConElFS,
+	GuardarDatos,
 	ValidarArchivo,
 	CrearArchivo,
 	ObtenerDatos,
-	GuardarDatos,
 	BorrarArchivo,
 	ElArchivoNoExiste,
 	ElArchivoExiste,
@@ -61,7 +60,8 @@ enum MENSAJES {
 	ArchivoNoBorrado,
 	FinDeQuantum,
 	BloquearDTB,
-	NoHayMasBloquesLibres
+	NoHayMasBloquesLibres,
+	FinalizarTrabajoConElFS
 };
 
 typedef struct {

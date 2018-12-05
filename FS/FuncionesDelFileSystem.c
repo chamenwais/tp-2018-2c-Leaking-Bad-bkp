@@ -878,12 +878,14 @@ void *hiloDePedidoDeDMA(void* arg){
 	int cabecera = (int)arg;
 	iniciarTrabajoConElDMA(cabecera);
 	log_info(LOGGER,"Finalizando pedido del DMA");
+	pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	return EXIT_SUCCESS;
 }
 
 void *funcionHiloComunicacionConElDMA(void *arg){
 	pthread_attr_t attr;
 	pthread_t thread;
+	t_cabecera cabecera;
 	int * valorDeLaCabecera;
 	log_info(LOGGER,"Esperando conexion entrante del DMA por el puerto: %d", configuracionDelFS.puerto);
 	int port = configuracionDelFS.puerto;
@@ -909,7 +911,6 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 	log_info(LOGGER,"Me pongo a esperar pedidos");
 
 	while(!hayQueFinalizarElPrograma()){
-		t_cabecera cabecera;
 		log_info(LOGGER,"Esperando alguna cabecera");
 		pthread_mutex_lock(&mutexUsoDelCanalDeComunicacionDelDMA);
 		cabecera = recibirCabecera(FDDMA);
@@ -919,9 +920,8 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 				cabecera.tipoDeMensaje, cabecera.tamanio);
 			valorDeLaCabecera=malloc(sizeof(int));
 			valorDeLaCabecera=(int)cabecera.tipoDeMensaje;
-		}
+			}
 		log_info(LOGGER,"Voy a atender una conexion por el FD: %d", FDDMA);
-
 		pthread_create(&thread, &attr,&hiloDePedidoDeDMA, valorDeLaCabecera);
 		}
 	log_info(LOGGER,"Cierro la conexion");
@@ -962,9 +962,10 @@ int iniciarTrabajoConElDMA(int cabecera){
 			log_warning(LOGGER,"Pedido del DMA de \"ObtenerDatos\"");
 			obtenerDatosDeDMA(FDDMA);
 			break;
-		case GuardarDatos:
+		case 101:
 			log_warning(LOGGER,"Pedido del DMA de \"GuardarDatos\"");
-			guardarDatosDeDMA(FDDMA);
+			//guardarDatosDeDMA(FDDMA);
+			sleep(1);
 			break;
 		case BorrarArchivo:
 			log_warning(LOGGER,"Pedido del DMA de \"BorrarArchivo\"");
@@ -977,7 +978,6 @@ int iniciarTrabajoConElDMA(int cabecera){
 			break;
 		}//end swith
 	log_warning(LOGGER,"Pedido finalizado");
-	pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	return EXIT_SUCCESS;
 }
 
@@ -1309,13 +1309,17 @@ int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer){
 int guardarDatosDeDMA(int fileDescriptorActual){
 	log_info(LOGGER,"Voy a recibir los datos a guardar por el FD: %d",fileDescriptorActual);
 	tp_obtenerDatos datos = prot_recibir_FS_DMA_guardarDatos(fileDescriptorActual);
+	datos->buffer="asdsd";
+	datos->path="asdsd";
+	datos->offset=0;
+	datos->size=1;
 	log_info(LOGGER,"Recibi los datos");
 	log_info(LOGGER,"Path:%s | Offset:%d | Size:%d | Buffer:%s",
 			datos->path,datos->offset,datos->size,datos->buffer);
 	pthread_mutex_lock(&mutexSistemaDeArchivos);
 	int resultadoDeGuardarDatos=guardarDatos(datos->path,datos->offset,datos->size,datos->buffer);
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
-	enviarCabecera(FDDMA, resultadoDeGuardarDatos, 1);
+	enviarCabecera(fileDescriptorActual, resultadoDeGuardarDatos, 1);
 	log_info(LOGGER,"Enviando respuesta de guardar datos al DMA");
 	return EXIT_SUCCESS;
 }
@@ -1379,7 +1383,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 							log_error(LOGGER,"No hay mas bloques libres");
 							free(archivoDeBloque);
 							free(ubicacionDelArchivoDeMetadata);
-							return EXIT_FAILURE;///no hay mas bloques libres
+							return NoHayMasBloquesLibres;///no hay mas bloques libres
 							}
 						reservarBloqueYCrearEstructuras(numeroDeBloqueLibre);
 					}

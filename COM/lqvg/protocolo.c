@@ -86,12 +86,13 @@ int prot_recibir_int(int sock){
 
 void prot_enviar_DMA_FS_guardarDatos(char *path, int offset, int size, char *buffer, int sock){
 	//4 envia
+	int tam2;
 	int tam = strlen(path)+1;
 	enviar(sock,&tam,sizeof(tam));
 	enviar(sock,path,tam);
 	enviar(sock,&offset,sizeof(offset));
 	enviar(sock,&size,sizeof(size));
-	int tam2 = strlen(buffer);
+	tam2 = strlen(buffer);
 	enviar(sock,&tam2,sizeof(tam2));
 	enviar(sock,buffer,tam2);
 	printf("Enviando: Path(%d) %s | Offset %d | Size %d | Buffer(%d) %s\n",
