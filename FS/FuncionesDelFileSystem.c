@@ -475,6 +475,7 @@ int obtenerLongigutDelArchivo(char* path){
 		}
 	log_info(LOGGER,"Cerrando el archivo %s, info recuperada",ubicacionDelArchivo);
 	config_destroy(configuracion);
+	free(ubicacionDelArchivo);
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 	return longitudDelArchivo;
 }
@@ -527,6 +528,7 @@ int mostrarBloque(int numeroDeBloque){
 		while((caracter = fgetc(archivo)) != EOF) printf("%c",caracter);
 		}
 	printf("\n");
+	free(archivoDeBloque);
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 	return EXIT_SUCCESS;
 }
@@ -547,12 +549,10 @@ int funcionDeConsolacat(char* path){
 
 int funcionDeConsolacd(char* path){
 	log_info(LOGGER,"Pedido por consola del comando \"cd\", con el parametro: %s",path);
-	char* nuevoDirectorio=string_new();
 	char** pathPartido = string_split(path, "/");
 	char* copiaDelDirectorioActual=string_new();
 	pthread_mutex_lock(&mutexPath);
 	string_append(&copiaDelDirectorioActual,directorioActual);
-
 	int i;
 	for(i=0;pathPartido[i]!=NULL;i++){
 		if(strcmp(path, "..")==0){
@@ -568,6 +568,7 @@ int funcionDeConsolacd(char* path){
 
 	if(existeElDirectorio(directorioActual)){
 		printf("Cambiando al directorio %s\n",directorioActual);
+		free(copiaDelDirectorioActual);
 		pthread_mutex_unlock(&mutexPath);
 		return EXIT_SUCCESS;
 	}else{
@@ -575,6 +576,7 @@ int funcionDeConsolacd(char* path){
 		directorioActual=string_new();
 		string_append(&directorioActual,copiaDelDirectorioActual);
 		printf("Volviendo al directorio %s\n",directorioActual);
+		free(copiaDelDirectorioActual);
 		pthread_mutex_unlock(&mutexPath);
 		return EXIT_FAILURE;
 		}
@@ -592,6 +594,7 @@ void volverUnaCarpetaParaAtras(){
 			}
 		//ver q pasa con el primero
 		}
+	free(directorioActual);
 	}
 
 void agregarCarpetaAlDirectorioActual(char* carpeta){
@@ -648,6 +651,7 @@ int listarDirectorioConParametro(char* path){
 	printf("Listando directorio pasado por parametro, %s\n",directorio);
 	pthread_mutex_lock(&mutexPath);
 	int resultado = listarDirectorio(directorio);
+	free(directorio);
 	pthread_mutex_lock(&mutexPath);
 	return resultado;
 }
@@ -678,6 +682,7 @@ int levantarMetadataBin(){
 		if(!config_has_property(configuracion,"TAMANIO_BLOQUES")) {
 			log_error(LOGGER,"No esta el tamaño de los bloques en el archivo \"Metadata.bin\"");
 			config_destroy(configuracion);
+			free(ubicacionDelArchivo);
 			return EXIT_FAILURE;
 			}
 		configuracionDeMetadata.tamanioBloques = config_get_int_value(configuracion,"TAMANIO_BLOQUES");
@@ -688,6 +693,7 @@ int levantarMetadataBin(){
 		if(!config_has_property(configuracion,"CANTIDAD_BLOQUES")) {
 			log_error(LOGGER,"No esta la cantidad de bloques en el archivo \"Metadata.bin\"");
 			config_destroy(configuracion);
+			free(ubicacionDelArchivo);
 			return EXIT_FAILURE;
 			}
 		configuracionDeMetadata.cantidadBloques = config_get_int_value(configuracion,"CANTIDAD_BLOQUES");
@@ -698,6 +704,7 @@ int levantarMetadataBin(){
 		if(!config_has_property(configuracion,"MAGIC_NUMBER")) {
 			log_error(LOGGER,"No esta el \"Magic number\" en el archivo \"Metadata.bin\"");
 			config_destroy(configuracion);
+			free(ubicacionDelArchivo);
 			return EXIT_FAILURE;
 			}
 		char* magicNumber = config_get_string_value(configuracion,"MAGIC_NUMBER");
@@ -708,10 +715,12 @@ int levantarMetadataBin(){
 
 	}else{
 		log_error(LOGGER,"No existe el archivo \"Metadata.bin\"");
+		free(ubicacionDelArchivo);
 		return EXIT_FAILURE;
 		}
 	log_info(LOGGER,"Cerrando \"Metadata.bin\", info recuperada");
 	config_destroy(configuracion);
+	free(ubicacionDelArchivo);
 	return EXIT_SUCCESS;
 }
 
