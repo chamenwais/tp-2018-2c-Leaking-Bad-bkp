@@ -67,7 +67,7 @@ int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 }
 
 int inicializarVariablesSAFA(){
-	estadoSAFA = 'C'; //Se inicializa en estado CORRUPTO
+	estadoSAFA = CORRUPTO; //Se inicializa en estado CORRUPTO
 	resultadoComElDiego = EXIT_SUCCESS;
 	safa_conectado = true;
 	id = 1;
@@ -115,6 +115,10 @@ int liberarMemoria(){
 	list_destroy_and_destroy_elements(ejecutando, free);
 	list_destroy_and_destroy_elements(bloqueados, free);
 	list_destroy_and_destroy_elements(terminados, free);
+	list_destroy_and_destroy_elements(auxVirtualRR, free);
+	list_destroy_and_destroy_elements(cpu_libres, free);
+	list_destroy_and_destroy_elements(cpu_ejecutando, free);
+	list_destroy_and_destroy_elements(dtbConEqGrandeAbierto, free);
 
 	log_info(LOG_SAFA, "Habemus memoria liberada");
 	return EXIT_SUCCESS;
@@ -171,13 +175,13 @@ int liberarMemoria(){
 	 log_info(LOG_SAFA,"Handshake exitoso con CPU");
 	 log_info(LOG_SAFA,"Espero cabecera de la CPU");
 	 t_cabecera cabecera = recibirCabecera(sockCPU);
-	 t_DTB* id_DTB; //tengo que hacer malloc? TODO
+	 tp_DTB id_DTB; //tengo que hacer malloc? TODO
 	 //TODO: CPU me manda el DTB a bloquear, tengo q crear la variable INT? CHAR?
 	 switch (cabecera.tipoDeMensaje){
 	 	 case BloquearDTB:
 	 		 log_info(LOG_SAFA, "CPU me pide bloquear el DTB %i");
 	 		 bool coincideID(void* node) {
-	 		 return ((((t_DTB*) node)->id_GDT)==id_DTB->id_GDT);
+	 		 return ((((tp_DTB) node)->id_GDT)==id_DTB->id_GDT);
 	 		 }
 	 		 id_DTB=list_remove_by_condition(ejecutando, coincideID);
 	 		 list_add(bloqueados, id_DTB);
@@ -282,12 +286,12 @@ void *funcionHiloConsola(void *arg){
 			 * El DTB dummy a enviar contendrá el archivo Escriptorio que se desea ejecutar y
 			 * el flag de inicialización en 0, siendo el único DTB que contenga este flag con dicho valor
 			 * (cualquier otro DTB lo tendrá en 1). */
-			if(strcmp(estadoSAFA, "C")==0){
+			if(estadoSAFA==CORRUPTO){
 				log_error(LOG_SAFA, "SAFA se encuentra en estado Corrupto, no se puede continuar");
 				//TODO ver que hacer en este caso
 			}else if(instruccion[1]!=NULL){
 					printf("Creando DTB para escriptorio: %s/n", instruccion[1]);
-					t_DTB* nuevo_DTB = crear_DTB(instruccion[1]);
+					tp_DTB nuevo_DTB = crear_DTB(instruccion[1]);
 					list_add(nuevos, nuevo_DTB);//agregar DTB a cola de NEW
 					log_info(LOG_SAFA, "Se agrega el nuevo DTB a la lista de Nuevos");
 					}else{
@@ -331,8 +335,8 @@ char** parser_instruccion(char* linea) {
 	return instruccion;
 }
 
-t_DTB* crear_DTB(char* path){
-	t_DTB* new_DTB = calloc(1,sizeof(t_DTB));
+tp_DTB crear_DTB(char* path){
+	tp_DTB new_DTB = calloc(1,sizeof(t_DTB));
 	log_info(LOG_SAFA, "Creando nuevo DTB");
 	new_DTB->id_GDT = id;
 	log_info(LOG_SAFA, "DTB %i creado", id);
@@ -379,7 +383,7 @@ void *funcionHiloPLP(void *arg){
 }
 
 int planificar_PLP(){
-	t_DTB* idDTB;
+	tp_DTB idDTB;
 	//lockearListas();
 	log_info(LOG_SAFA,"PLP en accion");
 	if(list_size(nuevos)>0){
@@ -425,7 +429,7 @@ void* funcionHiloPlanif(void *arg){
 }
 
 int planificar(){
-	t_DTB* DTB;
+	tp_DTB DTB;
 	int idDTB;
 	//lockearListas();
 	log_info(LOG_SAFA,"Vamo a planificarno");
@@ -436,7 +440,7 @@ int planificar(){
 		//ahora ya tengo el DTB entero que necesito enviar a CPU //
 		int proxCPUaUsar = list_remove(cpu_libres, 0);
 		list_add(cpu_ejecutando, proxCPUaUsar);
-		enviarDTBaCPU(DTB, proxCPUaUsar);
+		prot_enviar_SAFA_CPU_DTB(DTB->id_GDT, DTB->program_counter, DTB->iniGDT, DTB->escriptorio, DTB->tabla_dir_archivos, DTB->quantum, proxCPUaUsar);
 
 
 	}
@@ -500,14 +504,14 @@ int calcularDTBAPlanificarConBOAF(){ /*Priorización de aquellos DTB que tengan 
 }
 
 int obtenerPrimerId(t_list* lista){
-	t_DTB* primerDTB = list_get(lista, 0);
+	tp_DTB primerDTB = list_get(lista, 0);
 	return primerDTB->id_GDT;
 }
 
-t_DTB* buscarDTBPorId(idDTB){
-	t_DTB* el_DTB;
+tp_DTB buscarDTBPorId(int idDTB){
+	tp_DTB el_DTB;
 	bool coincideID(void* node) {
-			return ((((t_DTB*) node)->id_GDT)==idDTB);
+			return ((((tp_DTB) node)->id_GDT)==idDTB);
 			}
 	if(list_size(auxVirtualRR)>0){
 		el_DTB = list_find(auxVirtualRR, coincideID);
@@ -517,9 +521,10 @@ t_DTB* buscarDTBPorId(idDTB){
 	return el_DTB;
 }
 
-int enviarDTBaCPU(t_DTB * dtb, int sockCPU) {
+/*int enviarDTBaCPU(t_DTB * dtb, int sockCPU) {
 	t_DTB msj;
-	msj.escriptorio = dtb->escriptorio;
+	msj.escriptorio = calloc(1,sizeof(dtb->escriptorio));
+	strcpy(msj.escriptorio, dtb->escriptorio);
 	msj.id_GDT = dtb->id_GDT;
 	msj.iniGDT = dtb->iniGDT;
 	msj.program_counter = dtb->program_counter;
@@ -531,4 +536,4 @@ int enviarDTBaCPU(t_DTB * dtb, int sockCPU) {
 	list_add(ejecutando, dtb);
 	log_debug(LOG_SAFA, "Envia DTB a CPU");
 	return EXIT_SUCCESS;
-}
+}*/

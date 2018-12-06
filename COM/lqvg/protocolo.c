@@ -353,3 +353,43 @@ tp_pathPid prot_recibir_DMA_SAFA_finFlush(int sock){
 	recibir(sock,&(fin_flush->pid),sizeof(int));
 	return fin_flush;
 }
+
+void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char* escriptorio, t_list* tabla, int quantum, int sock){
+	//mando id_GDT
+	enviar(sock, &id_GDT, sizeof(id_GDT));
+	//mando program counter
+	enviar(sock, &program_counter, sizeof(program_counter));
+	//mando iniGDT
+	enviar(sock, &iniGDT, sizeof(iniGDT));
+	//mando escriptorio
+	int tam = strlen(escriptorio)+1;
+	enviar(sock, &tam, sizeof(tam));
+	enviar(sock, escriptorio, tam);
+	//mando la lista
+
+	//mando el quantum
+	enviar(sock, &quantum, sizeof(quantum));
+}
+
+tp_DTB prot_recibir_SAFA_CPU_DTB(int sock){
+	//reservo memoria
+	tp_DTB DTB = malloc(sizeof(t_DTB));
+	//recibo id_GDT
+	recibir(sock, &(DTB->id_GDT), sizeof(int));
+	//recibo program_counter
+	recibir(sock, &(DTB->program_counter), sizeof(int));
+	//recibo iniGDT
+	recibir(sock, &(DTB->iniGDT), sizeof(int));
+	//recibo escriptorio
+	int tam;
+	recibir(sock, &tam, sizeof(tam));
+	char* buffer = malloc(tam);
+	recibir(sock, DTB->escriptorio, tam);
+	//recibir lista
+
+	//recibir quantum
+	recibir(sock, &(DTB->quantum), sizeof(int));
+
+	return DTB;
+
+}

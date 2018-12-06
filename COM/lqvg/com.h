@@ -17,6 +17,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <commons/collections/list.h>
 
 enum PROCESO {
 	FS,

@@ -14,6 +14,7 @@
 #include <curses.h>
 #include <term.h>
 
+
 int inicializarLog();
 int ubicarArchivoDeConfiguracion(int argc,char** argv);
 int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion);
@@ -28,7 +29,7 @@ int escuchar();
 int iniciarConsola();
 void *funcionHiloConsola(void *arg);
 char** parser_instruccion(char* linea);
-t_DTB * crear_DTB(char* path);
+tp_DTB crear_DTB(char* path);
 int inicializarListas();
 int iniciarPCP();
 int iniciarPLP();
@@ -41,8 +42,8 @@ int proximoDTBAPlanificar();
 int calcularDTBAPlanificarConRR();
 int calcularDTBAPlanificarConVRR();
 int obtenerPrimerId(t_list* lista);
-t_DTB* buscarDTBPorId(idDTB);
-int enviarDTBaCPU(t_DTB * dtb, int sockCPU);
+tp_DTB buscarDTBPorId(int idDTB);
+//int enviarDTBaCPU(t_DTB * dtb, int sockCPU);
 int calcularDTBAPlanificarConBOAF();
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */

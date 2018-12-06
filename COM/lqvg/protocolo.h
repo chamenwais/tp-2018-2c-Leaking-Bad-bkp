@@ -75,6 +75,16 @@ typedef struct stru_lineaParaCPU{
 } t_lineaCPU;
 typedef t_lineaCPU* tp_lineaCPU;
 
+typedef struct defDTB {
+	int id_GDT;
+	char* escriptorio; // ver si esto realmente es un char*
+	int program_counter;
+	int iniGDT; // 0 o 1
+	t_list* tabla_dir_archivos; //tabla_dir_archivos;
+	int quantum;
+} t_DTB;
+typedef t_DTB* tp_DTB;
+
 void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTotalDelArchivo, int sock);
 tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos(int sock);
 void prot_enviar_DMA_FS_path(char* path,int sock);
@@ -101,5 +111,7 @@ void prot_enviar_DMA_SAFA_finFlush(char* path, int pid, int sock);
 tp_pathPid prot_recibir_DMA_SAFA_finFlush(int sock);
 void prot_enviar_CPU_FM9_pedir_linea(char * path, int id, int pc, int sock);
 tp_lineaCPU prot_recibir_CPU_FM9_pedir_linea(int sock);
+void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char* escriptorio, t_list* tabla, int quantum, int sock);
+tp_DTB prot_recibir_SAFA_CPU_DTB(int sock);
 
 #endif /* LQVG_PROTOCOLO_H_ */

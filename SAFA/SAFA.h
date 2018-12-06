@@ -17,7 +17,6 @@
 #include <commons/log.h>
 #include <commons/string.h>
 #include "variablesGlobales.h"
-#include "funcionesSafa.h"
 //#include "lqvg/com.h"
 //#include "//usr/include/lqvg/com.h"
 //#include "../COM/lqvg/com.h"
