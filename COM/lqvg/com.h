@@ -65,6 +65,7 @@ enum MENSAJES {
 	FinalizarTrabajoConElFS,
 	PedirLineaParaEjecutar,
 	NoHuboProblemaConLaLineaParaCpu,
+	ErrorSegmentoPagina
 };
 
 typedef struct {
