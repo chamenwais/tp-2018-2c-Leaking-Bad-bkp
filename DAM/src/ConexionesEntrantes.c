@@ -51,21 +51,19 @@ void crear_hilos_conexiones_entrantes(int socket_fm9, int socket_safa, int socke
 				} else {
 					//Conexion conocida
 					t_cabecera cabecera=recibirCabecera(iterador_conexiones_existentes);
-					if (cabecera_esta_vacia(&cabecera)) {
+					if (!cabecera_correcta(&cabecera)) {
 						//No se puede leer el mensaje, se va a cerrar el sockfd
 						loguear_y_cerrar_comunicacion_erronea_con_CPU(
 								iterador_conexiones_existentes);
 						FD_CLR(iterador_conexiones_existentes, &lista_fd_maestra);
 					}
-					if(cabecera_correcta(&cabecera)){
-						loguear_cabecera_recibida(CONST_NAME_CPU);
-						clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
-								cabecera.tipoDeMensaje
-								,iterador_conexiones_existentes
-								,socket_fm9
-								,socket_safa
-								,socket_filesystem);
-					}
+					loguear_cabecera_recibida(CONST_NAME_CPU);
+					clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
+							cabecera.tipoDeMensaje
+							,iterador_conexiones_existentes
+							,socket_fm9
+							,socket_safa
+							,socket_filesystem);
 				}
 			}
 		}
@@ -138,10 +136,6 @@ void loguear_y_cerrar_comunicacion_erronea_con_CPU(
 	close(sockfd_CPU_a_cerrar);
 }
 
-int cabecera_esta_vacia(t_cabecera* cabecera) {
-	return sizeof(*cabecera) == 0;
-}
-
 int cabecera_correcta(t_cabecera* cabecera){
 	return cabecera->tamanio>0;
 }
@@ -165,7 +159,7 @@ void operacion_abrir_path(int * sockets){
 	logger_DAM(escribir_loguear, l_trace,"Ehhh, voy a buscar [%s] para [%d]",mensaje_cpu->path,mensaje_cpu->pid);
 	enviarCabecera(socket_CPU,AbrirPathEjecutandose,sizeof(AbrirPathEjecutandose));
 	t_cabecera respuesta_validacion_path = validar_archivo(socket_mdj, mensaje_cpu);
-	if(cabecera_esta_vacia(&respuesta_validacion_path)||!cabecera_correcta(&respuesta_validacion_path)){
+	if(!cabecera_correcta(&respuesta_validacion_path)){
 		loguear_y_avisar_a_safa_apertura_erronea(socket_safa,CONST_NAME_MDJ,mensaje_cpu);
 	} else {
 		loguear_cabecera_recibida(CONST_NAME_MDJ);
@@ -255,8 +249,19 @@ void loguear_no_obtencion_de_fragmento_archivo() {
 	logger_DAM(escribir_loguear, l_error, "No se obtuvo el fragmento de archivo desde el FS");
 }
 
-bool todavia_no_se_recibio_todo_el_archivo(int tamanio_parcial_archivo, tp_datosObtenidosDeProtocolo parte_archivo) {
-	return tamanio_parcial_archivo <= parte_archivo->tamanio_total_archivo;
+bool todavia_no_se_recibio_todo_el_archivo(int tamanio_parcial_archivo, int tamanio_total_archivo) {
+	return tamanio_parcial_archivo < tamanio_total_archivo;
+}
+
+int loguear_cantidad_datos_y_cargar(tp_datosObtenidosDeProtocolo parte_archivo,
+		int direccion_de_memoria, int socket_fm9, tp_abrirPath info_cpu,
+		int offset_Fm9) {
+	logger_DAM(escribir_loguear, l_trace,
+			"Se recibio un fragmento de archivo de %d bytes",
+			parte_archivo->size);
+	direccion_de_memoria = cargar_datos_en_Fm9(socket_fm9, info_cpu, offset_Fm9,
+			parte_archivo);
+	return direccion_de_memoria;
 }
 
 void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath info_cpu, int socket_mdj, int socket_fm9, int socket_safa){
@@ -269,28 +274,144 @@ void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath i
 			loguear_no_obtencion_de_fragmento_archivo();
 			return;
 		}
-		int tamanio_parcial_archivo=0;
+		int tamanio_parcial_archivo=parte_archivo->size;
 		int direccion_de_memoria;
-		while (todavia_no_se_recibio_todo_el_archivo(tamanio_parcial_archivo, parte_archivo)) {
-			logger_DAM(escribir_loguear, l_trace,"Se recibio un fragmento de archivo de %d bytes",parte_archivo->size);
-			offset_Mdj+=parte_archivo->size;
-			direccion_de_memoria = cargar_datos_en_Fm9(socket_fm9, info_cpu, offset_Fm9, parte_archivo);
+		while (todavia_no_se_recibio_todo_el_archivo(tamanio_parcial_archivo, parte_archivo->tamanio_total_archivo)) {
+			direccion_de_memoria = loguear_cantidad_datos_y_cargar(
+					parte_archivo, direccion_de_memoria, socket_fm9, info_cpu,
+					offset_Fm9);
 			if(direccion_de_memoria==-1){
 				informar_carga_en_memoria_erronea(socket_safa, info_cpu);
 				return;
 			}
 			logger_DAM(escribir_loguear, l_trace,"Se cargo el fragmento en memoria");
+			offset_Mdj+=parte_archivo->size;
+			free(parte_archivo->buffer);
 			offset_Fm9+=parte_archivo->size;
 			parte_archivo=pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
 			if(validar_fragmento_archivo(parte_archivo, socket_safa, info_cpu)){
 				loguear_no_obtencion_de_fragmento_archivo();
+				informar_carga_en_memoria_erronea(socket_safa, info_cpu);
+				return;
+			}
+			tamanio_parcial_archivo+=parte_archivo->size;
+		}
+		if(parte_archivo->size>0){
+			direccion_de_memoria = loguear_cantidad_datos_y_cargar(
+								parte_archivo, direccion_de_memoria, socket_fm9, info_cpu,
+								offset_Fm9);
+			if(direccion_de_memoria==-1){
+				informar_carga_en_memoria_erronea(socket_safa, info_cpu);
 				return;
 			}
 		}
 		informar_operacion_abrir_exitosa(socket_safa, info_cpu,	direccion_de_memoria);
+		free(info_cpu->path);
+		//TODO verificar si hace falta este free
 		free(parte_archivo->buffer);
-		free(parte_archivo);
 	}
+}
+
+void loguear_error_comunicacion_en_flush(char* name_Fm9) {
+	logger_DAM(escribir_loguear, l_warning,
+			"Hubo un error de comunicacion con %s al hacer flush el archivo",
+			name_Fm9);
+}
+
+tp_datosObtenidosDeProtocolo recibir_datos_fm9(int socket_fm9) {
+	pthread_mutex_lock(&MX_MEMORIA);
+	tp_datosObtenidosDeProtocolo datos_obtenidos = prot_recibir_FM9_DMA_devolverDatos(socket_fm9);
+	pthread_mutex_unlock(&MX_MEMORIA);
+	return datos_obtenidos;
+}
+
+enum MENSAJES guardar_datos_en_disco(int socket_mdj, char * ruta, int offset_Mdj, char *  datos_obtenidos){
+	t_cabecera cabecera_resultado;
+	pthread_mutex_lock(&MX_FS);
+	enviarCabecera(socket_mdj,GuardarDatos,sizeof(GuardarDatos));
+	prot_enviar_DMA_FS_guardarDatos(ruta, offset_Mdj, transfer_size, datos_obtenidos, socket_mdj);
+	cabecera_resultado = recibirCabecera(socket_mdj);
+	pthread_mutex_unlock(&MX_FS);
+	if(!cabecera_correcta(&cabecera_resultado)){
+		loguear_error_comunicacion_en_flush(CONST_NAME_MDJ);
+		return ArchivoNoEncontrado;
+	}
+	return cabecera_resultado.tipoDeMensaje;
+}
+
+enum MENSAJES loguear_cantidad_datos_y_guardar_en_disco(
+		tp_datosObtenidosDeProtocolo datos_obtenidos,
+		enum MENSAJES resultado_guardado, int socket_mdj,
+		tp_datosEnMemoria pedido_flush, int offset_Mdj) {
+	logger_DAM(escribir_loguear, l_trace,
+			"Se recibio un fragmento de archivo de %d bytes",
+			datos_obtenidos->size);
+	resultado_guardado = guardar_datos_en_disco(socket_mdj, pedido_flush->path,
+			offset_Mdj, datos_obtenidos->buffer);
+	return resultado_guardado;
+}
+
+void tratar_existencia_archivo_en_mp(enum MENSAJES existencia, tp_datosEnMemoria pedido_flush, int socket_fm9,
+		int socket_mdj, int socket_safa) {
+	if (ElArchivoExiste == existencia) {
+		//guarda el archivo en disco y avisa a Safa
+		int offset_Fm9 = 0;
+		int offset_Mdj = 0;
+		logger_DAM(escribir_loguear, l_trace,
+				"El archivo %s existe en FM9, vamos a guardarlo en disco",
+				pedido_flush->path);
+		tp_datosObtenidosDeProtocolo datos_obtenidos=recibir_datos_fm9(socket_fm9);
+		int tamanio_parcial_archivo=datos_obtenidos->size;
+		enum MENSAJES resultado_guardado;
+		while (todavia_no_se_recibio_todo_el_archivo(tamanio_parcial_archivo,datos_obtenidos->tamanio_total_archivo)){
+			resultado_guardado = loguear_cantidad_datos_y_guardar_en_disco(
+					datos_obtenidos, resultado_guardado, socket_mdj,
+					pedido_flush, offset_Mdj);
+			if(resultado_guardado==ArchivoNoEncontrado){
+				informar_operacion_flush_erronea(socket_safa, pedido_flush);
+				return;
+			}
+			logger_DAM(escribir_loguear, l_trace,"Se hizo flush del fragmento en disco");
+			offset_Fm9+=datos_obtenidos->size;
+			offset_Mdj+=datos_obtenidos->size;
+			free(datos_obtenidos->buffer);
+			t_cabecera cabecera_existencia=validar_archivo_en_memoria(socket_fm9, socket_safa, pedido_flush, offset_Fm9);
+			if(!cabecera_correcta(&cabecera_existencia)){
+				loguear_informar_error_comunicacion_flush(socket_safa, pedido_flush);
+				return;
+			} else if(ErrorSegmentoPagina==cabecera_existencia.tipoDeMensaje){
+				tratar_error_segmento_pagina(pedido_flush, socket_safa);
+				return;
+			}
+			tamanio_parcial_archivo+=datos_obtenidos->size;
+		}
+		if(datos_obtenidos->size>0){
+			resultado_guardado = loguear_cantidad_datos_y_guardar_en_disco(
+								datos_obtenidos, resultado_guardado, socket_mdj,
+								pedido_flush, offset_Mdj);
+			if(resultado_guardado==ArchivoNoEncontrado){
+				informar_operacion_flush_erronea(socket_safa, pedido_flush);
+				return;
+			}
+		}
+		//Informa operacion flush exitosa a safa y hace free de estructuras dinamicas
+		informar_operacion_flush_exitosa(socket_safa,pedido_flush);
+		free(pedido_flush->path);
+		//TODO verificar si hace falta este free
+		free(datos_obtenidos->buffer);
+	}
+}
+
+void tratar_error_segmento_pagina(tp_datosEnMemoria pedido_flush, int socket_safa) {
+	logger_DAM(escribir_loguear, l_error,
+			"Hubo un error de segmento/memoria en FM9 para el path %s. Error 30002",
+			pedido_flush->path);
+	informar_operacion_flush_erronea(socket_safa, pedido_flush);
+}
+
+void loguear_informar_error_comunicacion_flush(int socket_safa, tp_datosEnMemoria pedido_flush) {
+	loguear_error_comunicacion_en_flush(CONST_NAME_FM9);
+	informar_operacion_flush_erronea(socket_safa, pedido_flush);
 }
 
 void operacion_flush_archivo(int * sockets){
@@ -299,27 +420,34 @@ void operacion_flush_archivo(int * sockets){
 	int socket_safa=sockets[2];
 	int socket_mdj=sockets[3];
 	free(sockets);
+	t_cabecera resultado_existencia_archivo;
 	tp_datosEnMemoria pedido_flush=prot_recibir_CPU_DMA_flush(socket_CPU);
 	logger_DAM(escribir_loguear, l_trace,"Voy a hacer flush de [%s] para [%d]",pedido_flush->path,pedido_flush->pid);
 	enviarCabecera(socket_CPU,FlushDeArchivoADiscoEjecutandose,sizeof(FlushDeArchivoADiscoEjecutandose));
-	tp_datosObtenidosDeProtocolo datos_obtenidos=obtener_archivo(socket_fm9,socket_safa,pedido_flush,0);
-	//TODO terminar
+	resultado_existencia_archivo=validar_archivo_en_memoria(socket_fm9, socket_safa, pedido_flush, 0);
+	if(!cabecera_correcta(&resultado_existencia_archivo)){
+		loguear_informar_error_comunicacion_flush(socket_safa, pedido_flush);
+	}else{
+		loguear_cabecera_recibida(CONST_NAME_FM9);
+		enum MENSAJES existencia=tratar_inexistencia_archivo_mp(resultado_existencia_archivo, pedido_flush, socket_safa);
+		if(ElArchivoNoExiste == existencia) {
+			return;
+		} else if(ErrorSegmentoPagina==existencia){
+			tratar_error_segmento_pagina(pedido_flush, socket_safa);
+			return;
+		}
+		tratar_existencia_archivo_en_mp(existencia, pedido_flush, socket_fm9, socket_mdj, socket_safa);
+	}
 }
 
-tp_datosObtenidosDeProtocolo obtener_archivo(int fm9_sock, int safa_sock, tp_datosEnMemoria datos_flush, int offset){
+t_cabecera validar_archivo_en_memoria(int fm9_sock, int safa_sock, tp_datosEnMemoria datos_flush, int offset){
 	pthread_mutex_lock(&MX_MEMORIA);
 	enviarCabecera(fm9_sock, ObtenerDatos, sizeof(ObtenerDatos));
 	prot_enviar_DMA_FM9_obtenerArchivo(datos_flush->path,datos_flush->pid,datos_flush->memory_address,
 			offset, transfer_size, fm9_sock);
 	t_cabecera respuesta_validacion = recibirCabecera(fm9_sock);
 	pthread_mutex_unlock(&MX_MEMORIA);
-	if(ElArchivoNoExiste==tratar_inexistencia_archivo_mp(respuesta_validacion, datos_flush, safa_sock)){
-		return NULL;
-	}
-	pthread_mutex_lock(&MX_MEMORIA);
-	tp_datosObtenidosDeProtocolo datos_obtenidos=prot_recibir_FM9_DMA_devolverDatos(fm9_sock);
-	pthread_mutex_unlock(&MX_MEMORIA);
-	return datos_obtenidos;
+	return respuesta_validacion;
 }
 
 void informar_operacion_flush_erronea(int socket_safa, tp_datosEnMemoria path_y_pid) {
