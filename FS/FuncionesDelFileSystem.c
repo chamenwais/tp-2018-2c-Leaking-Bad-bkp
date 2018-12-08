@@ -441,6 +441,8 @@ void liberarRecursos(){
 	pthread_mutex_destroy(&mutexFinalizarPrograma);
 	pthread_mutex_destroy(&mutexPath);
 	pthread_mutex_destroy(&mutexSistemaDeArchivos);
+	free(configuracionDelFS.punto_montaje);
+	free(configuracionDeMetadata.magicNumber),
 	printf("PROGRAMA FINALIZADO\n");
 }
 
@@ -511,6 +513,7 @@ int generarMD5(char* pathDelArchivo){
 	printf("Resultado del MD5:\n");
 	MDPrint (digest);
 	printf("\n");
+	free(digest);
 	return EXIT_SUCCESS;
 }
 
@@ -789,7 +792,6 @@ int levantarBitMap(){
 	char* ubicacionDelArchivo;
 	bool estaCreadoElBitmap;
 	bool estaVacioElBitmap=false;
-	//char *bufferDelArchivo;
 	ubicacionDelArchivo=string_new();
 	tamanioBitmap=configuracionDeMetadata.cantidadBloques * sizeof(char);
 	string_append(&ubicacionDelArchivo,configuracionDelFS.punto_montaje);
@@ -863,6 +865,7 @@ int levantarBitMap(){
 
 		}
 	close(FDbitmap);
+	free(ubicacionDelArchivo);
 	return EXIT_SUCCESS;
 }
 
@@ -1027,6 +1030,7 @@ int validarArchivo(char *ubicacionDelArchivo){
 	}else{
 		resultado = ElArchivoNoExiste;
 		}
+	free(path);
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 	return resultado;
 }
@@ -1037,10 +1041,13 @@ int crearArchivoDeConsola(char *path, int cantidadDeBytes){
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Archivos/");
 	string_append(&ubicacionDelArchivo, path);
-	if(crearArchivo(ubicacionDelArchivo, cantidadDeBytes, path)==ArchivoCreado)
+	if(crearArchivo(ubicacionDelArchivo, cantidadDeBytes, path)==ArchivoCreado){
+		free(ubicacionDelArchivo);
 		return EXIT_SUCCESS;
-	else
+	}else{
+		free(ubicacionDelArchivo);
 		return EXIT_FAILURE;
+		}
 }
 
 int crearArchivoDeDMA(int FDDMA){
@@ -1057,6 +1064,7 @@ int crearArchivoDeDMA(int FDDMA){
 			dataParaCrearElArchivo->path);
 	enviarCabecera(FDDMA, resultadoDeCrearElArchivo, 1);
 	log_info(LOGGER,"Enviando respuesta de crear archivo al DMA (%d)",resultadoDeCrearElArchivo);
+	free(ubicacionDelArchivo);
 	return resultadoDeCrearElArchivo;
 }
 
@@ -1081,6 +1089,7 @@ int crearCarpetas(char *carpetasACrear){
 	}
 	mkdir(directorio,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	log_info(LOGGER,"Directorio %s creado",directorio);
+	free(directorio);
 	return EXIT_SUCCESS;
 }
 
@@ -1168,18 +1177,22 @@ int borrarArchivo(char *path){
 			}
 		if(remove(ubicacionDelArchivoDeMetadata)==0){
 			log_info(LOGGER,"Se elimino el archivo de metadata: %s",ubicacionDelArchivoDeMetadata);
+			free(ubicacionDelArchivoDeMetadata);
 			pthread_mutex_unlock(&mutexSistemaDeArchivos);
 			return ArchivoBorrado;
 		}else{
 			log_error(LOGGER,"No se pudo eliminar el archivo de metadata: %s",ubicacionDelArchivoDeMetadata);
+			free(ubicacionDelArchivoDeMetadata);
 			pthread_mutex_unlock(&mutexSistemaDeArchivos);
 			return ArchivoNoBorrado;
 			}
 	}else{
 		log_error(LOGGER,"El archivo %s de metadata no existe, no lo puedo borrar",ubicacionDelArchivoDeMetadata);
+		free(ubicacionDelArchivoDeMetadata);
 		pthread_mutex_unlock(&mutexSistemaDeArchivos);
 		return ArchivoNoBorrado;
 		}
+	free(ubicacionDelArchivoDeMetadata);
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 }
 
@@ -1256,6 +1269,7 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 						log_error(LOGGER,"No me coincide el numero de bloque qeu quiero leer con la cantidad total de bloques que tiene el archivo");
 						datosObtendios.resultado=ArchivoNoEncontrado;
 						free(datosObtendios.datos);
+						free(ubicacionDelArchivoDeMetadata);
 						pthread_mutex_unlock(&mutexSistemaDeArchivos);
 						return datosObtendios;
 						}
@@ -1284,13 +1298,17 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 						log_error(LOGGER,"No se pudo abrir el archivo %s para leer",archivoDeBloque);
 						datosObtendios.resultado=ArchivoNoEncontrado;
 						free(datosObtendios.datos);
+						free(ubicacionDelArchivoDeMetadata);
+						free(archivoDeBloque);
 						pthread_mutex_unlock(&mutexSistemaDeArchivos);
 						return datosObtendios;
 						}
-					}
+					free(archivoDeBloque);
+					}//fin del for
 
 				log_info(LOGGER,"Se pudo recuperar todo el archivo %s devolviendo datos",ubicacionDelArchivoDeMetadata);
 				datosObtendios.resultado=DatosObtenidos;
+				free(ubicacionDelArchivoDeMetadata);
 				pthread_mutex_unlock(&mutexSistemaDeArchivos);
 				return datosObtendios;
 			}else{
@@ -1304,6 +1322,7 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 		}
 	datosObtendios.resultado=ArchivoNoEncontrado;
 	free(datosObtendios.datos);
+	free(ubicacionDelArchivoDeMetadata);
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 	return datosObtendios;
 }
@@ -1393,7 +1412,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 							return NoHayMasBloquesLibres;///no hay mas bloques libres
 							}
 						reservarBloqueYCrearEstructuras(numeroDeBloqueLibre);
-					}
+						}
 					log_info(LOGGER,"Abriendo el bloque %s para escribir",archivoDeBloque);
 					FILE * archivo = fopen(archivoDeBloque,"rb+");
 					//fwrite recibe: puntero a los datos, el tamaño de los registros, numero de registros, archivo
