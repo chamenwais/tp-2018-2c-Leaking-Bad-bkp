@@ -247,7 +247,15 @@ void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id){
 }
 
 void destruir_estructuras_esquema_segmentacion(){
-
+	if(tablas_de_segmentos!=NULL){
+		list_destroy_and_destroy_elements(tablas_de_segmentos,&eliminar_lista_de_entradas);
+	}
+	if(lista_de_huecos!=NULL){
+		list_destroy(lista_de_huecos);
+	}
+	if(archivos_cargandose!=NULL){
+		list_destroy(archivos_cargandose);
+	}
 }
 
 bool es_un_proceso_conocido(void * tabla_segmentos){
@@ -284,3 +292,6 @@ int todavia_falta_mandar_pedazo_de_archivo(tp_cargarEnMemoria pedazo_actual, t_a
 	return archivo_cargandose->recibido_actualmente<pedazo_actual->file_size;
 }
 
+void obtener_parte_archivo_con_segmentacion(int DAM_fd){
+
+}

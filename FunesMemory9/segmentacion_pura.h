@@ -57,6 +57,6 @@ int crear_nueva_entrada_tabla_de_segmentos(tp_cargarEnMemoria parte_archivo, int
 void informar_carga_segmento_exitosa(int indice_entrada_archivo_en_tabla_segmentos, tp_cargarEnMemoria parte_archivo, int DAM_fd);
 void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id);
 int todavia_falta_mandar_pedazo_de_archivo(tp_cargarEnMemoria pedazo_actual, t_archivo_cargandose * archivo_cargandose);
-
+void obtener_parte_archivo_con_segmentacion(int DAM_fd);
 
 #endif /* SEGMENTACION_PURA_H_ */

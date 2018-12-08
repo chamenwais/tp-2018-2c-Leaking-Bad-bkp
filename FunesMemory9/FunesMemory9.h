@@ -12,6 +12,8 @@
 #include "contexto.h"
 #include "utilidades_fm9.h"
 #include "segmentacion_pura.h"
+#include "segmentacion_paginada.h"
+#include "paginacion_invertida.h"
 #include "utilidades_para_listas.h"
 
 /*** Funciones ***/
@@ -28,24 +30,12 @@ void iniciar_consola();
 char** parser_instruccion(char* linea);
 void *funcionHiloConsola(void *arg);
 void realizar_dump();
-void buscar_informacion_administrativa_esquema_segmentacion_paginada();
-void buscar_informacion_administrativa_esquema_paginacion_invertida();
 
 /*** Funciones y variables necesarias a intercambiar segun el esquema de memoria utilizado ***/
 void (*crear_estructuras_esquema[3])();
 void (*cargar_parte_archivo[3])(int);
 void (*destruir_estructuras_esquema[3])();
 void (*buscar_informacion_administrativa[3])(int);
-
-/*** Segmentacion paginada ***/
-
-void crear_estructuras_esquema_segmentacion_paginada();
-void cargar_parte_archivo_en_segmento_paginado(int DAM_fd);
-void destruir_estructuras_esquema_segmentacion_paginada();
-
-/*** Paginacion invertida ***/
-void crear_estructuras_esquema_paginacion_invertida();
-void cargar_parte_archivo_en_pagina_invertida(int DAM_fd);
-void destruir_estructuras_esquema_paginacion_invertida();
+void (*obtener_parte_archivo[3])(int);
 
 #endif /* FUNESMEMORY9_FUNESMEMORY9_H_ */
