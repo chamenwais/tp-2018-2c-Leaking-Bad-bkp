@@ -6,6 +6,8 @@
 C_SRCS += \
 ../FunesMemory9.c \
 ../contexto.c \
+../paginacion_invertida.c \
+../segmentacion_paginada.c \
 ../segmentacion_pura.c \
 ../utilidades_fm9.c \
 ../utilidades_para_listas.c 
@@ -13,6 +15,8 @@ C_SRCS += \
 OBJS += \
 ./FunesMemory9.o \
 ./contexto.o \
+./paginacion_invertida.o \
+./segmentacion_paginada.o \
 ./segmentacion_pura.o \
 ./utilidades_fm9.o \
 ./utilidades_para_listas.o 
@@ -20,6 +24,8 @@ OBJS += \
 C_DEPS += \
 ./FunesMemory9.d \
 ./contexto.d \
+./paginacion_invertida.d \
+./segmentacion_paginada.d \
 ./segmentacion_pura.d \
 ./utilidades_fm9.d \
 ./utilidades_para_listas.d 

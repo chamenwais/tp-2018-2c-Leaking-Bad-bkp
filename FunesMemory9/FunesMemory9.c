@@ -68,6 +68,10 @@ void interpretar_mensaje_del_diego(enum MENSAJES mensaje, int DMA_socket){
 			logger_funesMemory9(escribir_loguear, l_info, "\nEl Diego quiere cargar una parte de un archivo\n");
 			(cargar_parte_archivo[MODO_EJECUCION])(DMA_socket);
 			break;
+		case ObtenerDatos:
+			logger_funesMemory9(escribir_loguear, l_info, "\nEl Diego quiere hacerle flush a un archivo\n");
+			(obtener_parte_archivo[MODO_EJECUCION])(DMA_socket);
+			break;
 		//TODO agregar otros pedidos de DMA
 		default:
 			break;
@@ -110,49 +114,8 @@ int comunicarse_con_dam(int socket_escucha){
 	return -1;
 }
 
-
 char *reservar_total_memoria(){
 	return malloc(TAMANIO_MEMORIA);
-}
-
-void cargar_parte_archivo_en_segmento_paginado(int DAM_fd){
-
-}
-
-void cargar_parte_archivo_en_pagina_invertida(int DAM_fd){
-
-}
-
-void crear_estructuras_esquema_segmentacion_paginada(){
-
-}
-
-void crear_estructuras_esquema_paginacion_invertida(){
-
-}
-
-void destruir_estructuras_esquema_segmentacion_paginada(){
-
-}
-
-void destruir_estructuras_esquema_paginacion_invertida(){
-	if(tablas_de_segmentos!=NULL){
-		list_destroy_and_destroy_elements(tablas_de_segmentos,&eliminar_lista_de_entradas);
-	}
-	if(lista_de_huecos!=NULL){
-		list_destroy(lista_de_huecos);
-	}
-	if(archivos_cargandose!=NULL){
-		list_destroy(archivos_cargandose);
-	}
-}
-
-void buscar_informacion_administrativa_esquema_segmentacion_paginada(int pid){
-
-}
-
-void buscar_informacion_administrativa_esquema_paginacion_invertida(int pid){
-
 }
 
 void inicializar_funciones_variables_por_segmento(){
@@ -168,6 +131,9 @@ void inicializar_funciones_variables_por_segmento(){
 	buscar_informacion_administrativa[SEGMENTACION_PURA]=&buscar_informacion_administrativa_esquema_segmentacion_y_mem_real;
 	buscar_informacion_administrativa[SEGMENTACION_PAGINADA]=&buscar_informacion_administrativa_esquema_segmentacion_paginada;
 	buscar_informacion_administrativa[TABLA_PAGINAS_INVERTIDA]=&buscar_informacion_administrativa_esquema_paginacion_invertida;
+	obtener_parte_archivo[SEGMENTACION_PURA]=&obtener_parte_archivo_con_segmentacion;
+	obtener_parte_archivo[SEGMENTACION_PAGINADA]=&obtener_parte_archivo_con_segmentacion_paginada;
+	obtener_parte_archivo[TABLA_PAGINAS_INVERTIDA]=&obtener_parte_archivo_con_paginacion_invertida;
 }
 
 char** parser_instruccion(char* linea){
@@ -217,7 +183,6 @@ void *funcionHiloConsola(void *arg){
 		}
 }
 
-
 void realizar_dump(int id){
 
 	(buscar_informacion_administrativa[MODO_EJECUCION])(id);
@@ -237,7 +202,6 @@ void iniciar_consola(){
 			logger_funesMemory9(escribir_loguear, l_info, "La consola fue creada correctamente\n");
 			}
 }
-
 
 int main(int argc, char **argv){
 
