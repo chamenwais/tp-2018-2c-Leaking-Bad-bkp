@@ -18,7 +18,7 @@ int cargarDirectorioActual(){
 	string_append(&directorioActual, configuracionDelFS.punto_montaje);
 	string_append(&directorioActual, "/Archivos");
 	log_info(LOGGER,"Directorio actual: %s",directorioActual);
-	free(directorioActual);
+	//free(directorioActual);
 	return EXIT_SUCCESS;
 }
 
@@ -312,7 +312,7 @@ int mostrarConfiguracion(){
 	printf("Puerto: %d\n", configuracionDelFS.puerto);
 	printf("Punto de montaje: %s\n", configuracionDelFS.punto_montaje);
 	printf("Retardo: %d\n", configuracionDelFS.retardo);
-	printf("Cantidad de : %d\n", configuracionDeMetadata.cantidadBloques);
+	printf("Cantidad de bloques: %d\n", configuracionDeMetadata.cantidadBloques);
 	printf("Magic number: %s\n", configuracionDeMetadata.magicNumber);
 	printf("Tamaño de bloques: %d\n", configuracionDeMetadata.tamanioBloques);
 	return EXIT_SUCCESS;
@@ -490,9 +490,10 @@ unsigned char digest[16];{
 }
 
 int generarMD5(char* pathDelArchivo){
-
+	pthread_mutex_lock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	int longitudDelArchivo=obtenerLongigutDelArchivo(pathDelArchivo);
 	t_datosObtenidos datosObtenidos = obtenerDatos(pathDelArchivo,0,longitudDelArchivo);
+	pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	char*content=datosObtenidos.datos;
 	if(datosObtenidos.resultado==DatosObtenidos){
 		printf("Los datos del archivo %s son:\n",pathDelArchivo);
@@ -514,6 +515,7 @@ int generarMD5(char* pathDelArchivo){
 	MDPrint (digest);
 	printf("\n");
 	free(digest);
+	free(datosObtenidos.datos);
 	return EXIT_SUCCESS;
 }
 
@@ -537,9 +539,11 @@ int mostrarBloque(int numeroDeBloque){
 }
 
 int funcionDeConsolacat(char* path){
+	pthread_mutex_lock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	printf("Mostrando el contenido del archivo %s por pantalla\n",path);
 	int longitudDelArchivo=obtenerLongigutDelArchivo(path);
 	t_datosObtenidos datosObtenidos = obtenerDatos(path,0,longitudDelArchivo);
+	pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	if(datosObtenidos.resultado==DatosObtenidos){
 		printf("Los datos del archivo %s son:\n",path);
 		for(int i=0;i<longitudDelArchivo;i++) printf("%c",datosObtenidos.datos[i]);
@@ -547,6 +551,7 @@ int funcionDeConsolacat(char* path){
 	}else{
 		printf("No se pudieron recuperar los datos del archivo:%s\n",path);
 		}
+	free(datosObtenidos.datos);
 	return EXIT_SUCCESS;
 }
 
@@ -597,7 +602,7 @@ void volverUnaCarpetaParaAtras(){
 			}
 		//ver q pasa con el primero
 		}
-	free(directorioActual);
+	//free(directorioActual);
 	}
 
 void agregarCarpetaAlDirectorioActual(char* carpeta){
@@ -866,6 +871,7 @@ int levantarBitMap(){
 		}
 	close(FDbitmap);
 	free(ubicacionDelArchivo);
+	//free(bufferArchivo);
 	return EXIT_SUCCESS;
 }
 
@@ -894,6 +900,7 @@ void *hiloDePedidoDeDMA(void* arg){
 	int cabecera = (int)arg;
 	iniciarTrabajoConElDMA(cabecera);
 	log_info(LOGGER,"Finalizando pedido del DMA");
+	free(arg);
 	pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	return EXIT_SUCCESS;
 }
@@ -1175,6 +1182,7 @@ int borrarArchivo(char *path){
 			bitarray_clean_bit(bitmap,i);
 			msync(bitmap, tamanioBitmap, MS_SYNC);
 			}
+		free(metadata);
 		if(remove(ubicacionDelArchivoDeMetadata)==0){
 			log_info(LOGGER,"Se elimino el archivo de metadata: %s",ubicacionDelArchivoDeMetadata);
 			free(ubicacionDelArchivoDeMetadata);
@@ -1205,6 +1213,7 @@ int obtenerDatosDeConsola(char *path, int offset, int Size){
 	}else{
 		printf("No se pudieron recuperar los datos del archivo:%s\n",path);
 		}
+	free(datosObtenidos.datos);
 	return EXIT_SUCCESS;
 	}
 
@@ -1220,6 +1229,7 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 	prot_enviar_FS_DMA_datosObtenidos(datosObtenidos.datos, tamanioTotalDelArchivo,
 			datosObtenidos.resultado, fileDescriptorActual);
 	log_info(LOGGER,"Enviando respuesta de datos obtenidos al DMA");
+	free(datosObtenidos.datos);
 	return EXIT_SUCCESS;
 }
 
