@@ -245,8 +245,13 @@ void obtener_archivo_en_curso_de_carga(tp_cargarEnMemoria parte_archivo,
 	*archivo_de_proceso_cargandose = list_get(archivo_cargandose_filtrado, 0);
 }
 
+void borrar_info_archivo_cargandose(int pid){
+	logger_funesMemory9(escribir_loguear, l_trace,"\nSe borra el elemento del archivo cargandose del proceso %d\n"
+			,(*(t_archivo_cargandose*)list_remove_by_condition_comparing(archivos_cargandose, &el_proceso_tiene_archivo_cargandose, pid)).pid);
+}
+
 void informar_espacio_insuficiente(int DAM_fd) {
 	logger_funesMemory9(escribir_loguear, l_warning,
-			"\nEspacio insuficiente para albergar el archivo. Error 1002\n");
+			"\nEspacio insuficiente para albergar el archivo. Error 10002\n");
 	prot_enviar_FM9_DMA_cargaEnMemoria(-1, DAM_fd);
 }
