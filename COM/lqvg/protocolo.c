@@ -400,7 +400,7 @@ tp_pathPid prot_recibir_DMA_SAFA_finFlush(int sock){
 	return fin_flush;
 }
 
-void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char* escriptorio, t_list* tabla, int quantum, int sock){
+void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char* escriptorio, t_list* lista, int quantum, int sock){
 	//mando id_GDT
 	enviar(sock, &id_GDT, sizeof(id_GDT));
 	//mando program counter
@@ -412,7 +412,17 @@ void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char*
 	enviar(sock, &tam, sizeof(tam));
 	enviar(sock, escriptorio, tam);
 	//mando la lista
-
+	int tamanio_elem;
+	int cant_elem_lista;
+	cant_elem_lista = list_size(lista);
+	enviar(sock, &cant_elem_lista, sizeof(int));
+	while(list_size(lista)>0){
+	//calculo el tamaño de un elemento
+	char* elem = list_remove(lista, 0);
+	tamanio_elem = strlen(elem)+1;
+	enviar(sock, &tamanio_elem, sizeof(tamanio_elem));
+	enviar(sock, elem, tamanio_elem);
+	}
 	//mando el quantum
 	enviar(sock, &quantum, sizeof(quantum));
 }
@@ -432,7 +442,19 @@ tp_DTB prot_recibir_SAFA_CPU_DTB(int sock){
 	char* buffer = malloc(tam);
 	recibir(sock, DTB->escriptorio, tam);
 	//recibir lista
-
+	t_list* lista_recibida;
+	int cant_elem_lista_rec;
+	int i;
+	char* elem_rec;
+	int tamanio_elem_rec;
+	lista_recibida = list_create();
+	recibir(sock, &cant_elem_lista_rec, sizeof(int));
+	for (i = 0; i < cant_elem_lista_rec; ++i) {
+		recibir(sock, &tamanio_elem_rec, sizeof(tamanio_elem_rec));
+		recibir(sock, &elem_rec, tamanio_elem_rec);
+		list_add(lista_recibida, elem_rec);
+	}
+	&DTB->tabla_dir_archivos = lista_recibida;
 	//recibir quantum
 	recibir(sock, &(DTB->quantum), sizeof(int));
 
