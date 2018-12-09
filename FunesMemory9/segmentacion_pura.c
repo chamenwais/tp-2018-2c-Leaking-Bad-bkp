@@ -105,10 +105,14 @@ t_archivo_cargandose * cargar_buffer_archivo(tp_cargarEnMemoria parte_archivo) {
 		archivo_de_proceso_cargandose->buffer_archivo=realloc(archivo_de_proceso_cargandose->buffer_archivo,
 				tamanio_archivo_cargandose+tamanio_parte_archivo);
 	} else {
-		//El pedazo de archivo es nuevo, hay que crear el structure del mismo
+		//El pedazo de archivo es nuevo, hay que crear el structure del mismo.
 		archivo_de_proceso_cargandose->pid = parte_archivo->pid;
 		archivo_de_proceso_cargandose->recibido_actualmente=0;
 		archivo_de_proceso_cargandose->buffer_archivo=malloc(tamanio_parte_archivo);
+		//Tambien se agrega elemento de archivo cargandose a la lista
+		logger_funesMemory9(escribir_loguear, l_trace,"\nSe agrega a la lista, un elemento por archivo cargandose del proceso %d\n"
+					,parte_archivo->pid);
+		list_add(archivos_cargandose,archivo_de_proceso_cargandose);
 	}
 	archivo_de_proceso_cargandose->recibido_actualmente +=tamanio_parte_archivo;
 	memcpy(archivo_de_proceso_cargandose->buffer_archivo, parte_archivo->buffer,tamanio_parte_archivo);
@@ -150,7 +154,8 @@ void cargar_parte_archivo_en_segmento(int DAM_fd){
 	actualizar_info_tabla_de_huecos(cantidad_de_lineas, hueco);
 
 	int indice_entrada_archivo_en_tabla_segmentos=actualizar_tabla_segmentos(parte_archivo, hueco->base-cantidad_de_lineas, cantidad_de_lineas);
-	//TODO borrar info del archivo cargandose
+	//borra info del archivo cargandose
+	borrar_info_archivo_cargandose(parte_archivo->pid);
 	informar_carga_segmento_exitosa(indice_entrada_archivo_en_tabla_segmentos,
 			parte_archivo, DAM_fd);
 	return;

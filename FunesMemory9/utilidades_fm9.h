@@ -26,5 +26,6 @@ bool el_archivo_ya_se_estaba_cargando(tp_cargarEnMemoria process_id);
 void informar_espacio_insuficiente(int DAM_fd);
 void obtener_archivo_en_curso_de_carga(tp_cargarEnMemoria parte_archivo,
 		t_archivo_cargandose** archivo_de_proceso_cargandose);
+void borrar_info_archivo_cargandose(int pid);
 
 #endif /* UTILIDADES_FM9_H_ */
