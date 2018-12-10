@@ -442,19 +442,16 @@ tp_DTB prot_recibir_SAFA_CPU_DTB(int sock){
 	char* buffer = malloc(tam);
 	recibir(sock, DTB->escriptorio, tam);
 	//recibir lista
-	t_list* lista_recibida;
 	int cant_elem_lista_rec;
 	int i;
 	char* elem_rec;
 	int tamanio_elem_rec;
-	lista_recibida = list_create();
 	recibir(sock, &cant_elem_lista_rec, sizeof(int));
 	for (i = 0; i < cant_elem_lista_rec; ++i) {
 		recibir(sock, &tamanio_elem_rec, sizeof(tamanio_elem_rec));
 		recibir(sock, &elem_rec, tamanio_elem_rec);
-		list_add(lista_recibida, elem_rec);
+		list_add(&DTB->tabla_dir_archivos, elem_rec);
 	}
-	&DTB->tabla_dir_archivos = lista_recibida;
 	//recibir quantum
 	recibir(sock, &(DTB->quantum), sizeof(int));
 
