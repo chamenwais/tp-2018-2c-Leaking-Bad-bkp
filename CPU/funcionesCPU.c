@@ -9,8 +9,8 @@
 
 t_operacion parsear(char * linea){
 	if(linea == NULL || string_equals_ignore_case(linea, "")){
-		logger_CPU(escribir_loguear, l_warning,"Fin de archivo, se cerrara el script y terminara el programa \n");
-		cerrar_script();
+		logger_CPU(escribir_loguear, l_warning,"Fin de archivo, se cerrara el script y terminara el programa");
+		cerrar_script();//avisar a memoria que cierre el archivo CLOSE
 		finalizar_cpu();
 	}
 
@@ -26,7 +26,12 @@ t_operacion parsear(char * linea){
 	resultado_de_parsear.liberar = split;
 
 	if(string_equals_ignore_case(tipo_de_operacion, "#")){
-		logger_CPU(escribir_loguear, l_warning,"Es un comentario, sera ignorado \n");
+		logger_CPU(escribir_loguear, l_warning,"Es un comentario, sera ignorado");
+		//no se hace nada...
+	}
+
+	if(tipo_de_operacion[0]=='#'){
+		logger_CPU(escribir_loguear, l_warning,"Es un comentario, sera ignorado");
 		//no se hace nada...
 	}
 
@@ -101,7 +106,7 @@ void cargar_archivo_de_config(char *path){
 		config_destroy(config_file);
 	}
 	else {
-		logger_CPU(escribir_loguear, l_error,"Error al intertar abrir el archivo de configuracion \n");
+		logger_CPU(escribir_loguear, l_error,"Error al intertar abrir el archivo de configuracion");
 		exit(1);
 	}
 }
@@ -171,13 +176,13 @@ void captura_sigpipe(int signo){
 
     if(signo == SIGINT)
     {
-    	logger_CPU(escribir_loguear, l_warning,"\nApretaste Ctrl+C, por que? No hay polque.\n");
+    	logger_CPU(escribir_loguear, l_warning,"\nApretaste Ctrl+C, por que? No hay polque.");
     	finalizar_cpu();
     	exit(EXIT_FAILURE);
     }
     else if(signo == SIGPIPE)
     {
-    	logger_CPU(escribir_loguear, l_error,"\n Se desconectó un proceso al que se quizo enviar.\n");
+    	logger_CPU(escribir_loguear, l_error,"\n Se desconectó un proceso al que se quizo enviar.");
     }
 
 }

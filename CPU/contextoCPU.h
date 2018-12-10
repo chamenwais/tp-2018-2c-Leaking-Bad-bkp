@@ -48,6 +48,7 @@ extern int serverSAFA;
 extern int serverDIEGO;
 extern int serverMEM;
 t_log * logger;
+extern char * path_archivo_para_comparar;
 
 typedef struct {
 	enum {

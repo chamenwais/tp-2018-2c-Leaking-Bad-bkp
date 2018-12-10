@@ -278,7 +278,7 @@ void prot_enviar_DMA_FM9_obtenerArchivo(char* path, int pid, int memory_address,
 	free(paquete_obtener);
 
 }
-/*
+
 void prot_enviar_CPU_FM9_asignar_datos_linea(char * datos, char * linea, char * path, int id_GDT, int sock){
 	int tam_datos = strlen(datos);
 	int tam_linea = strlen(linea);
@@ -289,8 +289,10 @@ void prot_enviar_CPU_FM9_asignar_datos_linea(char * datos, char * linea, char * 
 	paquete_asignar_datos[0]=id_GDT;
 	paquete_asignar_datos[4]=tam_datos;
 	memcpy(paquete_asignar_datos+4+4,datos,tam_datos);
-	memcpy(paquete_asignar_datos+4+4+tam_datos,linea,tam_linea);
-	memcpy(paquete_asignar_datos+4+4+tam_datos+4+tam_linea,path,tam_path);
+	paquete_asignar_datos[4+4+tam_datos]=tam_linea;
+	memcpy(paquete_asignar_datos+4+4+tam_datos+4,linea,tam_linea);
+	paquete_asignar_datos[4+4+tam_datos+4+tam_linea]=tam_path;
+	memcpy(paquete_asignar_datos+4+4+tam_datos+4+tam_linea+4,path,tam_path);
 	enviar(sock,paquete_asignar_datos,tamanio_paquete_asignar_datos);
 	free(paquete_asignar_datos);
 
@@ -301,6 +303,7 @@ tp_asignarDatosLinea prot_recibir_CPU_FM9_asignar_datos_linea(int sock){
 	int tam_datos;
 	int tam_linea;
 	int tam_path;
+	recibir(sock,&(asignar_datos_linea->id_GDT),sizeof(int));
 	recibir(sock,&tam_datos,sizeof(int));
 	asignar_datos_linea->datos=malloc(tam_datos+1);
 	recibir(sock,asignar_datos_linea->datos,tam_datos);
@@ -313,10 +316,9 @@ tp_asignarDatosLinea prot_recibir_CPU_FM9_asignar_datos_linea(int sock){
 	asignar_datos_linea->path=malloc(tam_path+1);
 	recibir(sock,asignar_datos_linea->path,tam_path);
 	(asignar_datos_linea->path)[tam_path]='\0';
-	recibir(sock,&(asignar_datos_linea->id_GDT),sizeof(int));
 	return asignar_datos_linea;
 }
-*/
+
 void prot_enviar_CPU_SAFA_abortar_DTB(int id_GDT, int sock){
 	enviar(sock,&id_GDT,sizeof(id_GDT));
 }

@@ -17,3 +17,4 @@ char * RETARDO;
 int serverSAFA;
 int serverDIEGO;
 int serverMEM;
+char *  path_archivo_para_comparar;
