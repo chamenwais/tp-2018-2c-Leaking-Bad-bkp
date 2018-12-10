@@ -12,7 +12,6 @@
 #include "contextoCPU.h"
 
 t_operacion parsear(char* linea);
-void cerrar_script();
 void finalizar_cpu();
 void cargar_archivo_de_config(char *path);
 void logger_CPU(int tipo_esc, int tipo_log, const char* mensaje, ...);

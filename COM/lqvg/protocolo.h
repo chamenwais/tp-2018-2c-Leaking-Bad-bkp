@@ -99,6 +99,26 @@ typedef struct stru_tipoRec{
 } t_tipoRecurso;
 typedef t_tipoRecurso * tp_tipoRecurso;
 
+typedef struct stru_liberarArchivo{
+	char * path;
+	int id_GDT;
+} t_liberarArchivo;
+typedef t_liberarArchivo * tp_liberarArchivo;
+
+typedef struct stru_crearLineasArch{
+	char * path;
+	int cant_lineas;
+	int id_GDT;
+} t_crearLineasArch;
+typedef t_crearLineasArch * tp_crearLineasArch;
+
+typedef struct stru_eliminarArch{
+	char * path;
+	int id_GDT;
+} t_eliminarArch;
+typedef t_eliminarArch * tp_eliminarArch;
+
+
 void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTotalDelArchivo, int sock);
 tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos(int sock);
 void prot_enviar_DMA_FS_path(char* path,int sock);
@@ -135,5 +155,10 @@ tp_tipoRecurso prot_recibir_CPU_SAFA_retener_recurso(int sock);
 void prot_enviar_CPU_SAFA_retener_recurso(char * recurso, int id_GDT, int sock);
 void prot_enviar_CPU_SAFA_liberar_recurso(char * recurso, int id_GDT, int sock);
 tp_tipoRecurso prot_recibir_CPU_SAFA_liberar_recurso(int sock);
+void prot_enviar_CPU_FM9_liberar_archivo(char * path, int id_GDT, int sock);
+tp_liberarArchivo prot_enviar_CPU_FM9_recibir_liberar_archivo(int sock);
+void prot_enviar_CPU_DMA_crear_lineas_arch(char * path, int cant_lineas, int id_GDT, int sock);
+tp_crearLineasArch prot_recibir_CPU_DMA_crear_lineas_arch(int sock);
+tp_eliminarArch prot_recibir_CPU_DAM_eliminar_arch_de_disco(int sock);
 
 #endif /* LQVG_PROTOCOLO_H_ */

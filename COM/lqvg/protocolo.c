@@ -449,6 +449,78 @@ tp_pathPid prot_recibir_DMA_SAFA_finFlush(int sock){
 	return fin_flush;
 }
 
+void prot_enviar_CPU_FM9_liberar_archivo(char * path, int id_GDT, int sock){
+	int tam_path = strlen(path);
+	int size_of_int = sizeof(int);
+	int tamanio_paquete_liberar_archivo = tam_path + size_of_int;
+	char * paquete_liberar_archivo = malloc(tamanio_paquete_liberar_archivo);
+	paquete_liberar_archivo[0]=tam_path;
+	memcpy(paquete_liberar_archivo+4,path,tam_path);
+	paquete_liberar_archivo[4+tam_path]=id_GDT;
+	enviar(sock,paquete_liberar_archivo,tamanio_paquete_liberar_archivo);
+	free(paquete_liberar_archivo);
+}
+
+void prot_enviar_CPU_DMA_crear_lineas_arch(char * path, int cant_lineas, int id_GDT, int sock){
+	int tam_path = strlen(path);
+	int size_of_int = sizeof(int);
+	int tamanio_paquete_crear_lineas_arch = tam_path + 2*(size_of_int);
+	char * paquete_crear_lineas_arch = malloc(tamanio_paquete_crear_lineas_arch);
+	paquete_crear_lineas_arch[0]=tam_path;
+	memcpy(paquete_crear_lineas_arch+4,path,tam_path);
+	paquete_crear_lineas_arch[4+tam_path]=cant_lineas;
+	paquete_crear_lineas_arch[4+tam_path+4]=id_GDT;
+	enviar(sock,paquete_crear_lineas_arch,tamanio_paquete_crear_lineas_arch);
+	free(paquete_crear_lineas_arch);
+}
+
+tp_crearLineasArch prot_recibir_CPU_DMA_crear_lineas_arch(int sock){
+	tp_crearLineasArch crear_lineas_arch;
+	int tam_path;
+	recibir(sock,&tam_path,sizeof(int));
+	crear_lineas_arch->path=malloc(tam_path+1);
+	recibir(sock,crear_lineas_arch->path,tam_path);
+	(crear_lineas_arch->path)[tam_path]='\0';
+	recibir(sock,&(crear_lineas_arch->cant_lineas),sizeof(int));
+	recibir(sock,&(crear_lineas_arch->id_GDT),sizeof(int));
+	return crear_lineas_arch;
+}
+
+tp_liberarArchivo prot_recibir_CPU_FM9_recibir_liberar_archivo(int sock){
+	tp_liberarArchivo liberar_archivo;
+	int tam_path;
+	recibir(sock,&tam_path,sizeof(int));
+	liberar_archivo->path=malloc(tam_path+1);
+	recibir(sock,liberar_archivo->path,tam_path);
+	(liberar_archivo->path)[tam_path]='\0';
+	recibir(sock,&(liberar_archivo->id_GDT),sizeof(int));
+	return liberar_archivo;
+}
+
+void prot_enviar_CPU_DAM_eliminar_arch_de_disco(char * path, int id_GDT, int sock){
+	int tam_path = strlen(path);
+	int size_of_int = sizeof(int);
+	int tamanio_paquete_eliminar_arch = tam_path + size_of_int;
+	char * paquete_eliminar_arch = malloc(tamanio_paquete_eliminar_arch);
+	paquete_eliminar_arch[0]=tam_path;
+	memcpy(paquete_eliminar_arch+4,path,tam_path);
+	paquete_eliminar_arch[4+tam_path]=id_GDT;
+	enviar(sock,paquete_eliminar_arch,tamanio_paquete_eliminar_arch);
+	free(paquete_eliminar_arch);
+}
+
+tp_eliminarArch prot_recibir_CPU_DAM_eliminar_arch_de_disco(int sock){
+	tp_eliminarArch eliminar_arch;
+	int tam_path;
+	recibir(sock,&tam_path,sizeof(int));
+	eliminar_arch->path=malloc(tam_path+1);
+	recibir(sock,eliminar_arch->path,tam_path);
+	(eliminar_arch->path)[tam_path]='\0';
+	recibir(sock,&(eliminar_arch->id_GDT),sizeof(int));
+	return eliminar_arch;
+}
+
+
 void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char* escriptorio, t_list* lista, int quantum, int sock){
 	//mando id_GDT
 	enviar(sock, &id_GDT, sizeof(id_GDT));

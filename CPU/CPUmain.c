@@ -130,6 +130,13 @@ void realizar_handshakes(){
 	}
 }
 
+void cerrar_script(tp_DTB dtb){
+	char * script = dtb->escriptorio;
+	logger_CPU(escribir_loguear, l_warning,"Fin de archivo, se cerrara el script y terminara el programa");
+	enviar_FM9_solicitud_liberar_archivo(script, dtb);
+	finalizar_cpu();
+}
+
 void solicitar_a_DAM_busqueda_dummy(tp_DTB dtb){
 	enviarCabecera(serverDIEGO, AbrirPathParaProceso, sizeof(AbrirPathParaProceso));
 	prot_enviar_CPU_DMA_abrirPath(dtb->escriptorio, dtb->id_GDT, serverDIEGO);
@@ -233,7 +240,7 @@ void asignar_datos_a_linea(char * datos, char * linea, char * path, tp_DTB dtb){
 			logger_CPU(escribir_loguear, l_trace,"FM9 puso manos a la obra!");
 		}
 	}else{
-		logger_CPU(escribir_loguear, l_error,"20001\n");
+		logger_CPU(escribir_loguear, l_error,"20001");
 		informar_a_safa_que_aborte_DTB(dtb);
 	}
 }
@@ -270,19 +277,82 @@ void liberar_recurso(char * recurso, tp_DTB dtb){
 	enviar_a_SAFA_solicitud_liberar_recurso(recurso,dtb);
 }
 
-void guardar_contenido_de_fm9_en_mdj(){
+void guardar_contenido_de_fm9_en_mdj(char * path, tp_DTB dtb){
+	path_archivo_para_comparar = path;
+	if(chequear_si_archivo_esta_abierto(dtb)){
+		logger_CPU(escribir_loguear, l_trace,"Voy a comunicarme con el diego para realizar el flush");
+		enviarCabecera(serverDIEGO, FlushDeArchivoADisco, sizeof(FlushDeArchivoADisco));
+		//prot_enviar_CPU_DMA_flush(path, dtb->id_GDT,memoryadress, serverDIEGO)
+		logger_CPU(escribir_loguear, l_info,"Se le envio a FM9 la informacion necesaria");
 
+		t_cabecera respuesta_de_fm9 = recibirCabecera(serverMEM);
+
+		if(respuesta_de_fm9.tipoDeMensaje == FlushDeArchivoADiscoEjecutandose){
+			logger_CPU(escribir_loguear, l_trace,"DAM esta realizando el flush");
+		}
+	}else{
+		logger_CPU(escribir_loguear, l_error,"30001");
+		informar_a_safa_que_aborte_DTB(dtb);
+	}
 }
 
-void liberar_archivo_abierto(){
+void enviar_FM9_solicitud_liberar_archivo(char * path, tp_DTB dtb){
+	logger_CPU(escribir_loguear, l_info,"Voy a comunicarme con FM9 para liberar un archivo abierto.");
+	enviarCabecera(serverMEM, LiberarArchivoAbierto, sizeof(LiberarArchivoAbierto));
+	prot_enviar_CPU_FM9_liberar_archivo(path, dtb->id_GDT, serverMEM);
+	logger_CPU(escribir_loguear, l_info,"Se le envio a FM9 la informacion necesaria");
 
+	t_cabecera respuesta_de_fm9 = recibirCabecera(serverMEM);
+
+	if(respuesta_de_fm9.tipoDeMensaje == LiberarArchivoAbiertoEjecutandose){
+		logger_CPU(escribir_loguear, l_trace,"FM9 se esta encargando del archivo en cuestion...");
+	}
 }
 
-void crear_nuevo_archivo_en_mdj(){
-
+void actualizar_dtb_liberar_archivo(char * path, tp_DTB dtb){
+	path_archivo_para_comparar = path;
+	list_remove_by_condition(dtb->tabla_dir_archivos, &tienen_el_mismo_nombre);
+	///se lo tengo que enviar a safa?? lo hace safa??
+	///esto lo hace fm9?
 }
 
-void eliminar_archivo_de_mdj(){
+void liberar_archivo_abierto(char * path, tp_DTB dtb){
+	path_archivo_para_comparar = path;
+	if(chequear_si_archivo_esta_abierto(dtb)){
+		enviar_FM9_solicitud_liberar_archivo(path, dtb);
+		actualizar_dtb_liberar_archivo(path, dtb);
+	}else{
+		logger_CPU(escribir_loguear, l_error,"40001");
+		informar_a_safa_que_aborte_DTB(dtb);
+	}
+}
+
+void crear_nuevo_archivo_en_mdj(char * path, int cant_lineas, tp_DTB dtb){
+	logger_CPU(escribir_loguear, l_trace,"Se procedera a crear un nuevo archivo en MDJ");
+	enviarCabecera(serverDIEGO,CrearLineasEnArchivo, sizeof(CrearLineasEnArchivo));
+	prot_enviar_CPU_DMA_crear_lineas_arch(path, cant_lineas, dtb->id_GDT, serverDIEGO);
+	logger_CPU(escribir_loguear, l_info,"Se le envio al DAM la informacion necesaria");
+
+	t_cabecera respuesta_de_fm9 = recibirCabecera(serverDIEGO);
+
+	if(respuesta_de_fm9.tipoDeMensaje == CrearLineasEnArchivoEjecutandose){
+		logger_CPU(escribir_loguear, l_info,"DAM recibio la informacion correctamente");
+		desalojar_dtb(dtb);
+	}
+}
+
+void eliminar_archivo_de_mdj(char * path, tp_DTB dtb){
+	logger_CPU(escribir_loguear, l_trace,"Se procedera a eliminar un archivo de MDJ");
+	enviarCabecera(serverDIEGO,EliminarArchivoDeDisco, sizeof(EliminarArchivoDeDisco));
+	prot_enviar_CPU_DAM_eliminar_arch_de_disco(path, dtb->id_GDT, serverDIEGO);
+	logger_CPU(escribir_loguear, l_info,"Se le envio al DAM la informacion necesaria");
+
+	t_cabecera respuesta_de_fm9 = recibirCabecera(serverDIEGO);
+
+	if(respuesta_de_fm9.tipoDeMensaje == EliminarArchivoDeDiscoEjecutandose){
+		logger_CPU(escribir_loguear, l_info,"DAM recibio la informacion correctamente");
+		desalojar_dtb(dtb);
+	}
 
 }
 
@@ -305,16 +375,19 @@ void realizar_la_operacion_que_corresponda_segun(t_operacion resultado_del_parse
 			liberar_recurso(resultado_del_parseado.parametros.signal.recurso,dtb);
 			break;
 		case FLUSH:
-			guardar_contenido_de_fm9_en_mdj();
+			guardar_contenido_de_fm9_en_mdj(resultado_del_parseado.parametros.flush.path, dtb);
 			break;
 		case CLOSE:
-			liberar_archivo_abierto();
+			liberar_archivo_abierto(resultado_del_parseado.parametros.close.path, dtb);
 			break;
 		case CREAR:
-			crear_nuevo_archivo_en_mdj();
+			crear_nuevo_archivo_en_mdj(resultado_del_parseado.parametros.crear.path, resultado_del_parseado.parametros.crear.cantidad_de_lineas, dtb);
 			break;
 		case BORRAR:
-			eliminar_archivo_de_mdj();
+			eliminar_archivo_de_mdj(resultado_del_parseado.parametros.borrar.path, dtb);
+			break;
+		case FIN:
+			cerrar_script(dtb);
 			break;
 	}
 }
@@ -330,6 +403,7 @@ void proceder_con_lectura_escriptorio(tp_DTB dtb){
 		actualizar_program_counter(dtb, paquete_linea->pc);
 		t_operacion resultado_del_parseado = parsear(paquete_linea->linea);
 		realizar_la_operacion_que_corresponda_segun(resultado_del_parseado, dtb);
+		//free(resultado_del_parseado);
 		sleep((int)RETARDO);
 
 	}
@@ -371,10 +445,7 @@ int main(int argc, char **argv){
 
 	recibir_dtb_y_delegar(dtb);
 
-	/*
-	 * Hacer las funciones para salir sin memory  leaks
-	 */
-
+	finalizar_cpu();
 
 return 0;
 

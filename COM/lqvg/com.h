@@ -73,7 +73,9 @@ enum MENSAJES {
 	RetenerRecurso,
 	LiberarRecurso,
 	RespuestaASolicitudDeRecursoAfirmativa,
-	RespuestaASolicitudDeRecursoDenegada
+	RespuestaASolicitudDeRecursoDenegada,
+	LiberarArchivoAbierto,
+	LiberarArchivoAbiertoEjecutandose,
 };
 
 typedef struct {

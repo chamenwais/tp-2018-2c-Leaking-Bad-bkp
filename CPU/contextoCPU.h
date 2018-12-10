@@ -60,7 +60,8 @@ typedef struct {
 		FLUSH,
 		CLOSE,
 		CREAR,
-		BORRAR
+		BORRAR,
+		FIN
 	} tipo_de_operacion;
 	union {
 		struct {
@@ -92,7 +93,6 @@ typedef struct {
 		} borrar;
 
 	} parametros;
-		char** liberar; //Para uso de la liberación
 } t_operacion;
 
 /*** Enums ***/

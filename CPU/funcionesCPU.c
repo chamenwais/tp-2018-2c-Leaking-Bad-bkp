@@ -8,11 +8,6 @@
 #include "funcionesCPU.h"
 
 t_operacion parsear(char * linea){
-	if(linea == NULL || string_equals_ignore_case(linea, "")){
-		logger_CPU(escribir_loguear, l_warning,"Fin de archivo, se cerrara el script y terminara el programa");
-		cerrar_script();//avisar a memoria que cierre el archivo CLOSE
-		finalizar_cpu();
-	}
 
 	t_operacion resultado_de_parsear;
 
@@ -23,7 +18,9 @@ t_operacion parsear(char * linea){
 	char* tipo_de_operacion = split[0];
 	char* parametros = split[1];
 
-	resultado_de_parsear.liberar = split;
+	if(linea == NULL || string_equals_ignore_case(linea, "")){
+		resultado_de_parsear.tipo_de_operacion = FIN;
+	}
 
 	if(string_equals_ignore_case(tipo_de_operacion, "#")){
 		logger_CPU(escribir_loguear, l_warning,"Es un comentario, sera ignorado");
@@ -111,12 +108,12 @@ void cargar_archivo_de_config(char *path){
 	}
 }
 
-void cerrar_script(){
-
-}
-
 void finalizar_cpu(){
-
+	logger_CPU(escribir_loguear, l_warning,"Se cerraran los sockets de servers y se destruira el log, Bye");
+	close(serverSAFA);
+	close(serverDIEGO);
+	close(serverMEM);
+	log_destroy(logger);
 }
 
 void logger_CPU(int tipo_esc, int tipo_log, const char* mensaje, ...){
