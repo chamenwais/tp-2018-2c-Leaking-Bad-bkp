@@ -93,6 +93,12 @@ typedef struct defDTB {
 } t_DTB;
 typedef t_DTB* tp_DTB;
 
+typedef struct stru_tipoRec{
+	char * recurso;
+	int id_GDT;
+} t_tipoRecurso;
+typedef t_tipoRecurso * tp_tipoRecurso;
+
 void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTotalDelArchivo, int sock);
 tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos(int sock);
 void prot_enviar_DMA_FS_path(char* path,int sock);
@@ -125,5 +131,9 @@ void prot_enviar_CPU_FM9_asignar_datos_linea(char * datos, char * linea, char * 
 void prot_enviar_CPU_SAFA_abortar_DTB(int id_GDT, int sock);
 tp_asignarDatosLinea prot_recibir_CPU_FM9_asignar_datos_linea(int sock);
 void prot_enviar_CPU_SAFA_bloquear_DTB(int id_GDT, int sock);
+tp_tipoRecurso prot_recibir_CPU_SAFA_retener_recurso(int sock);
+void prot_enviar_CPU_SAFA_retener_recurso(char * recurso, int id_GDT, int sock);
+void prot_enviar_CPU_SAFA_liberar_recurso(char * recurso, int id_GDT, int sock);
+tp_tipoRecurso prot_recibir_CPU_SAFA_liberar_recurso(int sock);
 
 #endif /* LQVG_PROTOCOLO_H_ */

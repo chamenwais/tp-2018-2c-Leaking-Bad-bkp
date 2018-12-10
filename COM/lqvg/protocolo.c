@@ -391,6 +391,53 @@ void prot_enviar_DMA_SAFA_finFlush(char* path, int pid, int sock){
 	free(paquete_flush);
 }
 
+void prot_enviar_CPU_SAFA_retener_recurso(char * recurso, int id_GDT, int sock){
+	int tam_recurso = strlen(recurso);
+	int size_of_int = sizeof(int);
+	int tamanio_paquete_retener = tam_recurso + size_of_int;
+	char * paquete_retener = malloc(tamanio_paquete_retener);
+	paquete_retener[0]=tam_recurso;
+	memcpy(paquete_retener+4,recurso,tam_recurso);
+	paquete_retener[4+tam_recurso]=id_GDT;
+	enviar(sock,paquete_retener,tamanio_paquete_retener);
+	free(paquete_retener);
+}
+
+void prot_enviar_CPU_SAFA_liberar_recurso(char * recurso, int id_GDT, int sock){
+	int tam_recurso = strlen(recurso);
+	int size_of_int = sizeof(int);
+	int tamanio_paquete_retener = tam_recurso + size_of_int;
+	char * paquete_retener = malloc(tamanio_paquete_retener);
+	paquete_retener[0]=tam_recurso;
+	memcpy(paquete_retener+4,recurso,tam_recurso);
+	paquete_retener[4+tam_recurso]=id_GDT;
+	enviar(sock,paquete_retener,tamanio_paquete_retener);
+	free(paquete_retener);
+}
+
+tp_tipoRecurso prot_recibir_CPU_SAFA_liberar_recurso(int sock){
+	tp_tipoRecurso liberar_rec;
+	int tam_recurso;
+	recibir(sock,&tam_recurso,sizeof(int));
+	liberar_rec->recurso=malloc(tam_recurso+1);
+	recibir(sock,liberar_rec->recurso,tam_recurso);
+	(liberar_rec->recurso)[tam_recurso]='\0';
+	recibir(sock,&(liberar_rec->id_GDT),sizeof(int));
+	return liberar_rec;
+}
+
+
+tp_tipoRecurso prot_recibir_CPU_SAFA_retener_recurso(int sock){
+	tp_tipoRecurso retener_rec;
+	int tam_recurso;
+	recibir(sock,&tam_recurso,sizeof(int));
+	retener_rec->recurso=malloc(tam_recurso+1);
+	recibir(sock,retener_rec->recurso,tam_recurso);
+	(retener_rec->recurso)[tam_recurso]='\0';
+	recibir(sock,&(retener_rec->id_GDT),sizeof(int));
+	return retener_rec;
+}
+
 tp_pathPid prot_recibir_DMA_SAFA_finFlush(int sock){
 	tp_pathPid fin_flush;
 	int tam_path;

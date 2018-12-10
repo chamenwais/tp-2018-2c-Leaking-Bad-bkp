@@ -69,7 +69,11 @@ enum MENSAJES {
 	AsignarDatosALinea,
 	AsignarDatosALineaEjecutandose,
 	ArchivoNoAbierto,
-	AbortarDTB
+	AbortarDTB,
+	RetenerRecurso,
+	LiberarRecurso,
+	RespuestaASolicitudDeRecursoAfirmativa,
+	RespuestaASolicitudDeRecursoDenegada
 };
 
 typedef struct {

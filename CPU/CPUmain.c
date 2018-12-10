@@ -238,12 +238,36 @@ void asignar_datos_a_linea(char * datos, char * linea, char * path, tp_DTB dtb){
 	}
 }
 
-void retener_recurso(){
-
+void enviar_a_SAFA_solicitud_retencion_recurso(char * recurso, tp_DTB dtb){
+	logger_CPU(escribir_loguear, l_trace,"Se ejecutara la primitiva Wait para el recurso %s", recurso);
+	enviarCabecera(serverSAFA, RetenerRecurso, sizeof(RetenerRecurso));
+	prot_enviar_CPU_SAFA_retener_recurso(recurso, dtb->id_GDT, serverSAFA);
 }
 
-void liberar_recurso(){
+void enviar_a_SAFA_solicitud_liberar_recurso(char * recurso, tp_DTB dtb){
+	logger_CPU(escribir_loguear, l_trace,"Se ejecutara la primitiva Signal para el recurso %s", recurso);
+	enviarCabecera(serverSAFA, LiberarRecurso, sizeof(LiberarRecurso));
+	prot_enviar_CPU_SAFA_liberar_recurso(recurso, dtb->id_GDT, serverSAFA);
+}
 
+void esperar_respuesta_afirmativa_de_SAFA(){
+	t_cabecera respuesta_de_SAFA = recibirCabecera(serverSAFA);
+
+	if(respuesta_de_SAFA.tipoDeMensaje == RespuestaASolicitudDeRecursoAfirmativa){
+		logger_CPU(escribir_loguear, l_warning,"El recurso fue asignado");
+	}
+	/*
+	 * El recv es bloqueante, se quedará esperando a que llegue la respuesta afirmativa
+	 */
+}
+
+void retener_recurso(char * recurso, tp_DTB dtb){
+	enviar_a_SAFA_solicitud_retencion_recurso(recurso,dtb);
+	esperar_respuesta_afirmativa_de_SAFA();
+}
+
+void liberar_recurso(char * recurso, tp_DTB dtb){
+	enviar_a_SAFA_solicitud_liberar_recurso(recurso,dtb);
 }
 
 void guardar_contenido_de_fm9_en_mdj(){
@@ -275,10 +299,10 @@ void realizar_la_operacion_que_corresponda_segun(t_operacion resultado_del_parse
 					resultado_del_parseado.parametros.asignar.path, dtb);
 			break;
 		case WAIT:
-			retener_recurso();
+			retener_recurso(resultado_del_parseado.parametros.wait.recurso,dtb);
 			break;
 		case SIGNAL:
-			liberar_recurso();
+			liberar_recurso(resultado_del_parseado.parametros.signal.recurso,dtb);
 			break;
 		case FLUSH:
 			guardar_contenido_de_fm9_en_mdj();
