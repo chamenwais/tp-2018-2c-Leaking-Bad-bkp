@@ -263,7 +263,7 @@ tp_datosEnMemoria prot_recibir_CPU_DMA_flush(int sock){
 	return datos_flush;
 }
 
-void prot_enviar_DMA_FM9_obtenerArchivo(char* path, int pid, int memory_address, int offset, int size, int sock){
+void prot_enviar_DMA_FM9_obtenerArchivo(char* path, int pid, int memory_address, int size, int sock){
 	int tam_path = strlen(path);
 	int size_of_int=sizeof(int);
 	int tamanio_paquete_obtener = tam_path + (5 * size_of_int);
@@ -272,8 +272,7 @@ void prot_enviar_DMA_FM9_obtenerArchivo(char* path, int pid, int memory_address,
 	memcpy(paquete_obtener+4,path,tam_path);
 	paquete_obtener[4+tam_path]=pid;
 	paquete_obtener[4+tam_path+4]=memory_address;
-	paquete_obtener[4+tam_path+4+4]=offset;
-	paquete_obtener[4+tam_path+4+4+4]=size;
+	paquete_obtener[4+tam_path+4+4]=size;
 	enviar(sock,paquete_obtener,tamanio_paquete_obtener);
 	free(paquete_obtener);
 
@@ -336,7 +335,6 @@ tp_obtenerArchivo prot_recibir_DMA_FM9_obtenerArchivo(int sock){
 	(obtener_archivo->path)[tam_path]='\0';
 	recibir(sock,&(obtener_archivo->pid),sizeof(int));
 	recibir(sock,&(obtener_archivo->memory_address),sizeof(int));
-	recibir(sock,&(obtener_archivo->offset),sizeof(int));
 	recibir(sock,&(obtener_archivo->size),sizeof(int));
 	return obtener_archivo;
 }

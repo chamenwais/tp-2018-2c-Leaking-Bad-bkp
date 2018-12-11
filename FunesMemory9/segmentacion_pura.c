@@ -214,6 +214,7 @@ void crear_estructuras_esquema_segmentacion(){
 	tablas_de_segmentos=list_create();
 	inicializar_lista_de_huecos();
 	archivos_cargandose=list_create();
+	archivos_devolviendose=list_create();
 }
 
 void eliminar_lista_de_entradas(void * tabla_segmentos){
@@ -261,6 +262,9 @@ void destruir_estructuras_esquema_segmentacion(){
 	if(archivos_cargandose!=NULL){
 		list_destroy(archivos_cargandose);
 	}
+	if(archivos_devolviendose!=NULL){
+		list_destroy(archivos_devolviendose);
+	}
 }
 
 bool es_un_proceso_conocido(void * tabla_segmentos){
@@ -297,6 +301,75 @@ int todavia_falta_mandar_pedazo_de_archivo(tp_cargarEnMemoria pedazo_actual, t_a
 	return archivo_cargandose->recibido_actualmente<pedazo_actual->file_size;
 }
 
-void obtener_parte_archivo_con_segmentacion(int DAM_fd){
+t_archivo_devolviendose* filtrar_info_archivo_devolviendose(int id_dtb){
+	return (t_archivo_devolviendose*)(list_get(list_filter_comparing(archivos_devolviendose,&el_proceso_tiene_archivo_devolviendose, id_dtb),0));
+}
 
+int obtener_tamanio_trozo_faltante(int tamanio_archivo_en_memoria,
+		int bytes_transferidos) {
+	return tamanio_archivo_en_memoria - bytes_transferidos;
+}
+
+bool trozo_faltante_es_menor_que_transfersize(t_archivo_devolviendose* info_trozo_archivo, int transfer_size){
+	int tamanio_archivo_en_memoria =
+			info_trozo_archivo->tamanio_archivo_en_memoria;
+	int bytes_transferidos = info_trozo_archivo->bytes_transferidos;
+	int tamanio_trozo_faltante = obtener_tamanio_trozo_faltante(
+			tamanio_archivo_en_memoria, bytes_transferidos);
+	return tamanio_trozo_faltante<transfer_size;
+}
+
+void devolver_trozo_faltante_archivo(tp_obtenerArchivo pedido_obtencion,
+		int DAM_fd, t_archivo_devolviendose* info_archivo_devolviendose) {
+	int tamanio_trozo_faltante = obtener_tamanio_trozo_faltante(
+			info_archivo_devolviendose->tamanio_archivo_en_memoria,
+			pedido_obtencion->size);
+	char* trozo_archivo = malloc(tamanio_trozo_faltante);
+	memcpy(trozo_archivo,
+			(info_archivo_devolviendose->buffer_en_memoria)
+					+ (info_archivo_devolviendose->bytes_transferidos),
+			tamanio_trozo_faltante);
+	prot_enviar_FM9_DMA_devolverDatos(trozo_archivo, tamanio_trozo_faltante,
+			info_archivo_devolviendose->tamanio_archivo_en_memoria, DAM_fd);
+	free(trozo_archivo);
+	free(info_archivo_devolviendose->buffer_en_memoria);
+	free(pedido_obtencion->path);
+	logger_funesMemory9(escribir_loguear, l_info, "Se devolvio el ultimo pedazo del archivo %s de %d bytes",
+			pedido_obtencion->path, tamanio_trozo_faltante);
+}
+
+void devolver_trozo_con_tamanio_transfersize(tp_obtenerArchivo pedido_obtencion,
+		int DAM_fd, t_archivo_devolviendose* info_archivo_devolviendose) {
+	int transfer_size = pedido_obtencion->size;
+	char* trozo_archivo = malloc(transfer_size);
+	memcpy(trozo_archivo,
+				(info_archivo_devolviendose->buffer_en_memoria)
+						+ (info_archivo_devolviendose->bytes_transferidos),
+						transfer_size);
+	info_archivo_devolviendose->bytes_transferidos += transfer_size;
+	prot_enviar_FM9_DMA_devolverDatos(trozo_archivo, transfer_size, info_archivo_devolviendose->tamanio_archivo_en_memoria
+			, DAM_fd);
+	free(trozo_archivo);
+	free(pedido_obtencion->path);
+		logger_funesMemory9(escribir_loguear, l_info, "Se devolvio un pedazo del archivo %s de transfer size %d bytes",
+				pedido_obtencion->path, transfer_size);
+}
+
+void obtener_parte_archivo_con_segmentacion(int DAM_fd){
+	tp_obtenerArchivo pedido_obtencion=prot_recibir_DMA_FM9_obtenerArchivo(DAM_fd);
+	t_archivo_devolviendose* info_archivo_devolviendose;
+	if(list_any_satisfy_comparing(archivos_devolviendose, &el_proceso_tiene_archivo_devolviendose, pedido_obtencion->pid)){
+		enviarCabecera(DAM_fd, ElArchivoExiste, sizeof(ElArchivoExiste));
+		info_archivo_devolviendose=filtrar_info_archivo_devolviendose(pedido_obtencion->pid);
+		if(trozo_faltante_es_menor_que_transfersize(info_archivo_devolviendose, pedido_obtencion->size)){
+			devolver_trozo_faltante_archivo(pedido_obtencion, DAM_fd, info_archivo_devolviendose);
+			return;
+		} else {
+			devolver_trozo_con_tamanio_transfersize(pedido_obtencion, DAM_fd, info_archivo_devolviendose);
+			return;
+		}
+	} else if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,pedido_obtencion->pid)){
+		//TODO Obtener tabla de segmentos y seguir
+	}
+	//TODO informar archivo no abierto y seguir
 }

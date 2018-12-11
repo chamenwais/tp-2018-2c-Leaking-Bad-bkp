@@ -227,7 +227,6 @@ void inicializar_logger(){
 	logger = log_create("Log_FunesMemory9.txt", "FunesMemory9", false, LOG_LEVEL_TRACE);
 }
 
-
 bool el_proceso_tiene_archivo_cargandose(void * archivo_cargandose, int pid){
 	return (*(t_archivo_cargandose*)archivo_cargandose).pid==pid;
 }
@@ -254,4 +253,8 @@ void informar_espacio_insuficiente(int DAM_fd) {
 	logger_funesMemory9(escribir_loguear, l_warning,
 			"\nEspacio insuficiente para albergar el archivo. Error 10002\n");
 	prot_enviar_FM9_DMA_cargaEnMemoria(-1, DAM_fd);
+}
+
+bool el_proceso_tiene_archivo_devolviendose(void * archivo_devolviendose, int pid){
+	return (*(t_archivo_cargandose*)archivo_devolviendose).pid==pid;
 }

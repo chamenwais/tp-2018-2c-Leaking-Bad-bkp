@@ -62,6 +62,16 @@ struct archivo_cargandose{
 };
 typedef struct archivo_cargandose t_archivo_cargandose;
 
+struct archivo_devolviendose{
+	int pid;
+	int tamanio_archivo_en_memoria;
+	int bytes_transferidos;
+	char * buffer_en_memoria;
+};
+typedef struct archivo_devolviendose t_archivo_devolviendose;
+
 extern t_list * archivos_cargandose;
+
+extern t_list * archivos_devolviendose;
 
 #endif /* CONTEXTO_H_ */
