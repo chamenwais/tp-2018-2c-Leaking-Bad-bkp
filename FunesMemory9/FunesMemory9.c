@@ -88,7 +88,23 @@ bool cabecera_es_invalida_cpu(t_cabecera cabecera){
 }
 
 void interpretar_mensaje_cpu(enum MENSAJES mensaje, int cpu_socket){
+	switch(mensaje){
+		case PedirLineaParaEjecutar:
+			logger_funesMemory9(escribir_loguear, l_info, "El cpu me pidio una linea para ejecutar\n");
+			(darle_una_linea_al_cpu[MODO_EJECUCION])(cpu_socket);
+			break;
+		case AsignarDatosALinea:
+			logger_funesMemory9(escribir_loguear, l_info, "El cpu solicito asignar datos a una linea\n");
+			(asignar_datos_a_linea[MODO_EJECUCION])(cpu_socket);
+			break;
+		case LiberarArchivoAbierto:
+			logger_funesMemory9(escribir_loguear, l_info, "El cpu solicito liberar un archivo abierto\n");
+			(liberar_archivo_abierto[MODO_EJECUCION])(cpu_socket);
+			break;
 
+		default:
+			break;
+	}
 }
 
 void interpretar_mensaje_del_diego(enum MENSAJES mensaje, int DMA_socket){

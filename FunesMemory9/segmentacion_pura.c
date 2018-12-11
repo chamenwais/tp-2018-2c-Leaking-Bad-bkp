@@ -120,6 +120,18 @@ t_archivo_cargandose * cargar_buffer_archivo(tp_cargarEnMemoria parte_archivo) {
 	return archivo_de_proceso_cargandose;
 }
 
+void darle_una_linea_al_cpu(int sock){
+
+}
+
+void asignar_datos_a_linea(int sock){
+
+}
+
+void liberar_archivo_abierto(int sock){
+
+}
+
 void cargar_parte_archivo_en_segmento(int DAM_fd){
 	tp_cargarEnMemoria parte_archivo=prot_recibir_DMA_FM9_cargarEnMemoria(DAM_fd);
 	t_archivo_cargandose * archivo_de_proceso_cargandose = cargar_buffer_archivo(parte_archivo);

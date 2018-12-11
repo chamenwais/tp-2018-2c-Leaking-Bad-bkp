@@ -44,5 +44,8 @@ void (*crear_estructuras_esquema[3])();
 void (*cargar_parte_archivo[3])(int);
 void (*buscar_informacion_administrativa[3])(int);
 void (*obtener_parte_archivo[3])(int);
+void (*darle_una_linea_al_cpu[3])(int);
+void (*asignar_datos_a_linea[3])(int);
+void (*liberar_archivo_abierto[3])(int);
 
 #endif /* FUNESMEMORY9_FUNESMEMORY9_H_ */

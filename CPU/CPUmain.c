@@ -285,9 +285,9 @@ void guardar_contenido_de_fm9_en_mdj(char * path, tp_DTB dtb){
 		//prot_enviar_CPU_DMA_flush(path, dtb->id_GDT,memoryadress, serverDIEGO)
 		logger_CPU(escribir_loguear, l_info,"Se le envio a FM9 la informacion necesaria");
 
-		t_cabecera respuesta_de_fm9 = recibirCabecera(serverMEM);
+		t_cabecera respuesta_del_diego = recibirCabecera(serverDIEGO);
 
-		if(respuesta_de_fm9.tipoDeMensaje == FlushDeArchivoADiscoEjecutandose){
+		if(respuesta_del_diego.tipoDeMensaje == FlushDeArchivoADiscoEjecutandose){
 			logger_CPU(escribir_loguear, l_trace,"DAM esta realizando el flush");
 		}
 	}else{
