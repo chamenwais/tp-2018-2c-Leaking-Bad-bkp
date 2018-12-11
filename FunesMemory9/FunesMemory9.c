@@ -7,13 +7,17 @@
 
 #include "FunesMemory9.h"
 
+void stdin_no_bloqueante(void){
+	  /* Set nonblock for stdin. */
+	  int flag = fcntl(STDIN_FILENO, F_GETFL, 0);
+	  flag |= O_NONBLOCK;
+	  fcntl(STDIN_FILENO, F_SETFL, flag);
+}
+
 void iniciar_funes_memory_9(char * path){
 	inicializar_logger();
-
-	logger_funesMemory9(escribir_loguear, l_warning,"\nHola! Soy Funes Memory 9, a sus ordenes... :) \n");
-
+	logger_funesMemory9(escribir_loguear, l_warning,"Hola! Soy Funes Memory 9, a sus ordenes... :)\n");
 	cargar_archivo_de_configuracion(path);
-
 	configurar_signals();
 }
 
@@ -21,21 +25,33 @@ int atender_nuevo_cpu(int serv_socket){
 	struct sockaddr_in client_addr;
 
 	//Setea la direccion en 0
-	//memset(&client_addr, 0, sizeof(client_addr));
+	memset(&client_addr, 0, sizeof(client_addr));
 	socklen_t client_len = sizeof(client_addr);
 
 	//Acepta la nueva conexion
 	int new_client_sock = accept(serv_socket, (struct sockaddr *)&client_addr, &client_len);
-
 	if (new_client_sock < 0) {
 		logger_funesMemory9(escribir_loguear,l_error,"Error al aceptar un nuevo cpu :(\n");
 	  return -1;
 	}
 
-	logger_funesMemory9(escribir_loguear,l_trace,"\nSe aceptó un nuevo cpu, conexión (%d)", new_client_sock);
+	logger_funesMemory9(escribir_loguear,l_trace,"\nSe aceptó un nuevo cpu, conexión (%d)\n", new_client_sock);
 
-	return new_client_sock;
+	//Lo agrego a la lista de conexiones esi actuales
+	for (int i = 0; i < MAX_CLIENTES; ++i) {
 
+		if (conexiones_cpu[i].socket == NO_SOCKET) {
+			conexiones_cpu[i].socket = new_client_sock;
+			conexiones_cpu[i].addres = client_addr;
+
+	        return 0;
+	    }
+	 }
+
+	logger_funesMemory9(escribir_loguear,l_error,"Demasiadas conexiones. Cerrando nueva conexion\n");
+	 close(new_client_sock);
+
+	 return -1;
 }
 
 void crear_hilo_conexion(int socket, void*funcion_a_ejecutar(int)){
@@ -44,32 +60,45 @@ void crear_hilo_conexion(int socket, void*funcion_a_ejecutar(int)){
 	pthread_detach(hilo);
 }
 
-void *escuchar_mensajes_de_cpus(int socket_cpu){
+t_cabecera recibir_mensaje_cpu(t_conexion_cpu conexion_cpu){
 
-    logger_funesMemory9(escribir_loguear,l_info, "Esperando mensajes de un cpu... \n");
+	logger_funesMemory9(escribir_loguear,l_debug,"Llegó un nuevo mensaje desde el ESI %d!\n",conexion_cpu.pid);
+	t_cabecera cabecera=recibirCabecera(conexion_cpu.socket);
+	interpretar_mensaje_cpu(cabecera.tipoDeMensaje, conexion_cpu.socket);
 
-    //Si no recibo nada...
-    logger_funesMemory9(escribir_loguear, l_info, "\nCerrada la conexión con socket de cpu\n");
-    return EXIT_SUCCESS;
+	return cabecera;
 }
 
-bool cabecera_es_invalida(t_cabecera* cabecera){
-	if(sizeof(*cabecera) != 0 && cabecera->tamanio>0){
-		logger_funesMemory9(escribir_loguear,l_trace,"\nEl Diego dijo algo, vamos a tratar de entenderlo\n");
+bool cabecera_es_invalida_dam(t_cabecera cabecera){
+	if(sizeof(cabecera) != 0 && cabecera.tamanio>0){
+		logger_funesMemory9(escribir_loguear,l_trace,"El Diego dijo algo, vamos a tratar de entenderlo\n");
 		return false;
 	}
-	logger_funesMemory9(escribir_loguear,l_error,"No se le entendio nada al Diego, se seguira escuchando\n");
+	logger_funesMemory9(escribir_loguear,l_error,"No se le entendio nada al Diego, se cerrara la conexion\n");
 	return true;
+}
+
+bool cabecera_es_invalida_cpu(t_cabecera cabecera){
+	if(sizeof(cabecera) != 0 && cabecera.tamanio>0){
+		logger_funesMemory9(escribir_loguear,l_trace,"El cpu me mando una solicitud, pasara a ser atendida\n");
+		return false;
+	}
+	logger_funesMemory9(escribir_loguear,l_error,"No se le entendio nada al cpu, se cerrara la conexion\n");
+	return true;
+}
+
+void interpretar_mensaje_cpu(enum MENSAJES mensaje, int cpu_socket){
+
 }
 
 void interpretar_mensaje_del_diego(enum MENSAJES mensaje, int DMA_socket){
 	switch(mensaje){
 		case CargarParteEnMemoria:
-			logger_funesMemory9(escribir_loguear, l_info, "\nEl Diego quiere cargar una parte de un archivo\n");
+			logger_funesMemory9(escribir_loguear, l_info, "El Diego quiere cargar una parte de un archivo\n");
 			(cargar_parte_archivo[MODO_EJECUCION])(DMA_socket);
 			break;
 		case ObtenerDatos:
-			logger_funesMemory9(escribir_loguear, l_info, "\nEl Diego quiere hacerle flush a un archivo\n");
+			logger_funesMemory9(escribir_loguear, l_info, "El Diego quiere hacerle flush a un archivo\n");
 			(obtener_parte_archivo[MODO_EJECUCION])(DMA_socket);
 			break;
 		//TODO agregar otros pedidos de DMA
@@ -78,34 +107,28 @@ void interpretar_mensaje_del_diego(enum MENSAJES mensaje, int DMA_socket){
 	}
 }
 
-void *escuchar_al_diego(int socket_DMA){
+t_cabecera recibir_mensaje_dam(int socket_DMA){
 
 	logger_funesMemory9(escribir_loguear,l_info, "Esperando que el Diego termine una frase... \n");
+	t_cabecera cabecera=recibirCabecera(socket_DMA);
+	interpretar_mensaje_del_diego(cabecera.tipoDeMensaje, socket_DMA);
 
-	while(true){
-		t_cabecera cabecera=recibirCabecera(socket_DMA);
-
-		if(cabecera_es_invalida(&cabecera)) continue;
-
-		interpretar_mensaje_del_diego(cabecera.tipoDeMensaje, socket_DMA);
-
-	}
-
+	return cabecera;
 }
 
 int comunicarse_con_dam(int socket_escucha){
-	logger_funesMemory9(escribir_loguear, l_trace,"\nVoy a esperar al Diego \n");
+	logger_funesMemory9(escribir_loguear, l_trace,"Voy a esperar al Diego\n");
 
 	int socket_dam=aceptarConexion(socket_escucha);
 
-	logger_funesMemory9(escribir_loguear, l_trace,"\nVoy a realizar un handshake con el Diego \n");
+	logger_funesMemory9(escribir_loguear, l_trace,"Voy a realizar un handshake con el Diego\n");
 
 	if(socket_dam > 0 && (recibirHandshake(MEMORIA, DMA, socket_dam) != 0)){
-		logger_funesMemory9(escribir_loguear, l_trace,"\nHandshake con el Diego hecho! \n");
+		logger_funesMemory9(escribir_loguear, l_trace,"Handshake con el Diego hecho!\n");
 		return socket_dam;
 	}
 
-	logger_funesMemory9(escribir_loguear, l_error,"\n No se pudo realizar handshake con el Diego \n");
+	logger_funesMemory9(escribir_loguear, l_error," No se pudo realizar handshake con el Diego\n");
 
 	close(socket_escucha);
 
@@ -136,104 +159,304 @@ void inicializar_funciones_variables_por_segmento(){
 	obtener_parte_archivo[TABLA_PAGINAS_INVERTIDA]=&obtener_parte_archivo_con_paginacion_invertida;
 }
 
-char** parser_instruccion(char* linea){
-	char** instruccion = string_split(linea, " ");
-	return instruccion;
+int consola_obtener_key_comando(char* comando)
+{
+	int key = -1;
+
+	if(comando == NULL)
+		return key;
+
+	if(!strcmp(comando, "dump")){
+		key = dump;
+	}else{
+		logger_funesMemory9(escribir_loguear, l_error,"No conozco ese comando, proba de nuevo\n");
+	}
+
+	return key;
 }
 
-void *funcionHiloConsola(void *arg){
-	char * linea;
-	char *ret="Cerrando hilo";
-	char** instruccion;
+void consola_obtener_parametros(char* buffer, char** comando, char** parametro1){
+	char** comandos;
+	int i,j=0;
 
-	logger_funesMemory9(escribir_loguear, l_info, "Consola lista\n");
+	comandos = string_n_split(buffer,3," ");
 
-	while(1){
-		linea = readline(">");
-
-		if(strlen(linea)>0){
-			add_history(linea);
-			instruccion = parser_instruccion(linea);
-
-			if(instruccion[0] == NULL) continue;
-
-			if(strcmp(instruccion[0],"exit")==0){//Mata al hilo de la consola
-
-				//salir_true();
-				for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
-				free(instruccion);
-				free(linea);
-
-				logger_funesMemory9(escribir_loguear, l_info, "Cerrando consola\n");
-				pthread_exit(ret);
-				}else{
-					if(strcmp(instruccion[0],"dump")==0){
-						if(instruccion[1]!=NULL){
-							logger_funesMemory9(escribir_loguear, l_info, "Se procederá a imprimir por pantalla y en log la totalidad"
-									"de los datos administrativos guardados y los datos en memoria real del ID: %d \n", instruccion[1]);
-
-							realizar_dump((int)instruccion[1]);
-
-							}else{
-								logger_funesMemory9(escribir_loguear, l_error, "Falta el ID del DTB, reintentar\n");
-							}
-						}
-					}
-				}
+	while(comandos[j])
+	{
+		switch(j)
+		{
+			case 0:
+				*comando = comandos[j];
+				break;
+			case 1:
+				*parametro1 = comandos[j];
+				break;
 		}
+
+		j++;
+	}
+
+	for(i=0;i>j;i++)
+	{
+		//log_info(logger,"parte %d: %s\n", j,comandos[j]);
+		free(comandos[j]);
+	}
+
+	free(comandos);
 }
 
 void realizar_dump(int id){
-
 	(buscar_informacion_administrativa[MODO_EJECUCION])(id);
 }
 
-void iniciar_consola(){
-	logger_funesMemory9(escribir_loguear, l_info, "\nIniciando hilo de consola\n");
+int consola_derivar_comando(char * buffer){
 
-	int resultadoDeCrearHilo = pthread_create(&threadConsola, NULL, funcionHiloConsola, "Hilo consola");
+	int comando_key;
+	char *comando = NULL;
+	char *parametro1 = NULL;
+	int res = 0;
 
-	if(resultadoDeCrearHilo){
-		logger_funesMemory9(escribir_loguear, l_error, "No se pudo crear el hilo de la consola correctamente\n");
-		finalizar_funesMemory9();
-		exit(EXIT_FAILURE);
-			}
-		else{
-			logger_funesMemory9(escribir_loguear, l_info, "La consola fue creada correctamente\n");
-			}
-}
+	// Separa la linea de consola en comando y sus parametros
+	consola_obtener_parametros(buffer, &comando, &parametro1);
 
-int main(int argc, char **argv){
+	// Obtiene la clave del comando a ejecutar para el switch
+	comando_key = consola_obtener_key_comando(comando);
 
-	iniciar_funes_memory_9(argv[1]);
-
-	int server_FM9, socket_cpu, cliente_DAM;
-
-	server_FM9 = iniciar_servidor(PUERTO_ESCUCHA);
-
-	MEMORIA_FISICA = reservar_total_memoria();
-
-	inicializar_funciones_variables_por_segmento();
-
-	(crear_estructuras_esquema[MODO_EJECUCION])();
-
-	cliente_DAM = comunicarse_con_dam(server_FM9);
-
-	crear_hilo_conexion(cliente_DAM, escuchar_al_diego);
-
-	iniciar_consola();
-
-	//Entra en un loop consecutivo hasta un ctrl+c...
-	while (GLOBAL_SEGUIR && cliente_DAM>0){
-
-		socket_cpu = atender_nuevo_cpu(server_FM9);
-
-		crear_hilo_conexion(socket_cpu, escuchar_mensajes_de_cpus);
+	switch(comando_key){
+		case dump:
+			realizar_dump((int)parametro1);
+			break;
 	}
 
-	cerrar_sockets(server_FM9, socket_cpu, cliente_DAM);
+	//Limpio el parametro 1
+	if(parametro1 != NULL){
+		free(parametro1);
+		parametro1 = NULL;
+	}
 
-	(destruir_estructuras_esquema[MODO_EJECUCION])();
+	free(comando);
+	return res;
+}
 
-	finalizar_funesMemory9();
+void inicializar_conexiones_cpu(void){
+	for (int i = 0; i < MAX_CLIENTES; ++i){
+		conexiones_cpu[i].socket = NO_SOCKET;
+	}
+}
+
+void *consola() {
+
+	int res = 0;
+	char *buffer = NULL;
+
+	logger_funesMemory9(escribir_loguear,l_info,"\nAbriendo consola...\n");
+
+	while(TRUE){
+
+		//Trae la linea de consola
+		buffer = readline(">");
+		//consola_leer_stdin(buffer, MAX_LINEA);
+
+		res = consola_derivar_comando(buffer);
+
+		free(buffer);
+
+		//Sale de la consola con exit
+		if(res)
+			break;
+	}
+
+	pthread_exit(0);
+	return 0;
+}
+
+int consola_leer_stdin(char *read_buffer, size_t max_len)
+{
+	char c = '\0';
+	int i = 0;
+
+	memset(read_buffer, 0, max_len);
+
+	ssize_t read_count = 0;
+	ssize_t total_read = 0;
+
+	do{
+		read_count = read(STDIN_FILENO, &c, 1);
+
+		if (read_count < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+			logger_funesMemory9(escribir_loguear,l_error,"Error en read() desde STDIN");
+		  return -1;
+		}
+		else if (read_count < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+		  break;
+		}
+		else if (read_count > 0) {
+		  total_read += read_count;
+
+		  read_buffer[i] = c;
+		  i++;
+
+		  if (total_read > max_len) {
+			//log_info(logger,"Message too large and will be chopped. Please try to be shorter next time.\n");
+			fflush(STDIN_FILENO);
+			break;
+		  }
+		}
+
+	}while ((read_count > 0) && (total_read < max_len) && (c != '\n'));
+
+	size_t len = strlen(read_buffer);
+	if (len > 0 && read_buffer[len - 1] == '\n'){
+		read_buffer[len - 1] = '\0';
+	}
+
+	//log_info(logger,"Read from stdin %zu bytes. Let's prepare message to send.\n", strlen(read_buffer));
+
+	return 0;
+}
+
+int main(int argc, char **argv) {
+
+	fd_set readset, writeset, exepset;
+	int max_fd;
+	char read_buffer[MAX_LINEA];
+	struct timeval tv = {0, 500};
+
+	iniciar_funes_memory_9(argv[1]);
+	inicializar_conexiones_cpu();
+	stdin_no_bloqueante();
+
+	int server_FM9 = iniciar_servidor(PUERTO_ESCUCHA);
+	int cliente_DAM = comunicarse_con_dam(server_FM9);
+
+	MEMORIA_FISICA = reservar_total_memoria();
+	inicializar_funciones_variables_por_segmento();
+	(crear_estructuras_esquema[MODO_EJECUCION])();
+
+	while(TRUE){
+		//Inicializa los file descriptor
+		FD_ZERO(&readset);
+		FD_ZERO(&writeset);
+		FD_ZERO(&exepset);
+
+		tv.tv_sec = 5;
+		tv.tv_usec = 0;
+
+		//Agrega el fd del socket servidor al set de lectura y excepciones
+		FD_SET(server_FM9, &readset);
+		FD_SET(server_FM9, &exepset);
+
+		//Agrega el fd del socket DAM al set de lectura y excepciones
+		FD_SET(cliente_DAM, &readset);
+		FD_SET(cliente_DAM, &exepset);
+
+		//Agrega el stdin para leer la consola
+		FD_SET(STDIN_FILENO, &readset);
+
+		//Seteo el maximo file descriptor necesario para el select
+		max_fd = server_FM9;
+
+		//Agrega los conexiones existentes
+		if (cliente_DAM != NO_SOCKET){
+			FD_SET(cliente_DAM, &readset);
+			FD_SET(cliente_DAM, &exepset);
+		}
+
+		if (cliente_DAM > max_fd){
+			max_fd = cliente_DAM;
+		}
+
+		for (int i = 0; i < MAX_CLIENTES; i++){
+			if (conexiones_cpu[i].socket != NO_SOCKET){
+				FD_SET(conexiones_cpu[i].socket, &readset);
+				FD_SET(conexiones_cpu[i].socket, &exepset);
+			}
+
+			if (conexiones_cpu[i].socket > max_fd){
+				max_fd = conexiones_cpu[i].socket;
+			}
+		}
+
+		int result = select(max_fd+1, &readset, &writeset, &exepset, &tv);
+		logger_funesMemory9(loguear, l_debug,"Resultado del select: %d\n",result); //Revisar rendimiento del CPU cuando select da > 1
+
+		if(result < 0 ){
+			logger_funesMemory9(escribir_loguear, l_error,"Error en select\n");
+			break;
+		}
+		else if(errno == EINTR){
+			logger_funesMemory9(escribir_loguear, l_error,"Me mataron! salgo del select\n");
+			break;
+		}
+		else if(result > 0) //Hubo un cambio en algun fd
+		{
+			//Aceptar nuevas conexiones de CPU
+			if (FD_ISSET(server_FM9, &readset)){
+				atender_nuevo_cpu(server_FM9);
+			}
+
+			//Se ingresó algo a la consola
+			if(FD_ISSET(STDIN_FILENO, &readset)){
+				consola_leer_stdin(read_buffer, MAX_LINEA);
+
+				int res = consola_derivar_comando(read_buffer);
+				if(res)	{
+					finalizar_funesMemory9();
+					break;
+				}
+			}
+
+			//Manejo de conexiones ya existentes
+			if(cliente_DAM != NO_SOCKET ){
+				//Mensajes nuevo de dam
+				if (FD_ISSET(cliente_DAM, &readset)) {
+					if(cabecera_es_invalida_dam(recibir_mensaje_dam(cliente_DAM)))
+					{
+						logger_funesMemory9(escribir_loguear,l_trace,"Conexión con DAM cerrada\n");
+						close(cliente_DAM);
+						finalizar_funesMemory9();
+					}
+				}
+
+				//Excepciones del dam, para la desconexion
+				if (FD_ISSET(cliente_DAM, &exepset)) {
+					if(cabecera_es_invalida_dam(recibir_mensaje_dam(cliente_DAM)))
+					{
+						logger_funesMemory9(escribir_loguear,l_trace,"Conexión con DAM cerrada\n");
+						close(cliente_DAM);
+						finalizar_funesMemory9();
+					}
+				}//if isset
+			} // if NO_SOCKET
+
+			for(int i = 0; i < MAX_CLIENTES; ++i){
+				if(conexiones_cpu[i].socket != NO_SOCKET ){
+					//Mensajes nuevos de algun cpu
+					if (FD_ISSET(conexiones_cpu[i].socket, &readset)) {
+						if(cabecera_es_invalida_cpu(recibir_mensaje_cpu(conexiones_cpu[i])))
+						{
+							logger_funesMemory9(escribir_loguear,l_trace,"Conexión con CPU %d cerrada\n",conexiones_cpu[i].pid);
+							close(conexiones_cpu[i].socket);
+							conexiones_cpu[i].socket = NO_SOCKET;
+							continue;
+						}
+					}
+
+					//Excepciones del cpu, para la desconexion
+					if (FD_ISSET(conexiones_cpu[i].socket, &exepset)) {
+						if(cabecera_es_invalida_cpu(recibir_mensaje_cpu(conexiones_cpu[i])))
+						{
+							logger_funesMemory9(escribir_loguear,l_trace,"Conexión con CPU %d cerrada\n",conexiones_cpu[i].pid);
+							close(conexiones_cpu[i].socket);
+							conexiones_cpu[i].socket = NO_SOCKET;
+							continue;
+						}
+					}//if isset
+				} // if NO_SOCKET
+			} //for conexiones_cpu
+		} //if result select
+	} //while
+
+	//pthread_exit(0);
+	return EXIT_SUCCESS;
 }

@@ -17,24 +17,31 @@
 #include "utilidades_para_listas.h"
 
 /*** Funciones ***/
-void iniciar_funes_memory_9();
-void *escuchar_mensajes_de_cpus(int socket_cpu);
-void *escuchar_al_diego(int socket_DMA);
-void crear_hilo_conexion(int socket, void*funcion_a_ejecutar(int));
-int comunicarse_con_dam(int socket_escucha);
-char * reservar_total_memoria();
+void stdin_no_bloqueante(void);
+void iniciar_funes_memory_9(char * path);
 int atender_nuevo_cpu(int serv_socket);
+void crear_hilo_conexion(int socket, void*funcion_a_ejecutar(int));
+t_cabecera recibir_mensaje_cpu(t_conexion_cpu conexion_cpu);
+bool cabecera_es_invalida_dam(t_cabecera cabecera);
+bool cabecera_es_invalida_cpu(t_cabecera cabecera);
+void interpretar_mensaje_cpu(enum MENSAJES mensaje, int cpu_socket);
 void interpretar_mensaje_del_diego(enum MENSAJES mensaje, int DMA_socket);
+t_cabecera recibir_mensaje_dam(int socket_DMA);
+int comunicarse_con_dam(int socket_escucha);
+char *reservar_total_memoria();
 void inicializar_funciones_variables_por_segmento();
-void iniciar_consola();
-char** parser_instruccion(char* linea);
-void *funcionHiloConsola(void *arg);
-void realizar_dump();
+int consola_obtener_key_comando(char* comando);
+void consola_obtener_parametros(char* buffer, char** comando, char** parametro1);
+void realizar_dump(int id);
+int consola_derivar_comando(char * buffer);
+void inicializar_conexiones_cpu(void);
+void *consola();
+int consola_leer_stdin(char *read_buffer, size_t max_len);
+
 
 /*** Funciones y variables necesarias a intercambiar segun el esquema de memoria utilizado ***/
 void (*crear_estructuras_esquema[3])();
 void (*cargar_parte_archivo[3])(int);
-void (*destruir_estructuras_esquema[3])();
 void (*buscar_informacion_administrativa[3])(int);
 void (*obtener_parte_archivo[3])(int);
 

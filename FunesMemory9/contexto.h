@@ -26,6 +26,8 @@
 #include <lqvg/protocolo.h>		// Para el protocolo de comunicaciones
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <fcntl.h>
+#include <errno.h>
 
 /*** Nombres claves de archivo de configuración ***/
 #define ARCH_CONFIG_MODO_EJECUCION "modo_ejecucion"
@@ -41,9 +43,15 @@
 
 /*** Enums ***/
 enum tipo_logueo { escribir, loguear, escribir_loguear, l_trace, l_debug, l_info, l_warning, l_error};
+//Enumeracion de los comandos de la consola
+enum comandos {dump};
 
 /*** Defines ***/
 #define MAX_CLIENTES 20
+#define STDIN 0
+#define TRUE 1
+#define MAX_LINEA 255
+#define NO_SOCKET -1
 
 extern int MODO_EJECUCION;
 extern int TAMANIO_MEMORIA;
@@ -70,8 +78,15 @@ struct archivo_devolviendose{
 };
 typedef struct archivo_devolviendose t_archivo_devolviendose;
 
-extern t_list * archivos_cargandose;
+struct conexion_cpu {
+	int pid;
+	int socket;
+	struct sockaddr_in addres;
+};
+typedef struct conexion_cpu t_conexion_cpu;
 
+extern t_conexion_cpu conexiones_cpu[MAX_CLIENTES];
+extern t_list * archivos_cargandose;
 extern t_list * archivos_devolviendose;
 
 #endif /* CONTEXTO_H_ */

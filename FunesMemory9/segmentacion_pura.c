@@ -88,7 +88,7 @@ void copiar_archivo_a_memoria_fisica(size_t tamanio_archivo_en_memoria,
 
 void informar_carga_segmento_exitosa(int indice_entrada_archivo_en_tabla_segmentos, tp_cargarEnMemoria parte_archivo, int DAM_fd) {
 	logger_funesMemory9(escribir_loguear, l_info,
-			"\nSe creo el segmento %d para el archivo %s\n",
+			"Se creo el segmento %d para el archivo %s\n",
 			indice_entrada_archivo_en_tabla_segmentos, parte_archivo->path);
 	prot_enviar_FM9_DMA_cargaEnMemoria(
 			indice_entrada_archivo_en_tabla_segmentos, DAM_fd);
@@ -110,7 +110,7 @@ t_archivo_cargandose * cargar_buffer_archivo(tp_cargarEnMemoria parte_archivo) {
 		archivo_de_proceso_cargandose->recibido_actualmente=0;
 		archivo_de_proceso_cargandose->buffer_archivo=malloc(tamanio_parte_archivo);
 		//Tambien se agrega elemento de archivo cargandose a la lista
-		logger_funesMemory9(escribir_loguear, l_trace,"\nSe agrega a la lista, un elemento por archivo cargandose del proceso %d\n"
+		logger_funesMemory9(escribir_loguear, l_trace,"Se agrega a la lista, un elemento por archivo cargandose del proceso %d\n"
 					,parte_archivo->pid);
 		list_add(archivos_cargandose,archivo_de_proceso_cargandose);
 	}
@@ -125,11 +125,11 @@ void cargar_parte_archivo_en_segmento(int DAM_fd){
 	t_archivo_cargandose * archivo_de_proceso_cargandose = cargar_buffer_archivo(parte_archivo);
 	//TODO agregar validaciones de posibles errores
 	if(todavia_falta_mandar_pedazo_de_archivo(parte_archivo, archivo_de_proceso_cargandose)){
-		logger_funesMemory9(escribir_loguear, l_trace,"\nSe acumulo una parte del archivo en un buffer\n");
+		logger_funesMemory9(escribir_loguear, l_trace,"Se acumulo una parte del archivo en un buffer");
 		prot_enviar_FM9_DMA_cargaEnMemoria(0, DAM_fd);
 		return;
 	}
-	logger_funesMemory9(escribir_loguear, l_trace,"\nYa se obtuvo el archivo y se intentara agregar el segmento en la memoria principal\n");
+	logger_funesMemory9(escribir_loguear, l_trace,"Ya se obtuvo el archivo y se intentara agregar el segmento en la memoria principal\n");
 	if(lista_de_huecos==NULL||list_is_empty(lista_de_huecos)){
 		informar_espacio_insuficiente(DAM_fd);
 		return;
@@ -170,7 +170,7 @@ int separar_en_lineas(t_archivo_cargandose * archivo_cargado, char** archivo_sep
 	//Convierto el stream a string para poder usar funciones de string de las commons
 	archivo_cargado->buffer_archivo=realloc(archivo_cargado->buffer_archivo, archivo_cargado->recibido_actualmente+1);
 	archivo_cargado->buffer_archivo[archivo_cargado->recibido_actualmente]='\0';
-	char ** lineas=string_split(archivo_cargado->buffer_archivo,"\n");
+	char ** lineas=string_split(archivo_cargado->buffer_archivo,"");
 	int cant_lineas=-1;
 	for(cant_lineas=0;lineas[cant_lineas]!=NULL;cant_lineas++){
 		if(cant_lineas==0){
@@ -181,9 +181,9 @@ int separar_en_lineas(t_archivo_cargandose * archivo_cargado, char** archivo_sep
 			*archivo_separado_en_lineas=realloc(*archivo_separado_en_lineas,TAMANIO_MAX_LINEA);
 		}
 		string_append(archivo_separado_en_lineas,lineas[cant_lineas]);
-		//Le tengo que agregar nuevamente el \n porque el split se lo quita
-		string_append(archivo_separado_en_lineas,"\n");
-		//Le sumo uno por el \n que tenia originalmente
+		//Le tengo que agregar nuevamente el  porque el split se lo quita
+		string_append(archivo_separado_en_lineas,"");
+		//Le sumo uno por el  que tenia originalmente
 		int tamanio_linea_separada = string_length(lineas[cant_lineas])+1;
 		if (tamanio_linea_separada < TAMANIO_MAX_LINEA) {
 			//Si la linea del archivo es mas chica que el tamanio de linea, completo con $
@@ -192,7 +192,7 @@ int separar_en_lineas(t_archivo_cargandose * archivo_cargado, char** archivo_sep
 			string_append(archivo_separado_en_lineas,relleno_sobrante);
 		} else if (tamanio_linea_separada>TAMANIO_MAX_LINEA){
 			logger_funesMemory9(escribir_loguear, l_warning,
-						"\nSe exedio el tamanio de una linea\n");
+						"Se exedio el tamanio de una linea\n");
 			return -1;
 		}
 
@@ -222,33 +222,37 @@ void eliminar_lista_de_entradas(void * tabla_segmentos){
 }
 
 void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id){
-	t_entrada_tabla_segmentos * entrada_segmento;
-	if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,id)){
-		t_tabla_segmentos * tabla_segmentos = (t_tabla_segmentos *)list_filter_comparing(tablas_de_segmentos, &tiene_tabla_de_segmentos,id);
-
-		int cant_entradas = list_size(tabla_segmentos->entradas);
-		logger_funesMemory9(escribir_loguear, l_info, "Utilizando el esquema de segmentacion pura y dado el ID del DTB indicado, el proceso tiene una tabla de "
-				"segmentos con %d entradas\n", cant_entradas);
-
-		for(int i = 0; i<cant_entradas; i++){
-			logger_funesMemory9(escribir_loguear, l_info, "En la entrada %d, se encuentra la sgte informacion: \n",i);
-			entrada_segmento = list_get(tabla_segmentos->entradas,i);
-			logger_funesMemory9(escribir_loguear, l_info, "El limite del segmento es %d. \n",entrada_segmento->limite);
-			logger_funesMemory9(escribir_loguear, l_info, "Contiene el archivo %s. \n\n",entrada_segmento->archivo);
-			logger_funesMemory9(escribir_loguear, l_info, "La base del segmento es %d. \n",entrada_segmento->base);
-
-			int tamanio_archivo = (entrada_segmento->limite)*TAMANIO_MAX_LINEA;
-			char * puntero_al_archivo = malloc(sizeof(tamanio_archivo)+1);
-
-			memcpy(puntero_al_archivo,MEMORIA_FISICA + (entrada_segmento->base*TAMANIO_MAX_LINEA),tamanio_archivo);
-			puntero_al_archivo[tamanio_archivo]='\0';
-
-			logger_funesMemory9(escribir_loguear, l_info, "La información contenida en la memoria fisica para la entrada correspondiente es:"
-					" %s \n",&puntero_al_archivo);
-		}
-
+	if(id == NULL){
+		logger_funesMemory9(escribir_loguear, l_error,"Falta el ID del DTB, proba de nuevo\n");
 	}else{
-		logger_funesMemory9(escribir_loguear, l_warning, "No hay información administrativa para el ID %d del DTB indicado. \n",id);
+		t_entrada_tabla_segmentos * entrada_segmento;
+		if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,id)){
+			t_tabla_segmentos * tabla_segmentos = (t_tabla_segmentos *)list_filter_comparing(tablas_de_segmentos, &tiene_tabla_de_segmentos,id);
+
+			int cant_entradas = list_size(tabla_segmentos->entradas);
+			logger_funesMemory9(escribir_loguear, l_info, "Utilizando el esquema de segmentacion pura y dado el ID del DTB indicado, el proceso tiene una tabla de "
+					"segmentos con %d entradas\n", cant_entradas);
+
+			for(int i = 0; i<cant_entradas; i++){
+				logger_funesMemory9(escribir_loguear, l_info, "En la entrada %d, se encuentra la sgte informacion: ",i);
+				entrada_segmento = list_get(tabla_segmentos->entradas,i);
+				logger_funesMemory9(escribir_loguear, l_info, "El limite del segmento es %d.\n",entrada_segmento->limite);
+				logger_funesMemory9(escribir_loguear, l_info, "Contiene el archivo %s.\n",entrada_segmento->archivo);
+				logger_funesMemory9(escribir_loguear, l_info, "La base del segmento es %d.\n",entrada_segmento->base);
+
+				int tamanio_archivo = (entrada_segmento->limite)*TAMANIO_MAX_LINEA;
+				char * puntero_al_archivo = malloc(sizeof(tamanio_archivo)+1);
+
+				memcpy(puntero_al_archivo,MEMORIA_FISICA + (entrada_segmento->base*TAMANIO_MAX_LINEA),tamanio_archivo);
+				puntero_al_archivo[tamanio_archivo]='\0';
+
+				logger_funesMemory9(escribir_loguear, l_info, "La información contenida en la memoria fisica para la entrada correspondiente es:"
+						" %s\n",&puntero_al_archivo);
+			}
+
+		}else{
+			logger_funesMemory9(escribir_loguear, l_warning, "No hay información administrativa para el ID %d del DTB indicado.\n",id);
+		}
 	}
 }
 
@@ -334,7 +338,7 @@ void devolver_trozo_faltante_archivo(tp_obtenerArchivo pedido_obtencion,
 	free(trozo_archivo);
 	free(info_archivo_devolviendose->buffer_en_memoria);
 	free(pedido_obtencion->path);
-	logger_funesMemory9(escribir_loguear, l_info, "Se devolvio el ultimo pedazo del archivo %s de %d bytes",
+	logger_funesMemory9(escribir_loguear, l_info, "Se devolvio el ultimo pedazo del archivo %s de %d bytes\n",
 			pedido_obtencion->path, tamanio_trozo_faltante);
 }
 
@@ -351,7 +355,7 @@ void devolver_trozo_con_tamanio_transfersize(tp_obtenerArchivo pedido_obtencion,
 			, DAM_fd);
 	free(trozo_archivo);
 	free(pedido_obtencion->path);
-		logger_funesMemory9(escribir_loguear, l_info, "Se devolvio un pedazo del archivo %s de transfer size %d bytes",
+		logger_funesMemory9(escribir_loguear, l_info, "Se devolvio un pedazo del archivo %s de transfer size %d bytes\n",
 				pedido_obtencion->path, transfer_size);
 }
 
