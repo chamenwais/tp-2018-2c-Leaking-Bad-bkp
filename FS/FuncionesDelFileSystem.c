@@ -367,8 +367,8 @@ int man(){
 	printf("11) \"bitmap\", muestra el estado de todos los bloques del bitmap\n");
 	printf("12) \"BorrarArchivo\" [Path], borra el archivo solicitado\n");
 	printf("13) \"pwd\", print working directory\n");
-	printf("14) \"mostrarbloque\" [NumeroDeBloque]");
-	printf("15) \"existeledirectorio\" [path], me dice si el directorio que le paso existe o no");
+	printf("14) \"mostrarbloque\" [NumeroDeBloque]\n");
+	printf("15) \"existeledirectorio\" [path], me dice si el directorio que le paso existe o no\n");
 	return EXIT_SUCCESS;
 }
 
@@ -430,8 +430,8 @@ int finalizarTodoPorError(){
 void liberarRecursos(){
 	log_info(LOGGER,"Cerrando esctructuras");
 	log_info(LOGGER,"Desmapeando el bitmap");
-	msync(bitmap, tamanioBitmap, MS_SYNC);
-	munmap(bitmap,tamanioBitmap);
+	memcpy(srcMmap,bufferArchivo,tamanioBitmap);
+	bajarADiscoBitmap();
 	log_info(LOGGER,"Destruyendo el bitarray");
 	bitarray_destroy(bitmap);
 	log_info(LOGGER,"Cerrando log");
@@ -879,23 +879,24 @@ int levantarBitMap(){
 			fprintf(archivoBitmap,"0");
 			}
 		fclose(archivoBitmap);
-		FDbitmap = open(ubicacionDelArchivo, O_RDWR);
+		//FDbitmap = open(ubicacionDelArchivo, O_RDWR);
+		FDbitmap = open(ubicacionDelArchivo, O_RDWR | O_CREAT, S_IRWXU );
 	}else{
 		estaVacioElBitmap=false;
 		}
 
-	char * src = mmap(NULL, mystat.st_size, PROT_WRITE | PROT_READ | PROT_EXEC, MAP_SHARED, FDbitmap, 0);
+	srcMmap = mmap(NULL, mystat.st_size, PROT_WRITE | PROT_READ | PROT_EXEC, MAP_SHARED, FDbitmap, 0);
 
-	if(src == MAP_FAILED){
+	if(srcMmap == MAP_FAILED){
 		log_error(LOGGER,"Error al mapear a memoria: %s",strerror(errno));
 		log_info(LOGGER,"Es probable que no este creado el archivo o este vacio, paso a crearlo y llenarlo con basura");
 	}else{
 		log_info(LOGGER,"MAP exitoso");
 		}
 
-	char * bufferArchivo = malloc(tamanioBitmap);
+	bufferArchivo = malloc(tamanioBitmap);
 
-	memcpy(bufferArchivo, src, tamanioBitmap);
+	memcpy(bufferArchivo, srcMmap, tamanioBitmap);
 
 	if(!estaCreadoElBitmap||estaVacioElBitmap){
 		log_info(LOGGER,"El archivo de bitmap no existia");
@@ -920,6 +921,7 @@ int levantarBitMap(){
 }
 
 int bajarADiscoBitmap(){
+	memcpy(srcMmap,bufferArchivo,tamanioBitmap);
 	msync(bitmap, tamanioBitmap, MS_SYNC);
 	return EXIT_SUCCESS;
 }
@@ -1105,7 +1107,6 @@ int crearArchivoDeDMA(int FDDMA){
 	/* Recibe del DMA los valores: path
 	 */
 	tp_crearArchivo dataParaCrearElArchivo=prot_recibir_DMA_FS_CrearArchivo(FDDMA);
-	int cantidadDeBytes=0; //modificar
 	log_info(LOGGER,"Recibiendo el path: \"%s\", para crear el archivo",dataParaCrearElArchivo->path);
 	char*ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
@@ -1160,6 +1161,7 @@ int crearArchivo(char *ubicacionDelArchivo, int cantidadDeBytes, char *path){
 	 * ubicacionDelArchivo: montaje/Archivos/carpeta/asd.txt
 	 * */
 
+	int resultadoDeGuardarDatos;
 	if(cantidadDeBytes<0){
 		log_error(LOGGER,"Error, la cantidad de bytes es menor que 0, es: %d",cantidadDeBytes);
 		return ArchivoNoCreado;
@@ -1180,11 +1182,31 @@ int crearArchivo(char *ubicacionDelArchivo, int cantidadDeBytes, char *path){
 				char *buffer = string_new();
 				for(int p=0;p<cantidadDeBytes;p++)
 					string_append(&buffer,"\n");
-				guardarDatos(path, 0, cantidadDeBytes, buffer);
+				resultadoDeGuardarDatos=guardarDatos(path, 0, cantidadDeBytes, buffer);
+
+				/*Como el archivo tiene q tener tamaño 0 modifico el archivo que cree
+				 * Lo hagoa si para poder reutiliar guardarDatos ya que necesita q el
+				 * archivo con la metadata este creado*/
+				/*log_info(LOGGER,"Dejando el size del archivo en 0");
+				t_config* configuracion = config_create(ubicacionDelArchivo);
+				config_set_value(configuracion,"TAMANIO","0");
+				config_destroy(configuracion);*/
+				/*Fin de la modificacion del tamaño*/
 				free(buffer);
 				}
 			pthread_mutex_unlock(&mutexSistemaDeArchivos);
-			return ArchivoCreado;
+			if(resultadoDeGuardarDatos==DatosGuardados){
+				log_info(LOGGER,"Archivo %s creado",ubicacionDelArchivo);
+				return ArchivoCreado;
+			}else{
+				if(resultadoDeGuardarDatos==ArchivoNoEncontrado){
+					log_error(LOGGER,"Error interno de guardar datos");
+					}
+				if(resultadoDeGuardarDatos==NoHayMasBloquesLibres){
+					log_error(LOGGER,"No hay mas bloques libres");
+					}
+				return ArchivoNoCreado;
+				}
 		}else{
 			pthread_mutex_unlock(&mutexSistemaDeArchivos);
 			log_info(LOGGER,"No se pudo crear el archivo %s",ubicacionDelArchivo);
@@ -1223,8 +1245,8 @@ int borrarArchivo(char *path){
 		for(i=0;i<list_size(metadata->bloques);i++){
 			numeroDeBloque =(int)list_get(metadata->bloques,i);
 			log_info(LOGGER,"Liberando el bloque: %d",numeroDeBloque);
-			bitarray_clean_bit(bitmap,i);
-			msync(bitmap, tamanioBitmap, MS_SYNC);
+			bitarray_clean_bit(bitmap,numeroDeBloque);
+			bajarADiscoBitmap();
 			}
 		free(metadata);
 		if(remove(ubicacionDelArchivoDeMetadata)==0){
@@ -1451,7 +1473,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 							log_info(LOGGER,"Voy a escribir en el bloque %d",numeroDeBloqueLibre);
 							//actualizo el bitarray
 							bitarray_set_bit(bitmap,numeroDeBloqueLibre);
-							msync(bitmap, tamanioBitmap, MS_SYNC);
+							bajarADiscoBitmap();
 							string_append(&archivoDeBloque, string_itoa(numeroDeBloqueLibre));
 							//actualizo la lista y activo la bandera para actualizar mi archivo de metadata de ese archivo
 							list_add(metadata->bloques,numeroDeBloqueLibre);

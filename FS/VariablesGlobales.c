@@ -19,3 +19,5 @@ pthread_mutex_t mutexFinalizarPrograma, mutexIniciarConsola, mutexSistemaDeArchi
 	mutexUsoDelCanalDeComunicacionDelDMA;
 int FDDMA;
 char* directorioActual;
+char * bufferArchivo;
+char * srcMmap;

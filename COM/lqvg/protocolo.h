@@ -135,6 +135,8 @@ void prot_enviar_FM9_DMA_cargaEnMemoria(int memory_address, int sock);
 int prot_recibir_FM9_DMA_cargaEnMemoria(int sock);
 void prot_enviar_DMA_SAFA_datosEnMemoria(char* path, int pid, int memory_address, int sock);
 tp_datosEnMemoria prot_recibir_DMA_SAFA_datosEnMemoria(int sock);
+void prot_enviar_DMA_FS_CrearArchivo(char* path,int longitud,int sock);
+tp_crearArchivo prot_recibir_DMA_FS_CrearArchivo(int sock);
 void prot_enviar_CPU_DMA_flush(char* path, int pid, int memory_address, int sock);
 tp_datosEnMemoria prot_recibir_CPU_DMA_flush(int sock);
 void prot_enviar_DMA_FM9_obtenerArchivo(char* path, int pid, int memory_address, int offset, int size, int sock);

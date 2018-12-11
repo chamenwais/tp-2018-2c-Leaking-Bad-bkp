@@ -34,5 +34,7 @@ extern pthread_mutex_t mutexFinalizarPrograma, mutexIniciarConsola, mutexSistema
 	mutexUsoDelCanalDeComunicacionDelDMA;
 extern int FDDMA;
 extern char* directorioActual;
+extern char * bufferArchivo;
+extern char * srcMmap;
 
 #endif /* VARIABLESGLOBALES_H_ */
