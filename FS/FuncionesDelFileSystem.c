@@ -580,11 +580,11 @@ int funcionDeConsolacat(char* nombreDelArchivo){
 		printf("Los datos del archivo %s son:\n",path);
 		for(int i=0;i<longitudDelArchivo;i++) printf("%c",datosObtenidos.datos[i]);
 		printf("\n");
+		free(datosObtenidos.datos);
 	}else{
 		printf("No se pudieron recuperar los datos del archivo:%s\n",path);
 		}
 	free(path);
-	free(datosObtenidos.datos);
 	return EXIT_SUCCESS;
 }
 
