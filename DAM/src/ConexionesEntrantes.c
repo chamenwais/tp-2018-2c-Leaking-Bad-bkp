@@ -351,11 +351,25 @@ enum MENSAJES loguear_cantidad_datos_y_guardar_en_disco(
 	return resultado_guardado;
 }
 
+void tratar_archivo_inexistente_en_mdj_flush(tp_datosEnMemoria pedido_flush,
+		int socket_safa) {
+	logger_DAM(escribir_loguear, l_error,
+			"El archivo %s no existe en MDJ. Error 30004\n",
+			pedido_flush->path);
+	informar_operacion_flush_erronea(socket_safa, pedido_flush);
+}
+
+void tratar_espacio_insuficiente_mdj_flush(int socket_safa,
+		tp_datosEnMemoria pedido_flush) {
+	logger_DAM(escribir_loguear, l_error,
+			"Espacio insuficiente en disco. Error 30003\n");
+	informar_operacion_flush_erronea(socket_safa, pedido_flush);
+}
+
 void tratar_existencia_archivo_en_mp(enum MENSAJES existencia, tp_datosEnMemoria pedido_flush, int socket_fm9,
 		int socket_mdj, int socket_safa) {
 	if (ElArchivoExiste == existencia) {
 		//guarda el archivo en disco y avisa a Safa
-		int offset_Fm9 = 0;
 		int offset_Mdj = 0;
 		logger_DAM(escribir_loguear, l_trace,
 				"El archivo %s existe en FM9, vamos a guardarlo en disco",
@@ -368,14 +382,19 @@ void tratar_existencia_archivo_en_mp(enum MENSAJES existencia, tp_datosEnMemoria
 					datos_obtenidos, resultado_guardado, socket_mdj,
 					pedido_flush, offset_Mdj);
 			if(resultado_guardado==ArchivoNoEncontrado){
-				informar_operacion_flush_erronea(socket_safa, pedido_flush);
+				tratar_archivo_inexistente_en_mdj_flush(pedido_flush,
+						socket_safa);
+				return;
+			}
+			if(resultado_guardado==NoHayMasBloquesLibres){
+				tratar_espacio_insuficiente_mdj_flush(socket_safa,
+						pedido_flush);
 				return;
 			}
 			logger_DAM(escribir_loguear, l_trace,"Se hizo flush del fragmento en disco");
-			offset_Fm9+=datos_obtenidos->size;
 			offset_Mdj+=datos_obtenidos->size;
 			free(datos_obtenidos->buffer);
-			t_cabecera cabecera_existencia=validar_archivo_en_memoria(socket_fm9, socket_safa, pedido_flush, offset_Fm9);
+			t_cabecera cabecera_existencia=validar_archivo_en_memoria(socket_fm9, socket_safa, pedido_flush);
 			if(!cabecera_correcta(&cabecera_existencia)){
 				loguear_informar_error_comunicacion_flush(socket_safa, pedido_flush);
 				return;
@@ -424,7 +443,7 @@ void operacion_flush_archivo(int * sockets){
 	tp_datosEnMemoria pedido_flush=prot_recibir_CPU_DMA_flush(socket_CPU);
 	logger_DAM(escribir_loguear, l_trace,"Voy a hacer flush de [%s] para [%d]",pedido_flush->path,pedido_flush->pid);
 	enviarCabecera(socket_CPU,FlushDeArchivoADiscoEjecutandose,sizeof(FlushDeArchivoADiscoEjecutandose));
-	resultado_existencia_archivo=validar_archivo_en_memoria(socket_fm9, socket_safa, pedido_flush, 0);
+	resultado_existencia_archivo=validar_archivo_en_memoria(socket_fm9, socket_safa, pedido_flush);
 	if(!cabecera_correcta(&resultado_existencia_archivo)){
 		loguear_informar_error_comunicacion_flush(socket_safa, pedido_flush);
 	}else{
@@ -440,11 +459,11 @@ void operacion_flush_archivo(int * sockets){
 	}
 }
 
-t_cabecera validar_archivo_en_memoria(int fm9_sock, int safa_sock, tp_datosEnMemoria datos_flush, int offset){
+t_cabecera validar_archivo_en_memoria(int fm9_sock, int safa_sock, tp_datosEnMemoria datos_flush){
 	pthread_mutex_lock(&MX_MEMORIA);
 	enviarCabecera(fm9_sock, ObtenerDatos, sizeof(ObtenerDatos));
 	prot_enviar_DMA_FM9_obtenerArchivo(datos_flush->path,datos_flush->pid,datos_flush->memory_address,
-			offset, transfer_size, fm9_sock);
+			transfer_size, fm9_sock);
 	t_cabecera respuesta_validacion = recibirCabecera(fm9_sock);
 	pthread_mutex_unlock(&MX_MEMORIA);
 	return respuesta_validacion;

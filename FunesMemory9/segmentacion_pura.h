@@ -58,5 +58,12 @@ void informar_carga_segmento_exitosa(int indice_entrada_archivo_en_tabla_segment
 void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id);
 int todavia_falta_mandar_pedazo_de_archivo(tp_cargarEnMemoria pedazo_actual, t_archivo_cargandose * archivo_cargandose);
 void obtener_parte_archivo_con_segmentacion(int DAM_fd);
+t_archivo_devolviendose* filtrar_info_archivo_devolviendose(int id_dtb);
+bool trozo_faltante_es_menor_que_transfersize(t_archivo_devolviendose* info_trozo_archivo, int transfer_size);
+int obtener_tamanio_trozo_faltante(int tamanio_archivo_en_memoria, int bytes_transferidos);
+void devolver_trozo_faltante_archivo(tp_obtenerArchivo pedido_obtencion, int DAM_fd,
+		t_archivo_devolviendose* info_archivo_devolviendose);
+void devolver_trozo_con_tamanio_transfersize(tp_obtenerArchivo pedido_obtencion,
+		int DAM_fd, t_archivo_devolviendose* info_archivo_devolviendose);
 
 #endif /* SEGMENTACION_PURA_H_ */
