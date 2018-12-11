@@ -173,7 +173,10 @@ int liberarMemoria(){
 } */
  void *funcionHiloComCPU(void *sockCPU){
 	 list_add(cpu_libres, sockCPU);
+	 //si es la primera cpu que se conecta se pasa a operativo
+	 if((list_size(cpu_libres)==1)&&(list_size(cpu_ejecutando)==0)){
 	 pasarSafaOperativo();
+	 }
 	 log_info(LOG_SAFA,"Espero cabecera de la CPU");
 	 t_cabecera cabecera = recibirCabecera(sockCPU);
 	 tp_DTB id_DTB; //tengo que hacer malloc? TODO
@@ -527,6 +530,7 @@ tp_DTB buscarDTBPorId(int idDTB){
 void pasarSafaOperativo(){
 	if(DAM_conectado){
 		estadoSAFA = OPERATIVO;
+		log_info(LOG_SAFA, "SAFA ahora esta OPERATIVO");
 	}
 }
 
