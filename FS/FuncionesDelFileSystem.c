@@ -1222,7 +1222,7 @@ int borrarArchivo(char *path){
 		for(i=0;i<list_size(metadata->bloques);i++){
 			numeroDeBloque =(int)list_get(metadata->bloques,i);
 			log_info(LOGGER,"Liberando el bloque: %d",numeroDeBloque);
-			bitarray_clean_bit(bitmap,i);
+			bitarray_clean_bit(bitmap,numeroDeBloque);
 			msync(bitmap, tamanioBitmap, MS_SYNC);
 			}
 		free(metadata);
