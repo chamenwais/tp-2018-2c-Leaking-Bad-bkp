@@ -126,7 +126,6 @@ int liberarMemoria(){
 
  void *funcionHiloComDMA(void *arg){//TODO:
 		//Trabajar con el Diegote eeeehhhhhh
-	log_info(LOG_SAFA,"Handshake exitoso con el Diego");
 	log_info(LOG_SAFA,"Espero cabecera del DMA");
 	t_cabecera cabecera = recibirCabecera(fd_DMA);
 	tp_datosEnMemoria datos_recibidos;
@@ -170,9 +169,8 @@ int liberarMemoria(){
 			}
 		return EXIT_SUCCESS;
 } */
- void *funcionHiloComCPU(void *sockCPU){//TODO: ver que hace
+ void *funcionHiloComCPU(void *sockCPU){
 	 list_add(cpu_libres, sockCPU);
-	 log_info(LOG_SAFA,"Handshake exitoso con CPU");
 	 log_info(LOG_SAFA,"Espero cabecera de la CPU");
 	 t_cabecera cabecera = recibirCabecera(sockCPU);
 	 tp_DTB id_DTB; //tengo que hacer malloc? TODO
@@ -199,9 +197,11 @@ int escuchar(){
 		//Acepto la conexion con el cliente
 		int client_fd = aceptarConexion(sockServer);
 		log_info(LOG_SAFA, "Conexion recibida");
-		if(recibirHandshake(PLANIFICADOR, DMA, client_fd) > 0){
+		enum PROCESO procesoConectado = recibir_Handshake_SAFA(PLANIFICADOR, client_fd);
+		if(procesoConectado == DMA){
 			log_info(LOG_SAFA, "Conexion realizada con El Diego");
 			fd_DMA = client_fd;
+			log_info(LOG_SAFA,"Handshake exitoso con el Diego en socket: %i", fd_DMA);
 			log_info(LOG_SAFA,"Iniciando hilo para la comunicacion con el Diegote");
 			int resultadoHiloDMA = pthread_create(&hiloComDMA, NULL, funcionHiloComDMA,
 					&configSAFA);
@@ -214,12 +214,12 @@ int escuchar(){
 				pthread_detach(resultadoHiloDMA);
 				continue;
 				}
-		}else if(recibirHandshake(PLANIFICADOR, CPU, client_fd) > 0){
+		}else if(procesoConectado == CPU){
 				log_info(LOG_SAFA, "Conexion realizada con CPU");
 				int fd_CPU = client_fd;
+				log_info(LOG_SAFA,"Handshake exitoso con CPU en socket: %i", fd_CPU);
 				log_info(LOG_SAFA, "Iniciando hilo para la comunicacion con el CPU");
-				int resultadoHiloCPU = pthread_create(
-						&hiloComCPU, NULL, funcionHiloComCPU, fd_CPU);
+				int resultadoHiloCPU = pthread_create(&hiloComCPU, NULL, funcionHiloComCPU, fd_CPU);
 				if(resultadoHiloCPU){
 					log_error(LOG_SAFA,"Error no se pudo crear el hilo para la comunicacion con la CPUr: %d\n",resultadoHiloCPU);
 					exit(EXIT_FAILURE);
@@ -231,7 +231,7 @@ int escuchar(){
 					}
 
 		} else {
-					log_info(LOG_SAFA, "Wrong client connected");
+					log_error(LOG_SAFA, "Se conecto algo distinto a DAM o CPU");
 					//client_fd = -1;
 				}
 				continue;

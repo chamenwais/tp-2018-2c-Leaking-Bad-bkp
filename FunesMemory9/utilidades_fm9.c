@@ -41,7 +41,7 @@ void cargar_archivo_de_configuracion(char * path){
 
 	if (config_has_property(config_file,ARCH_CONFIG_TAMANIO_MEMORIA)){
 		TAMANIO_MEMORIA = config_get_int_value(config_file, ARCH_CONFIG_TAMANIO_MEMORIA);
-		logger_funesMemory9(escribir_loguear, l_info, "Se obtuvo configuración 'Tamanio de la memoria': %d \n", TAMANIO_MEMORIA);
+		logger_funesMemory9(escribir_loguear, l_info, "Se obtuvo configuración 'Tamanio de la memoria': %d\n", TAMANIO_MEMORIA);
 	}
 
 	if (config_has_property(config_file,ARCH_CONFIG_PUERTO_ESCUCHA)){
@@ -68,12 +68,12 @@ int iniciar_servidor(char * port){
 
 	if(server_socket < 0)
 	{
-		logger_funesMemory9(escribir_loguear,l_error,"\nFalló la creación del socket servidor");
+		logger_funesMemory9(escribir_loguear,l_error,"Falló la creación del socket servidor\n");
 		exit(1);
 	}
 	else
 	{
-		logger_funesMemory9(escribir_loguear,l_trace,"Socket servidor (%d) escuchando", server_socket);
+		logger_funesMemory9(escribir_loguear,l_trace,"Socket servidor (%d) escuchando\n", server_socket);
 	}
 
 	return server_socket;
@@ -138,11 +138,10 @@ void logger_funesMemory9(int tipo_esc, int tipo_log, const char* mensaje, ...){
 	//ESCRIBE POR PANTALLA
 	if((tipo_esc == escribir) || (tipo_esc == escribir_loguear)){
 		//printf("%s",msj_salida);
-		//printf("\n");
+		//printf("");
 
 		console_buffer = string_from_format("%s%s%s",log_colors[tipo_log],msj_salida, log_colors[0]);
 		printf("%s",console_buffer);
-		printf("\n");
 		fflush(stdout);
 		free(console_buffer);
 	}
@@ -174,9 +173,8 @@ void logger_funesMemory9(int tipo_esc, int tipo_log, const char* mensaje, ...){
 }
 
 void finalizar_funesMemory9(){
-
+	//(destruir_estructuras_esquema[MODO_EJECUCION])();
 	log_destroy(logger);
-
 	free(MEMORIA_FISICA);
 }
 
@@ -184,14 +182,14 @@ void captura_sigpipe(int signo){
 
     if(signo == SIGINT)
     {
-    	logger_funesMemory9(escribir_loguear, l_warning,"\nFinalizando proceso... Gracias vuelva prontos.\n");
+    	logger_funesMemory9(escribir_loguear, l_warning,"Finalizando proceso... Gracias vuelva prontos.");
     	GLOBAL_SEGUIR = 0;
     	finalizar_funesMemory9();
     	exit(EXIT_FAILURE);
     }
     else if(signo == SIGPIPE)
     {
-    	logger_funesMemory9(escribir_loguear, l_error,"\n Se desconectó un proceso al que se quizo enviar.\n");
+    	logger_funesMemory9(escribir_loguear, l_error," Se desconectó un proceso al que se quizo enviar.");
     }
 
 }
@@ -206,27 +204,20 @@ void configurar_signals(void){
 	sigaddset(&signal_struct.sa_mask, SIGPIPE);
     if (sigaction(SIGPIPE, &signal_struct, NULL) < 0)
     {
-    	logger_funesMemory9(escribir_loguear, l_error,"\n SIGACTION error \n");
+    	logger_funesMemory9(escribir_loguear, l_error," SIGACTION error ");
     }
 
     sigaddset(&signal_struct.sa_mask, SIGINT);
     if (sigaction(SIGINT, &signal_struct, NULL) < 0)
     {
-    	logger_funesMemory9(escribir_loguear, l_error,"\n SIGACTION error \n");
+    	logger_funesMemory9(escribir_loguear, l_error," SIGACTION error ");
     }
 
-}
-
-void cerrar_sockets(int server_FM9, int socket_cpu, int cliente_DAM) {
-	close(server_FM9);
-	close(socket_cpu);
-	close(cliente_DAM);
 }
 
 void inicializar_logger(){
 	logger = log_create("Log_FunesMemory9.txt", "FunesMemory9", false, LOG_LEVEL_TRACE);
 }
-
 
 bool el_proceso_tiene_archivo_cargandose(void * archivo_cargandose, int pid){
 	return (*(t_archivo_cargandose*)archivo_cargandose).pid==pid;
@@ -246,12 +237,16 @@ void obtener_archivo_en_curso_de_carga(tp_cargarEnMemoria parte_archivo,
 }
 
 void borrar_info_archivo_cargandose(int pid){
-	logger_funesMemory9(escribir_loguear, l_trace,"\nSe borra el elemento del archivo cargandose del proceso %d\n"
+	logger_funesMemory9(escribir_loguear, l_trace,"Se borra el elemento del archivo cargandose del proceso %d\n"
 			,(*(t_archivo_cargandose*)list_remove_by_condition_comparing(archivos_cargandose, &el_proceso_tiene_archivo_cargandose, pid)).pid);
 }
 
 void informar_espacio_insuficiente(int DAM_fd) {
 	logger_funesMemory9(escribir_loguear, l_warning,
-			"\nEspacio insuficiente para albergar el archivo. Error 10002\n");
+			"Espacio insuficiente para albergar el archivo. Error 10002\n");
 	prot_enviar_FM9_DMA_cargaEnMemoria(-1, DAM_fd);
+}
+
+bool el_proceso_tiene_archivo_devolviendose(void * archivo_devolviendose, int pid){
+	return (*(t_archivo_cargandose*)archivo_devolviendose).pid==pid;
 }

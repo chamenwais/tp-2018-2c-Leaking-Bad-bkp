@@ -110,6 +110,13 @@ int recibirHandshake(enum PROCESO receptor, enum PROCESO procesoEsperado, int so
 		return true;
 }
 
+enum PROCESO recibir_Handshake_SAFA(enum PROCESO receiver, int sock) {
+	enum PROCESO received;
+	recibir(sock,&received,sizeof(received));
+	enviar(sock, &receiver, sizeof(receiver));
+	return received;
+}
+
 int enviarCabecera(int sock, enum MENSAJES tipoDeMensaje,int tamanio){
 	t_cabecera cabecera;
 	cabecera.tamanio = tamanio;

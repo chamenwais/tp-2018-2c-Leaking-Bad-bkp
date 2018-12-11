@@ -99,5 +99,6 @@ int enviarHandshake(enum PROCESO emisor,enum PROCESO procesoEsperado,int sock);
 int recibirHandshake(enum PROCESO receptor, enum PROCESO procesoEsperado, int sock);
 int enviarCabecera(int sock, enum MENSAJES tipoDeMensaje,int tamanio);
 t_cabecera recibirCabecera(int sock);
+enum PROCESO recibir_Handshake_SAFA(enum PROCESO receiver, int sock);
 
 #endif /* COM_H_ */

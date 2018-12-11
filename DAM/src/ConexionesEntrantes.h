@@ -54,7 +54,7 @@ enum MENSAJES tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_
 void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath path_y_pid, int socket_mdj, int socket_fm9, int socket_safa);
 bool todavia_no_se_recibio_todo_el_archivo(int tamanio_parcial_archivo, int tamanio_total_archivo);
 void operacion_flush_archivo(int * sockets);
-t_cabecera validar_archivo_en_memoria(int fm9_sock, int safa_sock, tp_datosEnMemoria datos_flush, int offset);
+t_cabecera validar_archivo_en_memoria(int fm9_sock, int safa_sock, tp_datosEnMemoria datos_flush);
 void informar_operacion_flush_erronea(int socket_safa, tp_datosEnMemoria path_y_pid);
 enum MENSAJES tratar_inexistencia_archivo_mp(t_cabecera respuesta_validez_archivo, tp_datosEnMemoria info_cpu, int socket_safa);
 void informar_operacion_flush_exitosa(int socket_safa, tp_datosEnMemoria path_y_pid);
@@ -71,4 +71,9 @@ enum MENSAJES loguear_cantidad_datos_y_guardar_en_disco(
 		tp_datosObtenidosDeProtocolo datos_obtenidos,
 		enum MENSAJES resultado_guardado, int socket_mdj,
 		tp_datosEnMemoria pedido_flush, int offset_Mdj);
+void tratar_archivo_inexistente_en_mdj_flush(tp_datosEnMemoria pedido_flush,
+		int socket_safa);
+void tratar_espacio_insuficiente_mdj_flush(int socket_safa,
+		tp_datosEnMemoria pedido_flush);
+
 #endif /* CONEXIONESENTRANTES_H_ */

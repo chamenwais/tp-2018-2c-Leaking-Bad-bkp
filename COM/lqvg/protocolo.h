@@ -58,7 +58,6 @@ typedef struct stru_obtenerArchivo{
 	char* path;
 	int pid;
 	int memory_address;
-	int offset;
 	int size;
 } t_obtenerArchivo;
 typedef t_obtenerArchivo* tp_obtenerArchivo;
@@ -139,7 +138,7 @@ void prot_enviar_DMA_FS_CrearArchivo(char* path,int longitud,int sock);
 tp_crearArchivo prot_recibir_DMA_FS_CrearArchivo(int sock);
 void prot_enviar_CPU_DMA_flush(char* path, int pid, int memory_address, int sock);
 tp_datosEnMemoria prot_recibir_CPU_DMA_flush(int sock);
-void prot_enviar_DMA_FM9_obtenerArchivo(char* path, int pid, int memory_address, int offset, int size, int sock);
+void prot_enviar_DMA_FM9_obtenerArchivo(char* path, int pid, int memory_address, int size, int sock);
 tp_obtenerArchivo prot_recibir_DMA_FM9_obtenerArchivo(int sock);
 void prot_enviar_FM9_DMA_devolverDatos(char* datos, int tamanio_trozo, int tamanio_total_archivo, int sock);
 tp_datosObtenidosDeProtocolo prot_recibir_FM9_DMA_devolverDatos(int sock);
