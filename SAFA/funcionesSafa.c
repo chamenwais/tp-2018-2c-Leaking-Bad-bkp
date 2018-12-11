@@ -71,6 +71,7 @@ int inicializarVariablesSAFA(){
 	resultadoComElDiego = EXIT_SUCCESS;
 	safa_conectado = true;
 	id = 1;
+	DAM_conectado = false;
 	return EXIT_SUCCESS;
 }
 
@@ -126,6 +127,7 @@ int liberarMemoria(){
 
  void *funcionHiloComDMA(void *arg){//TODO:
 		//Trabajar con el Diegote eeeehhhhhh
+	DAM_conectado = true;
 	log_info(LOG_SAFA,"Espero cabecera del DMA");
 	t_cabecera cabecera = recibirCabecera(fd_DMA);
 	tp_datosEnMemoria datos_recibidos;
@@ -171,6 +173,10 @@ int liberarMemoria(){
 } */
  void *funcionHiloComCPU(void *sockCPU){
 	 list_add(cpu_libres, sockCPU);
+	 //si es la primera cpu que se conecta se pasa a operativo
+	 if((list_size(cpu_libres)==1)&&(list_size(cpu_ejecutando)==0)){
+	 pasarSafaOperativo();
+	 }
 	 log_info(LOG_SAFA,"Espero cabecera de la CPU");
 	 t_cabecera cabecera = recibirCabecera(sockCPU);
 	 tp_DTB id_DTB; //tengo que hacer malloc? TODO
@@ -519,6 +525,13 @@ tp_DTB buscarDTBPorId(int idDTB){
 		el_DTB = list_find(listos, coincideID);
 	}
 	return el_DTB;
+}
+
+void pasarSafaOperativo(){
+	if(DAM_conectado){
+		estadoSAFA = OPERATIVO;
+		log_info(LOG_SAFA, "SAFA ahora esta OPERATIVO");
+	}
 }
 
 /*int enviarDTBaCPU(t_DTB * dtb, int sockCPU) {

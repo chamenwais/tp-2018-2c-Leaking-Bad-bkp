@@ -12,8 +12,8 @@
 
 typedef struct stru_obtenerDatos{
 	char* path;
-	int offset;
-	int size;
+	unsigned long int offset;
+	unsigned long int size;
 	char* buffer;
 } t_obtenerDatos;
 typedef t_obtenerDatos* tp_obtenerDatos;
@@ -122,9 +122,9 @@ void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTo
 tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos(int sock);
 void prot_enviar_DMA_FS_path(char* path,int sock);
 char* prot_recibir_DMA_FS_path(int sock);
-void prot_enviar_DMA_FS_guardarDatos(char *path, int offset, int size, char *buffer, int sock);
+void prot_enviar_DMA_FS_guardarDatos(char *path, long int offset, long int size, char *buffer, int sock);
 tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos(int sock);
-void prot_enviar_DMA_FS_obtenerDatos(char *path, int offset, int size, int sock);
+void prot_enviar_DMA_FS_obtenerDatos(char *path, long int offset, long int size, int sock);
 tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos(int sock);
 void prot_enviar_CPU_DMA_abrirPath(char* path, int pid, int sock);
 tp_abrirPath prot_recibir_CPU_DMA_abrirPath(int sock);

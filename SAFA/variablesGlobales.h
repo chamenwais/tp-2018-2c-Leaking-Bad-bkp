@@ -55,6 +55,7 @@ extern t_list* cpu_libres;
 extern t_list* cpu_ejecutando;
 extern t_list* dtbConEqGrandeAbierto;
 extern pthread_mutex_t mutexDePausaDePlanificacion;
+extern bool DAM_conectado;
 
 
 #endif /* SAFA_VARIABLESGLOBALES_H_ */

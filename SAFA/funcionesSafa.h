@@ -45,5 +45,6 @@ int obtenerPrimerId(t_list* lista);
 tp_DTB buscarDTBPorId(int idDTB);
 //int enviarDTBaCPU(t_DTB * dtb, int sockCPU);
 int calcularDTBAPlanificarConBOAF();
+void pasarSafaOperativo();
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */
