@@ -33,7 +33,7 @@ tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos(int sock){
 	return obtenidos;
 }
 
-void prot_enviar_DMA_FS_obtenerDatos(char *path, int offset, int size, int sock){
+void prot_enviar_DMA_FS_obtenerDatos(char *path, long int offset, long int size, int sock){
 	//2 envia
 	int tam = strlen(path)+1;
 	enviar(sock,&tam,sizeof(tam));
@@ -84,7 +84,7 @@ int prot_recibir_int(int sock){
 	return i;
 }
 
-void prot_enviar_DMA_FS_guardarDatos(char *path, int offset, int size, char *buffer, int sock){
+void prot_enviar_DMA_FS_guardarDatos(char *path, long int offset, long int size, char *buffer, int sock){
 	//4 envia
 	int tam2;
 	int tam = strlen(path)+1;

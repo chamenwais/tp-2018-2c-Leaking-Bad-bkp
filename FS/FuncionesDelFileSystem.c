@@ -823,10 +823,10 @@ int obtenerBloqueLibreDelBitMap(){
 	log_info(LOGGER,"Obteniendo bloque libre");
 	for(i=0;i<configuracionDeMetadata.cantidadBloques;i++){
 		if(!bitarray_test_bit(bitmap,i)){
-			log_info(LOGGER,"El bloque %d esta libre", i);
+			//log_info(LOGGER,"El bloque %d esta libre", i);
 			return i;
 			}
-		log_info(LOGGER,"El bloque: %d esta ocupado",i);
+		//log_info(LOGGER,"El bloque: %d esta ocupado",i);
 		}
 	log_info(LOGGER,"No hay mas bloques libres");
 	return -1;
@@ -1270,11 +1270,11 @@ int borrarArchivo(char *path){
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 }
 
-int obtenerDatosDeConsola(char *path, int offset, int Size){
+int obtenerDatosDeConsola(char *path, long int offset, long int Size){
 	t_datosObtenidos datosObtenidos = obtenerDatos(path,offset,Size);
 	if(datosObtenidos.resultado==DatosObtenidos){
 		printf("Los datos del archivo %s son:\n",path);
-		for(int i=0;i<Size;i++) printf("%c",datosObtenidos.datos[i]);
+		for(long int i=0;i<Size;i++) printf("%c",datosObtenidos.datos[i]);
 		printf("\n");
 	}else{
 		printf("No se pudieron recuperar los datos del archivo:%s\n",path);
@@ -1299,7 +1299,7 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 	return EXIT_SUCCESS;
 }
 
-t_datosObtenidos obtenerDatos(char *path, int offset, int size){
+t_datosObtenidos obtenerDatos(char *path, long int offset, long int size){
 	/* Parámetros​: [Path, Offset, Size]
 	 * Descripción​: Ante un pedido de datos File System devolverá del path enviado por parámetro,
 	 * la cantidad de bytes definidos por el Size a partir del offset solicitado.
@@ -1307,7 +1307,7 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 	log_info(LOGGER,"Obteniendo datos con los parametros: path \"%s\" | offset \"%d\" | size \"%d\" ",
 			path, offset, size);
 	t_datosObtenidos datosObtendios;
-	int bytesLeidos=0;
+	long int bytesLeidos=0;
 	datosObtendios.datos=malloc(sizeof(char)*size);
 	char *ubicacionDelArchivoDeMetadata=string_new();
 	string_append(&ubicacionDelArchivoDeMetadata,configuracionDelFS.punto_montaje);
@@ -1321,18 +1321,18 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 				tp_metadata metadata = recuperarMetaData(ubicacionDelArchivoDeMetadata);
 				log_info(LOGGER,"Offset: %d, tamaño de bloques %d, size %d",
 						offset, configuracionDeMetadata.tamanioBloques,size);
-				int numeroDeBloqueDeInicioDeLectura=offset/configuracionDeMetadata.tamanioBloques;
-				int numeroDeBloqueDeFinDeLectura=(offset+size)/configuracionDeMetadata.tamanioBloques;
-				int leerEnPrimerArchivoDesde=offset%configuracionDeMetadata.tamanioBloques;
-				int bytesALeer;
-				int cantidadTotalDeBloquesCreados=list_size(metadata->bloques);
-				int bloqueActual=numeroDeBloqueDeInicioDeLectura;
+				long int numeroDeBloqueDeInicioDeLectura=offset/configuracionDeMetadata.tamanioBloques;
+				long int numeroDeBloqueDeFinDeLectura=(offset+size)/configuracionDeMetadata.tamanioBloques;
+				long int leerEnPrimerArchivoDesde=offset%configuracionDeMetadata.tamanioBloques;
+				long int bytesALeer;
+				long int cantidadTotalDeBloquesCreados=list_size(metadata->bloques);
+				long int bloqueActual=numeroDeBloqueDeInicioDeLectura;
 				log_info(LOGGER,"Voy a leer en el primer bloque desde: %d",leerEnPrimerArchivoDesde);
 				log_info(LOGGER,"El numero de bloque de inicio de lectura es: %d",numeroDeBloqueDeInicioDeLectura);
 				log_info(LOGGER,"El numero de bloque de fin de lectura es: %d",numeroDeBloqueDeFinDeLectura);
 
-				for(int i=numeroDeBloqueDeInicioDeLectura;i<=numeroDeBloqueDeFinDeLectura;i++){
-					int numeroDeBloque;
+				for(long int i=numeroDeBloqueDeInicioDeLectura;i<=numeroDeBloqueDeFinDeLectura;i++){
+					long int numeroDeBloque;
 					char *archivoDeBloque=string_new();
 					string_append(&archivoDeBloque,configuracionDelFS.punto_montaje);
 					string_append(&archivoDeBloque, "/Bloques/");
@@ -1404,7 +1404,7 @@ t_datosObtenidos obtenerDatos(char *path, int offset, int size){
 }
 
 
-int guardarDatosDeConsola(char *path, int offset, int size, char *Buffer){
+int guardarDatosDeConsola(char *path, long int offset, long int size, char *Buffer){
 	log_info(LOGGER,"Buffer: %s",Buffer);
 	pthread_mutex_lock(&mutexSistemaDeArchivos);
 	guardarDatos(path, offset, size, Buffer);
@@ -1426,14 +1426,14 @@ int guardarDatosDeDMA(int fileDescriptorActual){
 	return EXIT_SUCCESS;
 }
 
-int guardarDatos(char *path, int offset, int size, char *Buffer){
+int guardarDatos(char *path, long int offset, long int size, char *Buffer){
 	/* Parámetros​: [Path, Offset, Size, Buffer]
 	 * Descripción​: Ante un pedido de escritura MDJ almacenará en el path enviado por parámetro,
  	 * los bytes del buffer, definidos por el valor del Size y a partir del offset solicitado. En caso de
 	 * que se soliciten datos o se intenten guardar datos en un archivo inexistente el File System
 	 * deberá retornar un error de Archivo no encontrado.
 	 */
-	int escribiHasta=0;
+	long int escribiHasta=0;
 	char *ubicacionDelArchivoDeMetadata=string_new();
 	bool hayQueActualziarMetadataDelArchivo=false;
 	string_append(&ubicacionDelArchivoDeMetadata,configuracionDelFS.punto_montaje);
@@ -1445,18 +1445,18 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 				tp_metadata metadata = recuperarMetaData(ubicacionDelArchivoDeMetadata);
 				log_info(LOGGER,"Offset: %d, tamaño de bloques %d, size %d",
 						offset, configuracionDeMetadata.tamanioBloques,size);
-				int numeroDeBloqueDeInicioDeEscritura=offset/configuracionDeMetadata.tamanioBloques;
-				int numeroDeBloqueDeFinDeEscritura=(offset+size)/configuracionDeMetadata.tamanioBloques;
-				int escribirEnPrimerArchivoDesde=offset%configuracionDeMetadata.tamanioBloques;
-				int bytesAEscribir;
-				int bytesEscritos=offset;
-				int cantidadTotalDeBloquesCreados=list_size(metadata->bloques);
-				int bloqueActual=numeroDeBloqueDeInicioDeEscritura;
+				long int numeroDeBloqueDeInicioDeEscritura=offset/configuracionDeMetadata.tamanioBloques;
+				long int numeroDeBloqueDeFinDeEscritura=(offset+size)/configuracionDeMetadata.tamanioBloques;
+				long int escribirEnPrimerArchivoDesde=offset%configuracionDeMetadata.tamanioBloques;
+				long int bytesAEscribir;
+				long int bytesEscritos=offset;
+				long int cantidadTotalDeBloquesCreados=list_size(metadata->bloques);
+				long int bloqueActual=numeroDeBloqueDeInicioDeEscritura;
 				log_info(LOGGER,"Voy a escribir en el primer bloque desde: %d",escribirEnPrimerArchivoDesde);
 				log_info(LOGGER,"El numero de bloque de inicio de escritura es: %d",numeroDeBloqueDeInicioDeEscritura);
 				log_info(LOGGER,"El numero de bloque de fin de escritura es: %d",numeroDeBloqueDeFinDeEscritura);
-				for(int i=numeroDeBloqueDeInicioDeEscritura;i<=numeroDeBloqueDeFinDeEscritura;i++){
-					int numeroDeBloque;
+				for(long int i=numeroDeBloqueDeInicioDeEscritura;i<=numeroDeBloqueDeFinDeEscritura;i++){
+					long int numeroDeBloque;
 					char *archivoDeBloque=string_new();
 					string_append(&archivoDeBloque,configuracionDelFS.punto_montaje);
 					string_append(&archivoDeBloque, "/Bloques/");
@@ -1468,7 +1468,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 					}else{
 						log_info(LOGGER,"El bloque para escribir no existe, lo tengo que crear");
 						//El bloque no existe tengo que tomar uno vacio, crearlo y ademas actualizar la metadata
-						int numeroDeBloqueLibre=obtenerBloqueLibreDelBitMap();
+						long int numeroDeBloqueLibre=obtenerBloqueLibreDelBitMap();
 						if(numeroDeBloqueLibre!=-1){
 							log_info(LOGGER,"Voy a escribir en el bloque %d",numeroDeBloqueLibre);
 							//actualizo el bitarray
@@ -1515,7 +1515,7 @@ int guardarDatos(char *path, int offset, int size, char *Buffer){
 								archivoDeBloque,bytesEscritos,bytesAEscribir);
 						fwrite(&Buffer[bytesEscritos],sizeof(char),bytesAEscribir,archivo);
 						char * bufferParaLog = string_new();
-						for(int o=bytesEscritos;o<(bytesAEscribir+bytesEscritos);o++)
+						for(long int o=bytesEscritos;o<(bytesAEscribir+bytesEscritos);o++)
 							string_append_with_format(&bufferParaLog, "%c", Buffer[o]);
 						log_info(LOGGER,"Escribiendo en el FS: %s",bufferParaLog);
 						free(bufferParaLog);
