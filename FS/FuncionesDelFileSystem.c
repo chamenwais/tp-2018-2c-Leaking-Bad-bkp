@@ -16,7 +16,7 @@ int inicializarLog(){
 int cargarDirectorioActual(){
 	directorioActual=string_new();
 	string_append(&directorioActual, configuracionDelFS.punto_montaje);
-	string_append(&directorioActual, "/Archivos");
+	string_append(&directorioActual, "/Archivos/");
 	log_info(LOGGER,"Directorio actual: %s",directorioActual);
 	//free(directorioActual);
 	return EXIT_SUCCESS;
@@ -442,7 +442,8 @@ void liberarRecursos(){
 	pthread_mutex_destroy(&mutexPath);
 	pthread_mutex_destroy(&mutexSistemaDeArchivos);
 	free(configuracionDelFS.punto_montaje);
-	free(configuracionDeMetadata.magicNumber),
+	free(configuracionDeMetadata.magicNumber);
+	free(directorioActual);
 	printf("PROGRAMA FINALIZADO\n");
 }
 
@@ -489,18 +490,33 @@ unsigned char digest[16];{
 		printf ("%02x", digest[i]);
 }
 
-int generarMD5(char* pathDelArchivo){
+int generarMD5(char* nombreDelArchivo){
+	/*Adapte esto xq puedo estar parado en el directorio asd/
+	* y desde ahi poner "cat hola.txt", para leer la ubicacion
+	* asd/hola.txt
+	*/
+	char*pathCompletoDelArchivo=string_new();
+	int i;
 	pthread_mutex_lock(&mutexUsoDelCanalDeComunicacionDelDMA);
-	int longitudDelArchivo=obtenerLongigutDelArchivo(pathDelArchivo);
-	t_datosObtenidos datosObtenidos = obtenerDatos(pathDelArchivo,0,longitudDelArchivo);
+	char** pathPartido = string_split(directorioActual, "/");
+	for(i=0;(pathPartido[i]!=NULL)&&(strcmp(pathPartido[i], "Archivos")!=0);i++);
+	for(i++;(pathPartido[i]!=NULL);i++){
+		string_append(&pathCompletoDelArchivo,pathPartido[i]);
+		string_append(&pathCompletoDelArchivo,"/");
+		}
+	string_append(&pathCompletoDelArchivo,nombreDelArchivo);
+	log_info(LOGGER,"Archivo:%s \nPath completo del archivo:%s \nDirectorio actual:%s",
+				nombreDelArchivo,pathCompletoDelArchivo,directorioActual);
+	int longitudDelArchivo=obtenerLongigutDelArchivo(pathCompletoDelArchivo);
+	t_datosObtenidos datosObtenidos = obtenerDatos(pathCompletoDelArchivo,0,longitudDelArchivo);
 	pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	char*content=datosObtenidos.datos;
 	if(datosObtenidos.resultado==DatosObtenidos){
-		printf("Los datos del archivo %s son:\n",pathDelArchivo);
+		printf("Los datos del archivo %s son:\n",pathCompletoDelArchivo);
 		for(int i=0;i<longitudDelArchivo;i++) printf("%c",datosObtenidos.datos[i]);
 		printf("\n");
 	}else{
-		printf("No se pudieron recuperar los datos del archivo:%s\n",pathDelArchivo);
+		printf("No se pudieron recuperar los datos del archivo:%s\n",pathCompletoDelArchivo);
 		return EXIT_FAILURE;
 		}
 	//unsigned char digest[16];
@@ -515,7 +531,8 @@ int generarMD5(char* pathDelArchivo){
 	MDPrint (digest);
 	printf("\n");
 	free(digest);
-	free(datosObtenidos.datos);
+	free(pathCompletoDelArchivo);
+	//free(datosObtenidos.datos); no hace falta ya q content apunta a lo mismo
 	return EXIT_SUCCESS;
 }
 
@@ -538,8 +555,23 @@ int mostrarBloque(int numeroDeBloque){
 	return EXIT_SUCCESS;
 }
 
-int funcionDeConsolacat(char* path){
+int funcionDeConsolacat(char* nombreDelArchivo){
+	/*Adapte esto xq puedo estar parado en el directorio asd/
+	 * y desde ahi poner "cat hola.txt", para leer la ubicacion
+	 * asd/hola.txt
+	 */
 	pthread_mutex_lock(&mutexUsoDelCanalDeComunicacionDelDMA);
+	char*path=string_new();
+	int i;
+	char** pathPartido = string_split(directorioActual, "/");
+	for(i=0;(pathPartido[i]!=NULL)&&(strcmp(pathPartido[i], "Archivos")!=0);i++);
+	for(i++;(pathPartido[i]!=NULL);i++){
+		string_append(&path,pathPartido[i]);
+		string_append(&path,"/");
+		}
+	string_append(&path,nombreDelArchivo);
+	log_info(LOGGER,"Archivo:%s \nPath completo del archivo:%s \nDirectorio actual:%s",
+			nombreDelArchivo,path,directorioActual);
 	printf("Mostrando el contenido del archivo %s por pantalla\n",path);
 	int longitudDelArchivo=obtenerLongigutDelArchivo(path);
 	t_datosObtenidos datosObtenidos = obtenerDatos(path,0,longitudDelArchivo);
@@ -551,6 +583,7 @@ int funcionDeConsolacat(char* path){
 	}else{
 		printf("No se pudieron recuperar los datos del archivo:%s\n",path);
 		}
+	free(path);
 	free(datosObtenidos.datos);
 	return EXIT_SUCCESS;
 }
@@ -563,10 +596,10 @@ int funcionDeConsolacd(char* path){
 	string_append(&copiaDelDirectorioActual,directorioActual);
 	int i;
 	for(i=0;pathPartido[i]!=NULL;i++){
-		if(strcmp(path, "..")==0){
+		if((strcmp(path, "..")==0)||(strcmp(pathPartido[i], "..")==0)){
 			volverUnaCarpetaParaAtras();
 		}else{
-			if(strcmp(path, ".")==0){
+			if((strcmp(path, ".")==0)||(strcmp(pathPartido[i], ".")==0)){
 				//nada
 			}else{
 				agregarCarpetaAlDirectorioActual(pathPartido[i]);
@@ -591,24 +624,35 @@ int funcionDeConsolacd(char* path){
 }
 
 void volverUnaCarpetaParaAtras(){
+	int i;
 	log_info(LOGGER,"Volviendo una carpeta para atras");
 	char** pathPartido = string_split(directorioActual, "/");
 	free(directorioActual);
 	directorioActual=string_new();
-	for(int i=0;pathPartido[i+1]!=NULL;i++){
+	for(i=0;(pathPartido[i]!=NULL)&&(strcmp(pathPartido[i],"Archivos")!=0);i++){
 		string_append(&directorioActual,pathPartido[i]);
-		if(pathPartido[i+2]!=NULL){
-			string_append(&directorioActual,"/");
-			}
-		//ver q pasa con el primero
+		string_append(&directorioActual,"/");
 		}
-	//free(directorioActual);
+	if((pathPartido[i]!=NULL)&&(strcmp(pathPartido[i],"Archivos")==0)){
+		string_append(&directorioActual,pathPartido[i]);
+		string_append(&directorioActual,"/");
+		i++;
+		for(;(pathPartido[i]!=NULL)&&(pathPartido[i+1]!=NULL);i++){
+			log_info(LOGGER,"dir actual %s",directorioActual);
+			string_append(&directorioActual,pathPartido[i]);
+			//if(pathPartido[i+2]!=NULL){
+				string_append(&directorioActual,"/");
+			//	}
+			//ver q pasa con el primero
+			}
+		}
+	log_info(LOGGER,"Volviendo una carpeta para atras, dir: %s",directorioActual);
 	}
 
 void agregarCarpetaAlDirectorioActual(char* carpeta){
 	log_info(LOGGER,"Agregando la capeta %s al directorio actual",carpeta);
-	string_append(&directorioActual,"/");
 	string_append(&directorioActual,carpeta);
+	string_append(&directorioActual,"/");
 }
 
 int listarDirectorio(char* directorio){
