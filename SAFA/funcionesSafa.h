@@ -30,6 +30,7 @@ int iniciarConsola();
 void *funcionHiloConsola(void *arg);
 char** parser_instruccion(char* linea);
 tp_DTB crear_DTB(char* path);
+tp_DTB crear_DTB_Dummy();
 int inicializarListas();
 int iniciarPCP();
 int iniciarPLP();

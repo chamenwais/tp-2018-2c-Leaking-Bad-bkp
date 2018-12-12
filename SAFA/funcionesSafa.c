@@ -207,7 +207,7 @@ int liberarMemoria(){
 	 		 log_info(LOG_SAFA, "Se aborto el DTB %i", id_DTB->id_GDT);
 	 	 break;
 	 	 case RetenerRecurso:
-	 		 log_info(LOG_SAFA, "");
+	 		 log_info(LOG_SAFA, "CPU pide el recurso %s");
 	 	 break;
 	 }
 	 }
@@ -368,8 +368,21 @@ tp_DTB crear_DTB(char* path){
 	id++;
 	new_DTB->escriptorio = malloc(strlen(path)+1);
 	strcpy(new_DTB->escriptorio, path);
-	new_DTB->iniGDT = 0;// TODO solo uno tiene q enviarse con cero?
+	new_DTB->iniGDT = 1;// TODO solo uno tiene q enviarse con cero?
 	new_DTB->program_counter = 1;
+	new_DTB->tabla_dir_archivos = list_create();
+	new_DTB->quantum = configSAFA.quantum;
+	return new_DTB;
+}
+
+tp_DTB crear_DTB_Dummy(){
+	tp_DTB new_DTB = calloc(1,sizeof(t_DTB));
+	log_info(LOG_SAFA, "Creando DTB Dummy");
+	new_DTB->id_GDT = 0;
+	log_info(LOG_SAFA, "DTB Dummy creado");
+	new_DTB->escriptorio = "";
+	new_DTB->iniGDT = 0;// TODO solo uno tiene q enviarse con cero?
+	new_DTB->program_counter = 0;
 	new_DTB->tabla_dir_archivos = list_create();
 	new_DTB->quantum = configSAFA.quantum;
 	return new_DTB;
@@ -410,6 +423,7 @@ void *funcionHiloPLP(void *arg){
 
 int planificar_PLP(){
 	tp_DTB idDTB;
+	while(safa_conectado){
 	//lockearListas();
 	log_info(LOG_SAFA,"PLP en accion");
 	if(list_size(nuevos)>0){
@@ -418,6 +432,7 @@ int planificar_PLP(){
 		log_info(LOG_SAFA,"DTB listo para planificar %d",idDTB);
 		}
 	//deslockearListas();
+	}
 	return EXIT_SUCCESS;
 }
 
