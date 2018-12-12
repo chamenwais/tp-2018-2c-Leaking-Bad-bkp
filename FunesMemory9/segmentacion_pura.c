@@ -193,8 +193,8 @@ int separar_en_lineas(t_archivo_cargandose * archivo_cargado, char** archivo_sep
 			*archivo_separado_en_lineas=realloc(*archivo_separado_en_lineas,TAMANIO_MAX_LINEA);
 		}
 		string_append(archivo_separado_en_lineas,lineas[cant_lineas]);
-		//Le tengo que agregar nuevamente el  porque el split se lo quita
-		string_append(archivo_separado_en_lineas,"");
+		//Le tengo que agregar nuevamente el \n porque el split se lo quita
+		string_append(archivo_separado_en_lineas,"\n");
 		//Le sumo uno por el  que tenia originalmente
 		int tamanio_linea_separada = string_length(lineas[cant_lineas])+1;
 		if (tamanio_linea_separada < TAMANIO_MAX_LINEA) {
@@ -233,13 +233,18 @@ void eliminar_lista_de_entradas(void * tabla_segmentos){
 	list_destroy((*(t_tabla_segmentos*)tabla_segmentos).entradas);
 }
 
+t_tabla_segmentos* buscar_tabla_de_segmentos(int pid) {
+	return (t_tabla_segmentos*) list_filter_comparing(tablas_de_segmentos,
+			&tiene_tabla_de_segmentos, pid);
+}
+
 void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id){
 	if(id == NULL){
 		logger_funesMemory9(escribir_loguear, l_error,"Falta el ID del DTB, proba de nuevo\n");
 	}else{
 		t_entrada_tabla_segmentos * entrada_segmento;
 		if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,id)){
-			t_tabla_segmentos * tabla_segmentos = (t_tabla_segmentos *)list_filter_comparing(tablas_de_segmentos, &tiene_tabla_de_segmentos,id);
+			t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(id);
 
 			int cant_entradas = list_size(tabla_segmentos->entradas);
 			logger_funesMemory9(escribir_loguear, l_info, "Utilizando el esquema de segmentacion pura y dado el ID del DTB indicado, el proceso tiene una tabla de "
@@ -367,8 +372,14 @@ void devolver_trozo_con_tamanio_transfersize(tp_obtenerArchivo pedido_obtencion,
 			, DAM_fd);
 	free(trozo_archivo);
 	free(pedido_obtencion->path);
-		logger_funesMemory9(escribir_loguear, l_info, "Se devolvio un pedazo del archivo %s de transfer size %d bytes\n",
+	logger_funesMemory9(escribir_loguear, l_info, "Se devolvio un pedazo del archivo %s de transfer size %d bytes\n",
 				pedido_obtencion->path, transfer_size);
+}
+
+void informar_archivo_no_abierto(int DAM_fd) {
+	enviarCabecera(DAM_fd, ElArchivoNoExiste, sizeof(ElArchivoNoExiste));
+	logger_funesMemory9(escribir_loguear, l_warning,
+			"Se informa a Safa que el archivo no se encuentra abierto\n");
 }
 
 void obtener_parte_archivo_con_segmentacion(int DAM_fd){
@@ -379,13 +390,31 @@ void obtener_parte_archivo_con_segmentacion(int DAM_fd){
 		info_archivo_devolviendose=filtrar_info_archivo_devolviendose(pedido_obtencion->pid);
 		if(trozo_faltante_es_menor_que_transfersize(info_archivo_devolviendose, pedido_obtencion->size)){
 			devolver_trozo_faltante_archivo(pedido_obtencion, DAM_fd, info_archivo_devolviendose);
+			//elimina elemento de lista de archivos devolviendose
+			borrar_info_archivo_devolviendose(pedido_obtencion->pid);
 			return;
 		} else {
 			devolver_trozo_con_tamanio_transfersize(pedido_obtencion, DAM_fd, info_archivo_devolviendose);
 			return;
 		}
 	} else if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,pedido_obtencion->pid)){
-		//TODO Obtener tabla de segmentos y seguir
+		//Obtiene tabla de segmentos
+		t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(pedido_obtencion->pid);
+		t_entrada_tabla_segmentos* segmento;
+		if(list_get(tabla_segmentos->entradas, pedido_obtencion->memory_address)!=NULL){
+			segmento=(t_entrada_tabla_segmentos*)
+					list_get(tabla_segmentos->entradas, pedido_obtencion->memory_address);
+			if(string_equals_ignore_case(segmento->archivo,pedido_obtencion->path)){
+				//TODO devolver datos y crear elemento en archivos devolviendose
+			}
+			bool es_el_segmento_buscado(void * segmento){
+				return (*(t_entrada_tabla_segmentos*)segmento).archivo==pedido_obtencion->path;
+			}
+			if(list_any_satisfy(tabla_segmentos->entradas,&es_el_segmento_buscado)){
+				//TODO obtener segmento, devolver datos y crear elemento en archivos devolviendose
+			}
+		}
 	}
-	//TODO informar archivo no abierto y seguir
+	//informa archivo no abierto
+	informar_archivo_no_abierto(DAM_fd);
 }
