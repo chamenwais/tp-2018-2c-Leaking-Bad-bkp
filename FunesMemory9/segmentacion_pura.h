@@ -65,5 +65,7 @@ void devolver_trozo_faltante_archivo(tp_obtenerArchivo pedido_obtencion, int DAM
 		t_archivo_devolviendose* info_archivo_devolviendose);
 void devolver_trozo_con_tamanio_transfersize(tp_obtenerArchivo pedido_obtencion,
 		int DAM_fd, t_archivo_devolviendose* info_archivo_devolviendose);
+void informar_archivo_no_abierto(int DAM_fd);
+t_tabla_segmentos* buscar_tabla_de_segmentos(int pid);
 
 #endif /* SEGMENTACION_PURA_H_ */
