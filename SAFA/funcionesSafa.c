@@ -106,6 +106,7 @@ int inicializarListas(){
 	cpu_libres = list_create();
 	cpu_ejecutando = list_create();
 	dtbConEqGrandeAbierto = list_create();
+	tabla_recursos = list_create();
 	return EXIT_SUCCESS;
 }
 
@@ -128,6 +129,7 @@ int liberarMemoria(){
  void *funcionHiloComDMA(void *arg){//TODO:
 		//Trabajar con el Diegote eeeehhhhhh
 	DAM_conectado = true;
+	while(DAM_conectado){
 	log_info(LOG_SAFA,"Espero cabecera del DMA");
 	t_cabecera cabecera = recibirCabecera(fd_DMA);
 	tp_datosEnMemoria datos_recibidos;
@@ -143,6 +145,7 @@ int liberarMemoria(){
 			datos_recibidos = prot_recibir_DMA_SAFA_datosEnMemoria(fd_DMA);
 			//ver que es lo que me manda DAM
 			break;
+	}
 	}
 	resultadoComElDiego=EXIT_SUCCESS;
 	return resultadoComElDiego;
@@ -177,20 +180,36 @@ int liberarMemoria(){
 	 if((list_size(cpu_libres)==1)&&(list_size(cpu_ejecutando)==0)){
 	 pasarSafaOperativo();
 	 }
+	 while(safa_conectado){
 	 log_info(LOG_SAFA,"Espero cabecera de la CPU");
 	 t_cabecera cabecera = recibirCabecera(sockCPU);
 	 tp_DTB id_DTB; //tengo que hacer malloc? TODO
-	 //TODO: CPU me manda el DTB a bloquear, tengo q crear la variable INT? CHAR?
+	 int idGDT;
 	 switch (cabecera.tipoDeMensaje){
 	 	 case BloquearDTB:
-	 		 log_info(LOG_SAFA, "CPU me pide bloquear el DTB %i");
+	 		 idGDT = prot_recibir_CPU_SAFA_bloquear_DTB(sockCPU);
+	 		 log_info(LOG_SAFA, "CPU me pide bloquear el DTB %i", idGDT);
 	 		 bool coincideID(void* node) {
-	 		 return ((((tp_DTB) node)->id_GDT)==id_DTB->id_GDT);
+	 		 return ((((tp_DTB) node)->id_GDT)==idGDT);
 	 		 }
 	 		 id_DTB=list_remove_by_condition(ejecutando, coincideID);
 	 		 list_add(bloqueados, id_DTB);
 	 		 log_info(LOG_SAFA, "Se bloqueo el DTB %i", id_DTB->id_GDT);
 	 	 break;
+	 	 case AbortarDTB:
+	 		 idGDT = prot_recibir_CPU_SAFA_abortar_DTB(sockCPU);
+	 		 log_info(LOG_SAFA, "CPU me pide abortar el DTB %i", idGDT);
+	 		 bool coincideID_Abortar(void* node){
+	 		 return((((tp_DTB) node)->id_GDT)==idGDT);
+	 		 }
+	 		 id_DTB=list_remove_by_condition(ejecutando, coincideID_Abortar);
+	 		 list_add(terminados, id_DTB);
+	 		 log_info(LOG_SAFA, "Se aborto el DTB %i", id_DTB->id_GDT);
+	 	 break;
+	 	 case RetenerRecurso:
+	 		 log_info(LOG_SAFA, "");
+	 	 break;
+	 }
 	 }
 	return EXIT_SUCCESS;
 }
@@ -347,9 +366,10 @@ tp_DTB crear_DTB(char* path){
 	new_DTB->id_GDT = id;
 	log_info(LOG_SAFA, "DTB %i creado", id);
 	id++;
+	new_DTB->escriptorio = malloc(strlen(path)+1);
 	strcpy(new_DTB->escriptorio, path);
 	new_DTB->iniGDT = 0;// TODO solo uno tiene q enviarse con cero?
-	new_DTB->program_counter = 0;
+	new_DTB->program_counter = 1;
 	new_DTB->tabla_dir_archivos = list_create();
 	new_DTB->quantum = configSAFA.quantum;
 	return new_DTB;
@@ -423,7 +443,7 @@ void* funcionHiloPlanif(void *arg){
 		pthread_mutex_lock(&mutexDePausaDePlanificacion);
 
 		//log_info(LOGGER,"Planifico");
-		if(safa_conectado)
+		//if(safa_conectado)
 			planificar();
 
 		//log_info(LOGGER,"Deslockeando semaforo de pausa de planificacion");
@@ -435,11 +455,12 @@ void* funcionHiloPlanif(void *arg){
 }
 
 int planificar(){
-	tp_DTB DTB;
-	int idDTB;
-	//lockearListas();
+
 	log_info(LOG_SAFA,"Vamo a planificarno");
 	if(list_size(listos)>0 && list_size(ejecutando) < configSAFA.grado_multiprogramacion){
+		tp_DTB DTB;
+		int idDTB;
+		//lockearListas();
 		idDTB=proximoDTBAPlanificar();
 		log_info(LOG_SAFA,"Proximo DTB a planificar %d",idDTB);
 		DTB = buscarDTBPorId(idDTB);
@@ -447,7 +468,9 @@ int planificar(){
 		int proxCPUaUsar = list_remove(cpu_libres, 0);
 		list_add(cpu_ejecutando, proxCPUaUsar);
 		prot_enviar_SAFA_CPU_DTB(DTB->id_GDT, DTB->program_counter, DTB->iniGDT, DTB->escriptorio, DTB->tabla_dir_archivos, DTB->quantum, proxCPUaUsar);
-
+		log_info(LOG_SAFA, "Se envio el DTB %i a la CPU %i", DTB->id_GDT, proxCPUaUsar);
+		list_remove(listos, 0);
+		list_add(ejecutando, DTB);
 
 	}
 	//deslockearListas();

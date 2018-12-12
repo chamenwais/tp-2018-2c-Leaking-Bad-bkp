@@ -29,6 +29,11 @@ typedef struct defConfiguracionSAFA {
 	int quantum;
 } t_DTB;*/
 
+typedef struct recurso{
+	char* nombre;
+	int valor;
+}t_recurso;
+
 enum ESTADO {
 	CORRUPTO,
 	OPERATIVO
@@ -54,6 +59,8 @@ extern t_list* auxVirtualRR;
 extern t_list* cpu_libres;
 extern t_list* cpu_ejecutando;
 extern t_list* dtbConEqGrandeAbierto;
+extern t_list* tabla_recursos;
+extern t_list* lista_espera_recursos;
 extern pthread_mutex_t mutexDePausaDePlanificacion;
 extern bool DAM_conectado;
 

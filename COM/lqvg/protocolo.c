@@ -322,8 +322,20 @@ void prot_enviar_CPU_SAFA_abortar_DTB(int id_GDT, int sock){
 	enviar(sock,&id_GDT,sizeof(id_GDT));
 }
 
+int prot_recibir_CPU_SAFA_abortar_DTB(int sock){
+	int idGDT;
+	recibir(sock, &idGDT, sizeof(int));
+	return idGDT;
+}
+
 void prot_enviar_CPU_SAFA_bloquear_DTB(int id_GDT, int sock){
 	enviar(sock,&id_GDT,sizeof(id_GDT));
+}
+
+int prot_recibir_CPU_SAFA_bloquear_DTB(int sock){
+	int idGDT;
+	recibir(sock, &idGDT, sizeof(int));
+	return idGDT;
 }
 
 tp_obtenerArchivo prot_recibir_DMA_FM9_obtenerArchivo(int sock){

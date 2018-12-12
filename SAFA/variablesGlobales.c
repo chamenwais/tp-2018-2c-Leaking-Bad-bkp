@@ -27,6 +27,8 @@ t_list* auxVirtualRR;
 t_list* cpu_ejecutando;
 t_list* cpu_libres;
 t_list* dtbConEqGrandeAbierto;
+t_list* tabla_recursos;
+t_list* lista_espera_recursos;
 pthread_mutex_t mutexDePausaDePlanificacion;
 bool DAM_conectado;
 
