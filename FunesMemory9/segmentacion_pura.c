@@ -106,6 +106,7 @@ t_archivo_cargandose * cargar_buffer_archivo(tp_cargarEnMemoria parte_archivo) {
 				tamanio_archivo_cargandose+tamanio_parte_archivo);
 	} else {
 		//El pedazo de archivo es nuevo, hay que crear el structure del mismo.
+		archivo_de_proceso_cargandose=malloc(sizeof(t_archivo_cargandose));
 		archivo_de_proceso_cargandose->pid = parte_archivo->pid;
 		archivo_de_proceso_cargandose->recibido_actualmente=0;
 		archivo_de_proceso_cargandose->buffer_archivo=malloc(tamanio_parte_archivo);
@@ -355,6 +356,7 @@ void devolver_trozo_faltante_archivo(tp_obtenerArchivo pedido_obtencion,
 	free(trozo_archivo);
 	free(info_archivo_devolviendose->buffer_en_memoria);
 	free(pedido_obtencion->path);
+	free(info_archivo_devolviendose);
 	logger_funesMemory9(escribir_loguear, l_info, "Se devolvio el ultimo pedazo del archivo %s de %d bytes\n",
 			pedido_obtencion->path, tamanio_trozo_faltante);
 }
@@ -382,6 +384,23 @@ void informar_archivo_no_abierto(int DAM_fd) {
 			"Se informa a Safa que el archivo no se encuentra abierto\n");
 }
 
+t_archivo_devolviendose* crear_elemento_en_archivos_devolviendose(t_entrada_tabla_segmentos* segmento_archivo, int pid){
+	t_archivo_devolviendose* nueva_devolucion=malloc(sizeof(t_archivo_devolviendose));
+	int lineas_archivo=segmento_archivo->limite;
+	int bytes_brutos=lineas_archivo*TAMANIO_MAX_LINEA;
+	nueva_devolucion->buffer_en_memoria=malloc(bytes_brutos+1);
+	memcpy(nueva_devolucion->buffer_en_memoria, MEMORIA_FISICA+(segmento_archivo->base*TAMANIO_MAX_LINEA)
+			, bytes_brutos);
+	nueva_devolucion->buffer_en_memoria[bytes_brutos]='\0';
+	//Quitamos el relleno para finalizar la linea
+	remover_caracter(nueva_devolucion->buffer_en_memoria, '$');
+	nueva_devolucion->tamanio_archivo_en_memoria=string_length(nueva_devolucion->buffer_en_memoria);
+	//inicializa cantidad de bytes copiados en cero
+	nueva_devolucion->bytes_transferidos=0;
+	nueva_devolucion->pid=pid;
+	return nueva_devolucion;
+}
+
 void obtener_parte_archivo_con_segmentacion(int DAM_fd){
 	tp_obtenerArchivo pedido_obtencion=prot_recibir_DMA_FM9_obtenerArchivo(DAM_fd);
 	t_archivo_devolviendose* info_archivo_devolviendose;
@@ -401,17 +420,24 @@ void obtener_parte_archivo_con_segmentacion(int DAM_fd){
 		//Obtiene tabla de segmentos
 		t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(pedido_obtencion->pid);
 		t_entrada_tabla_segmentos* segmento;
-		if(list_get(tabla_segmentos->entradas, pedido_obtencion->memory_address)!=NULL){
+		t_list* segmentos = tabla_segmentos->entradas;
+		if (list_get(segmentos, pedido_obtencion->memory_address) != NULL) {
 			segmento=(t_entrada_tabla_segmentos*)
-					list_get(tabla_segmentos->entradas, pedido_obtencion->memory_address);
+					list_get(segmentos, pedido_obtencion->memory_address);
+			t_archivo_devolviendose* nuevo_archivo_devolviendose;
 			if(string_equals_ignore_case(segmento->archivo,pedido_obtencion->path)){
-				//TODO devolver datos y crear elemento en archivos devolviendose
+				//crea elemento en archivos devolviendose
+				nuevo_archivo_devolviendose=crear_elemento_en_archivos_devolviendose(segmento, pedido_obtencion->pid);
+				devolver_trozo_con_tamanio_transfersize(pedido_obtencion, DAM_fd, nuevo_archivo_devolviendose);
 			}
 			bool es_el_segmento_buscado(void * segmento){
-				return (*(t_entrada_tabla_segmentos*)segmento).archivo==pedido_obtencion->path;
+				return string_equals_ignore_case((*(t_entrada_tabla_segmentos*)segmento).archivo,pedido_obtencion->path);
 			}
-			if(list_any_satisfy(tabla_segmentos->entradas,&es_el_segmento_buscado)){
-				//TODO obtener segmento, devolver datos y crear elemento en archivos devolviendose
+			if(list_any_satisfy(segmentos,&es_el_segmento_buscado)){
+				segmento=(t_entrada_tabla_segmentos*)
+						list_get(list_filter(segmentos, &es_el_segmento_buscado),0);
+				nuevo_archivo_devolviendose=crear_elemento_en_archivos_devolviendose(segmento, pedido_obtencion->pid);
+				devolver_trozo_con_tamanio_transfersize(pedido_obtencion, DAM_fd, nuevo_archivo_devolviendose);
 			}
 		}
 	}
