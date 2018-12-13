@@ -93,6 +93,11 @@ int inicializarSemaforosSAFA(){
 		log_error(LOG_SAFA,"No se pudo inicializar el semaforo de planificacion");
 		exit(1);
 	}
+	if (pthread_mutex_init(&mutexDePausaPCP, NULL) != 0) {
+			/*Para pausar la planificacion*/
+		log_error(LOG_SAFA,"No se pudo inicializar el semaforo de planificacion");
+		exit(1);
+	}
 	return EXIT_SUCCESS;
  }
 
@@ -122,6 +127,7 @@ int liberarMemoria(){
 	list_destroy_and_destroy_elements(cpu_libres, free);
 	list_destroy_and_destroy_elements(cpu_ejecutando, free);
 	list_destroy_and_destroy_elements(dtbConEqGrandeAbierto, free);
+	list_destroy_and_destroy_elements(tabla_recursos, free);
 
 	log_info(LOG_SAFA, "Habemus memoria liberada");
 	return EXIT_SUCCESS;
@@ -199,6 +205,7 @@ int liberarMemoria(){
 	 			 log_info(LOG_SAFA, "el DTB Dummy se bloquea, pasa flag a 1");
 	 			 id_DTB->iniGDT = 1;
 	 			 --hayDummy;
+	 			pthread_mutex_unlock(&mutexDePausaDePlanificacion);//ahora puedo aceptar otro dummy
 	 		 }
 	 		 list_add(bloqueados, id_DTB);
 	 		 log_info(LOG_SAFA, "Se bloqueo el DTB %i", id_DTB->id_GDT);
@@ -392,11 +399,12 @@ void *funcionHiloConsola(void *arg){
 			 * (cualquier otro DTB lo tendrá en 1). */
 			if(estadoSAFA==CORRUPTO){
 				log_error(LOG_SAFA, "SAFA se encuentra en estado Corrupto, no se puede continuar");
-				//TODO ver que hacer en este caso
+
 			}else if(instruccion[1]!=NULL){
 					printf("Creando DTB para escriptorio: %s/n", instruccion[1]);
-					tp_DTB nuevo_DTB = crear_DTB(instruccion[1]);//se crea con 0 porque inicia Dummy
+					tp_DTB nuevo_DTB = crear_DTB(instruccion[1]);//se crea con 1. el PLP lo pasa a 0 cuando es dummy
 					list_add(nuevos, nuevo_DTB);//agregar DTB a cola de NEW
+					pthread_mutex_unlock(&mutexDePausaDePlanificacion);//habilito PLP
 					log_info(LOG_SAFA, "Se agrega el nuevo DTB a la lista de Nuevos");
 					}else{
 					printf("Falta el path del escriptorio, pediselo a Donofrio y reintenta/n");
@@ -474,10 +482,10 @@ void *funcionHiloPLP(void *arg){
 
 	while(safa_conectado){
 		//log_info(LOGGER,"Lockeando semaforo de pausa de planificacion");
-		//pthread_mutex_lock(&mutexDePausaDePlanificacion);
+		pthread_mutex_lock(&mutexDePausaDePlanificacion);
 
-		//log_info(LOGGER,"Planifico");
-		if(safa_conectado && (list_size(nuevos) + list_size(ejecutando) + list_size (bloqueados) - hayDummy)<configSAFA.grado_multiprogramacion){
+		log_info(LOG_SAFA,"Corre PLP");
+		if((list_size(nuevos) + list_size(ejecutando) + list_size (bloqueados) - hayDummy)<configSAFA.grado_multiprogramacion){
 			planificar_PLP();
 		}
 		//log_info(LOGGER,"Deslockeando semaforo de pausa de planificacion");
@@ -497,6 +505,7 @@ int planificar_PLP(){
 		idDTB->iniGDT = 0; //lo desbloqueo como Dummy
 		++hayDummy;
 		list_add(listos, idDTB);
+		pthread_mutex_unlock(&mutexDePausaPCP);
 		log_info(LOG_SAFA,"DTB listo para planificar %d",idDTB);
 		}else{
 			log_error(LOG_SAFA, "AWANTIIIAAAA, EMOCIONADO: Ya existe un DTB Dummy");
@@ -524,14 +533,14 @@ void* funcionHiloPlanif(void *arg){
 
 	while(safa_conectado){
 		//log_info(LOGGER,"Lockeando semaforo de pausa de planificacion");
-		//pthread_mutex_lock(&mutexDePausaDePlanificacion);
+		pthread_mutex_lock(&mutexDePausaPCP);
 
 		//log_info(LOGGER,"Planifico");
 		//if(safa_conectado)
 			planificar();
 
 		//log_info(LOGGER,"Deslockeando semaforo de pausa de planificacion");
-		//pthread_mutex_unlock(&mutexDePausaDePlanificacion);
+		pthread_mutex_unlock(&mutexDePausaPCP);
 		}
 
 	pthread_exit(ret);
@@ -562,10 +571,8 @@ int planificar(){
 }
 
 int proximoDTBAPlanificar(){
-	int idDTBAPlanificar = -1;
-	if(list_size(ejecutando) < configSAFA.grado_multiprogramacion){
-		log_info(LOG_SAFA,"No hay DTBs ejecutando");
-		if(list_size(listos)>0){
+	int idDTBAPlanificar = 0;
+	if(list_size(listos) < configSAFA.grado_multiprogramacion){
 			log_info(LOG_SAFA,"Hay mas procesos para ejecutar");
 			if(string_equals_ignore_case(configSAFA.algoritmo_planif, "RR")){
 				log_info(LOG_SAFA, "El algoritmo de planif es ROUND ROBIN");
@@ -581,7 +588,7 @@ int proximoDTBAPlanificar(){
 						}
 		log_info(LOG_SAFA,"Proximo DTB a planififcar: %d ",idDTBAPlanificar);
 		return idDTBAPlanificar;
-		}
+
 	}
 	log_info(LOG_SAFA, "No hay mas DTB para ser ejecutados");
 	return idDTBAPlanificar;

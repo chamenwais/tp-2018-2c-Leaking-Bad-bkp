@@ -31,5 +31,6 @@ t_list* dtbConEqGrandeAbierto;
 t_list* tabla_recursos;
 t_list* lista_espera_recursos;
 pthread_mutex_t mutexDePausaDePlanificacion;
+pthread_mutex_t mutexDePausaPCP;
 bool DAM_conectado;
 

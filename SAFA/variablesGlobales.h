@@ -66,6 +66,7 @@ extern t_list* dtbConEqGrandeAbierto;
 extern t_list* tabla_recursos;
 extern t_list* lista_espera_recursos;
 extern pthread_mutex_t mutexDePausaDePlanificacion;
+extern pthread_mutex_t mutexDePausaPCP;
 extern bool DAM_conectado;
 
 
