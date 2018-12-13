@@ -237,7 +237,15 @@ int liberarMemoria(){
 	 				 rec->valor = rec->valor - 1;
 	 				 list_add(tabla_recursos, rec);
 	 			 }
-	 			 //Me falta si el recurso no esta asignado
+	 		 }else{
+	 			 log_info(LOG_SAFA, "El Recurso %s no existe, paso a crearlo", recurso->recurso);
+	 			 tp_recurso recurso_creado = calloc(1, sizeof(t_recurso));
+	 			 strcpy(recurso_creado->nombre, recurso->recurso);
+	 			 recurso_creado->valor = 1;
+	 			 list_add(tabla_recursos, recurso_creado);
+	 			 log_info(LOG_SAFA, "Se agrego el recurso %s a la tabla", recurso_creado->nombre);
+	 			 enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoAfirmativa, sizeof(RespuestaASolicitudDeRecursoAfirmativa));
+	 			 log_info(LOG_SAFA, "Recurso %s asignado a la CPU", recurso_creado->nombre);
 	 		 }
 	 	 break;
 	 }
