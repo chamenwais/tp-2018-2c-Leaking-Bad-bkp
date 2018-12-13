@@ -30,5 +30,6 @@ void borrar_info_archivo_cargandose(int pid);
 bool el_proceso_tiene_archivo_devolviendose(void * archivo_devolviendose, int pid);
 void (*destruir_estructuras_esquema[3])();
 void borrar_info_archivo_devolviendose(int pid);
+void remover_caracter(char * string_afectado, char caracter);
 
 #endif /* UTILIDADES_FM9_H_ */

@@ -237,9 +237,14 @@ void obtener_archivo_en_curso_de_carga(tp_cargarEnMemoria parte_archivo,
 }
 
 void borrar_info_archivo_cargandose(int pid){
+	t_archivo_cargandose * info_archivo_cargandose =
+			(t_archivo_cargandose*) list_remove_by_condition_comparing(
+					archivos_cargandose, &el_proceso_tiene_archivo_cargandose,
+					pid);
 	logger_funesMemory9(escribir_loguear, l_trace,"Se borra el elemento del archivo cargandose del proceso %d\n"
-			,(*(t_archivo_cargandose*)list_remove_by_condition_comparing(archivos_cargandose,
-					&el_proceso_tiene_archivo_cargandose, pid)).pid);
+			,
+			info_archivo_cargandose->pid);
+	free(info_archivo_cargandose);
 }
 
 void borrar_info_archivo_devolviendose(int pid){
@@ -256,4 +261,13 @@ void informar_espacio_insuficiente(int DAM_fd) {
 
 bool el_proceso_tiene_archivo_devolviendose(void * archivo_devolviendose, int pid){
 	return (*(t_archivo_devolviendose*)archivo_devolviendose).pid==pid;
+}
+
+void remover_caracter(char * string_afectado, char caracter){
+	char *src, *dst;
+	for (src = dst = string_afectado; *src != '\0'; src++) {
+		*dst = *src;
+		if (*dst != caracter) dst++;
+	}
+	*dst = '\0';
 }
