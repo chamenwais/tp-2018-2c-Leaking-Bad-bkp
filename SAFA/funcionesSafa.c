@@ -72,6 +72,7 @@ int inicializarVariablesSAFA(){
 	safa_conectado = true;
 	id = 1;
 	DAM_conectado = false;
+	hayDummy = 0;
 	return EXIT_SUCCESS;
 }
 
@@ -193,6 +194,11 @@ int liberarMemoria(){
 	 		 return ((((tp_DTB) node)->id_GDT)==idGDT);
 	 		 }
 	 		 id_DTB=list_remove_by_condition(ejecutando, coincideID);
+	 		 if(id_DTB->iniGDT == 0){//se cambia el flag del dummy al bloquearlo
+	 			 log_info(LOG_SAFA, "el DTB Dummy se bloquea, pasa flag a 1");
+	 			 id_DTB->iniGDT = 1;
+	 			 --hayDummy;
+	 		 }
 	 		 list_add(bloqueados, id_DTB);
 	 		 log_info(LOG_SAFA, "Se bloqueo el DTB %i", id_DTB->id_GDT);
 	 	 break;
@@ -316,7 +322,7 @@ void *funcionHiloConsola(void *arg){
 				//TODO ver que hacer en este caso
 			}else if(instruccion[1]!=NULL){
 					printf("Creando DTB para escriptorio: %s/n", instruccion[1]);
-					tp_DTB nuevo_DTB = crear_DTB(instruccion[1]);
+					tp_DTB nuevo_DTB = crear_DTB(instruccion[1]);//se crea con 0 porque inicia Dummy
 					list_add(nuevos, nuevo_DTB);//agregar DTB a cola de NEW
 					log_info(LOG_SAFA, "Se agrega el nuevo DTB a la lista de Nuevos");
 					}else{
@@ -368,25 +374,13 @@ tp_DTB crear_DTB(char* path){
 	id++;
 	new_DTB->escriptorio = malloc(strlen(path)+1);
 	strcpy(new_DTB->escriptorio, path);
-	new_DTB->iniGDT = 1;// TODO solo uno tiene q enviarse con cero?
+	new_DTB->iniGDT = 1;
 	new_DTB->program_counter = 1;
 	new_DTB->tabla_dir_archivos = list_create();
 	new_DTB->quantum = configSAFA.quantum;
 	return new_DTB;
 }
 
-tp_DTB crear_DTB_Dummy(){
-	tp_DTB new_DTB = calloc(1,sizeof(t_DTB));
-	log_info(LOG_SAFA, "Creando DTB Dummy");
-	new_DTB->id_GDT = 0;
-	log_info(LOG_SAFA, "DTB Dummy creado");
-	new_DTB->escriptorio = "";
-	new_DTB->iniGDT = 0;// TODO solo uno tiene q enviarse con cero?
-	new_DTB->program_counter = 0;
-	new_DTB->tabla_dir_archivos = list_create();
-	new_DTB->quantum = configSAFA.quantum;
-	return new_DTB;
-}
 
 int iniciarPLP(){
 	int resultadoDeCrearHilo = pthread_create(
@@ -410,7 +404,7 @@ void *funcionHiloPLP(void *arg){
 		//pthread_mutex_lock(&mutexDePausaDePlanificacion);
 
 		//log_info(LOGGER,"Planifico");
-		if(safa_conectado && list_size(nuevos)<configSAFA.grado_multiprogramacion){
+		if(safa_conectado && (list_size(nuevos) + list_size(ejecutando) + list_size (bloqueados) - hayDummy)<configSAFA.grado_multiprogramacion){
 			planificar_PLP();
 		}
 		//log_info(LOGGER,"Deslockeando semaforo de pausa de planificacion");
@@ -423,16 +417,18 @@ void *funcionHiloPLP(void *arg){
 
 int planificar_PLP(){
 	tp_DTB idDTB;
-	while(safa_conectado){
 	//lockearListas();
 	log_info(LOG_SAFA,"PLP en accion");
-	if(list_size(nuevos)>0){
+	if(list_size(nuevos)>0 && hayDummy == 0){
 		idDTB=list_remove(nuevos, 0);
+		idDTB->iniGDT = 0; //lo desbloqueo como Dummy
+		++hayDummy;
 		list_add(listos, idDTB);
 		log_info(LOG_SAFA,"DTB listo para planificar %d",idDTB);
+		}else{
+			log_error(LOG_SAFA, "AWANTIIIAAAA, EMOCIONADO: Ya existe un DTB Dummy");
 		}
 	//deslockearListas();
-	}
 	return EXIT_SUCCESS;
 }
 
@@ -455,14 +451,14 @@ void* funcionHiloPlanif(void *arg){
 
 	while(safa_conectado){
 		//log_info(LOGGER,"Lockeando semaforo de pausa de planificacion");
-		pthread_mutex_lock(&mutexDePausaDePlanificacion);
+		//pthread_mutex_lock(&mutexDePausaDePlanificacion);
 
 		//log_info(LOGGER,"Planifico");
 		//if(safa_conectado)
 			planificar();
 
 		//log_info(LOGGER,"Deslockeando semaforo de pausa de planificacion");
-		pthread_mutex_unlock(&mutexDePausaDePlanificacion);
+		//pthread_mutex_unlock(&mutexDePausaDePlanificacion);
 		}
 
 	pthread_exit(ret);
@@ -472,7 +468,7 @@ void* funcionHiloPlanif(void *arg){
 int planificar(){
 
 	log_info(LOG_SAFA,"Vamo a planificarno");
-	if(list_size(listos)>0 && list_size(ejecutando) < configSAFA.grado_multiprogramacion){
+	if(list_size(listos)>0){
 		tp_DTB DTB;
 		int idDTB;
 		//lockearListas();

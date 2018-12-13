@@ -18,6 +18,7 @@ int fd_DMA;
 int resultadoComElDiego;
 bool safa_conectado;
 int id;
+int hayDummy;
 t_list* nuevos;
 t_list* listos;
 t_list* ejecutando;

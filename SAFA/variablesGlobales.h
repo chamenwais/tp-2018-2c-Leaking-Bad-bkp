@@ -50,6 +50,7 @@ extern int fd_DMA;
 extern int resultadoComElDiego;
 extern bool safa_conectado;
 extern int id;
+extern int hayDummy;
 extern t_list* nuevos;
 extern t_list* listos;
 extern t_list* ejecutando;
