@@ -145,6 +145,7 @@ tp_datosObtenidosDeProtocolo prot_recibir_FM9_DMA_devolverDatos(int sock);
 void prot_enviar_DMA_SAFA_finFlush(char* path, int pid, int sock);
 tp_pathPid prot_recibir_DMA_SAFA_finFlush(int sock);
 void prot_enviar_CPU_FM9_pedir_linea(char * path, int id, int pc, int sock);
+void prot_enviar_CPU_FM9_linea_pedida(char * linea, int pc, int sock);
 tp_lineaCPU prot_recibir_CPU_FM9_pedir_linea(int sock);
 void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char* escriptorio, t_list* lista, int quantum, int sock);
 tp_DTB prot_recibir_SAFA_CPU_DTB(int sock);

@@ -179,6 +179,13 @@ void prot_enviar_FM9_DMA_cargaEnMemoria(int memory_address, int sock){
 	enviar(sock,&memory_address,sizeof(memory_address));
 }
 
+void prot_enviar_CPU_FM9_linea_pedida(char * linea, int pc, int sock){
+	int linea_size = strlen(linea)+1;
+	enviar(sock,&linea_size,sizeof(linea_size));
+	enviar(sock,linea,linea_size);
+	enviar(sock,&pc,sizeof(pc));
+}
+
 tp_lineaCPU prot_recibir_CPU_FM9_pedir_linea(int sock){
 	int tam_linea;
 	tp_lineaCPU recibido = malloc(sizeof(tp_lineaCPU));

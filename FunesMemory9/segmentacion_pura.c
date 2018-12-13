@@ -121,16 +121,44 @@ t_archivo_cargandose * cargar_buffer_archivo(tp_cargarEnMemoria parte_archivo) {
 	return archivo_de_proceso_cargandose;
 }
 
-void darle_una_linea_al_cpu(int sock){
+void darle_una_linea_al_cpu_segmentacion_pura(int sock){
 
 }
 
-void asignar_datos_a_linea(int sock){
+void asignar_datos_a_linea_segmentacion_pura(int sock){
 
 }
 
-void liberar_archivo_abierto(int sock){
+bool tienen_el_mismo_nombre(void * arch1){
+	return string_equals_ignore_case(path_archivo_para_comparar, (char*)arch1);
+}
 
+bool realizar_operacion_liberar(tp_liberarArchivo paquete_liberar){
+	t_hueco* hueco;
+	t_entrada_tabla_segmentos * entrada_segmento;
+
+	if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,paquete_liberar->id_GDT)){
+		t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(paquete_liberar->id_GDT);
+		path_archivo_para_comparar = paquete_liberar->path;
+		entrada_segmento = list_find(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
+		int tamanio_archivo_en_memoria = (entrada_segmento->limite)*TAMANIO_MAX_LINEA;
+		list_remove_by_condition(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
+		actualizar_info_tabla_de_huecos(tamanio_archivo_en_memoria, hueco);
+		return true;
+	}else{
+		return false;
+	}
+}
+
+void liberar_archivo_abierto_segmentacion_pura(int sock){
+	tp_liberarArchivo paquete_liberar = prot_recibir_CPU_FM9_recibir_liberar_archivo(sock);
+	if(realizar_operacion_liberar(paquete_liberar)){
+		enviarCabecera(sock, LiberarArchivoAbiertoEjecutandose, sizeof(LiberarArchivoAbiertoEjecutandose));
+		logger_funesMemory9(escribir_loguear, l_info,"Se le aviso al CPU solicitante que se esta liberando el archivo deseado\n");
+	}else{
+		logger_funesMemory9(escribir_loguear, l_error,"40002\n");
+	}
+	free(paquete_liberar);
 }
 
 void cargar_parte_archivo_en_segmento(int DAM_fd){
@@ -213,7 +241,6 @@ int separar_en_lineas(t_archivo_cargandose * archivo_cargado, char** archivo_sep
 	free(archivo_cargado->buffer_archivo);
 	return cant_lineas;
 }
-
 
 void inicializar_lista_de_huecos() {
 	lista_de_huecos = list_create();

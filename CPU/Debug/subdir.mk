@@ -5,17 +5,17 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../CPUmain.c \
-../conexionesCPU.c \
+../contextoCPU.c \
 ../funcionesCPU.c 
 
 OBJS += \
 ./CPUmain.o \
-./conexionesCPU.o \
+./contextoCPU.o \
 ./funcionesCPU.o 
 
 C_DEPS += \
 ./CPUmain.d \
-./conexionesCPU.d \
+./contextoCPU.d \
 ./funcionesCPU.d 
 
 
