@@ -286,6 +286,7 @@ int liberarMemoria(){
 	 				//enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoAfirmativa, sizeof(RespuestaASolicitudDeRecursoAfirmativa));
 	 				log_info(LOG_SAFA, "Recurso %s asignado a la CPU", recurso_creado->nombre);
 	 		 }
+	 	break;
 
 	 }
 	 }
