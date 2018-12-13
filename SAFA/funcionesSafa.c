@@ -217,15 +217,17 @@ int liberarMemoria(){
 	 		 recurso = prot_recibir_CPU_SAFA_retener_recurso(sockCPU);
 	 		 log_info(LOG_SAFA, "CPU pide el recurso %s");
 	 		 if(recursoEstaEnTabla(recurso->recurso)){
-	 			 if(recursoEstaAsignado(recurso)){
+	 			 if(recursoEstaAsignado(recurso->recurso)){
 	 				 log_info(LOG_SAFA, "El recurso %s esta tomado", recurso->recurso);
 	 				 enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoDenegada, sizeof(RespuestaASolicitudDeRecursoDenegada));
 	 				 bool coincideIDBlq(void* node) {
-	 					 return ((((tp_DTB) node)->id_GDT)==idGDT);
+	 					 return ((((tp_DTB) node)->id_GDT)==recurso->id_GDT);
 	 				 }
 	 				 id_DTB=list_remove_by_condition(ejecutando, coincideIDBlq);
 	 				 list_add(bloqueados, id_DTB);
 	 				 log_info(LOG_SAFA, "Se bloqueo el DTB %i", id_DTB->id_GDT);
+	 				 agregarGdtAColaRecurso(recurso);
+	 				 log_info(LOG_SAFA, "Se agrego el GDT a la cola de espera");
 	 			 }else{
 	 				 log_info(LOG_SAFA, "El recurso %s esta libre", recurso->recurso);
 	 				 enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoAfirmativa, sizeof(RespuestaASolicitudDeRecursoAfirmativa));
@@ -242,12 +244,49 @@ int liberarMemoria(){
 	 			 tp_recurso recurso_creado = calloc(1, sizeof(t_recurso));
 	 			 strcpy(recurso_creado->nombre, recurso->recurso);
 	 			 recurso_creado->valor = 1;
+	 			 recurso_creado->gdts_en_espera = list_create();
 	 			 list_add(tabla_recursos, recurso_creado);
 	 			 log_info(LOG_SAFA, "Se agrego el recurso %s a la tabla", recurso_creado->nombre);
 	 			 enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoAfirmativa, sizeof(RespuestaASolicitudDeRecursoAfirmativa));
 	 			 log_info(LOG_SAFA, "Recurso %s asignado a la CPU", recurso_creado->nombre);
 	 		 }
 	 	 break;
+	 	 case LiberarRecurso:
+	 		 recurso = prot_recibir_CPU_SAFA_liberar_recurso(sockCPU);
+	 		 log_info(LOG_SAFA, "CPU pide liberar el recurso %s", recurso->recurso);
+	 		 if(recursoEstaEnTabla(recurso->recurso)){
+	 			 tp_recurso recurso_tabla;
+	 			bool coincideNombre3(void* node){
+	 				return strcmp((((tp_recurso) node)->nombre), recurso->recurso);
+	 			}
+	 			 recurso_tabla = list_remove_by_condition(tabla_recursos, coincideNombre3);
+	 			 recurso_tabla->valor = recurso_tabla->valor + 1;
+	 			 //obtengo el primer gdt que esta bloqueado
+	 			 int idGDT;
+	 			 idGDT = list_remove(recurso_tabla->gdts_en_espera, 0);
+	 			 list_add(tabla_recursos, recurso_tabla);
+	 			 log_info(LOG_SAFA, "Recurso %s liberado", recurso_tabla->nombre);
+	 			 //Desbloqueo el GDT
+	 			 tp_DTB bloqDTB;
+	 				bool coincideId(void* node) {
+	 					return ((((tp_DTB) node)->id_GDT)==idGDT);
+	 					}
+	 			 bloqDTB = list_remove_by_condition(bloqueados, coincideId);
+	 			 list_add(listos, bloqDTB);
+	 			 log_info(LOG_SAFA, "El GDT %i ahora esta en READY", bloqDTB->id_GDT);
+	 			 //TODO deberia enviar respuesta alguna a CPU?
+	 		 }else{
+	 			log_info(LOG_SAFA, "El Recurso %s no existe, paso a crearlo", recurso->recurso);
+	 				tp_recurso recurso_creado = calloc(1, sizeof(t_recurso));
+	 				strcpy(recurso_creado->nombre, recurso->recurso);
+	 				recurso_creado->valor = 1;
+	 				recurso_creado->gdts_en_espera = list_create();
+	 				list_add(tabla_recursos, recurso_creado);
+	 				log_info(LOG_SAFA, "Se agrego el recurso %s a la tabla", recurso_creado->nombre);
+	 				//enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoAfirmativa, sizeof(RespuestaASolicitudDeRecursoAfirmativa));
+	 				log_info(LOG_SAFA, "Recurso %s asignado a la CPU", recurso_creado->nombre);
+	 		 }
+
 	 }
 	 }
 	return EXIT_SUCCESS;
@@ -612,14 +651,25 @@ bool recursoEstaEnTabla(char* rec){
 
 bool recursoEstaAsignado(char* rec){
 	tp_recurso recurso;
-	bool coincideNombre(void* node){
+	bool coincideNombre2(void* node){
 		return strcmp((((tp_recurso) node)->nombre), rec);
 	}
-	recurso = list_find(tabla_recursos, coincideNombre);
-	if(recurso->valor < 0){
+	recurso = list_find(tabla_recursos, coincideNombre2);
+	if(recurso->valor <= 0){
 		return true;
 	}else{
 		return false;
 	}
+}
+
+void agregarGdtAColaRecurso(tp_tipoRecurso recurso){
+	tp_recurso recu;
+	bool coincideNombreCola(void* node){
+		return strcmp((((tp_recurso) node)->nombre), recurso->recurso);
+		}
+	recu = list_remove_by_condition(tabla_recursos, coincideNombreCola);
+	list_add(recu->gdts_en_espera, recurso->id_GDT);
+	recu->valor = recu->valor - 1;
+	list_add(tabla_recursos, recu);
 }
 

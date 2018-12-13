@@ -48,5 +48,6 @@ int calcularDTBAPlanificarConBOAF();
 void pasarSafaOperativo();
 bool recursoEstaEnTabla(char* rec);
 bool recursoEstaAsignado(char* rec);
+void agregarGdtAColaRecurso(tp_tipoRecurso recurso);
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */

@@ -32,6 +32,7 @@ typedef struct defConfiguracionSAFA {
 typedef struct recurso{
 	char* nombre;
 	int valor;
+	t_list* gdts_en_espera;
 }t_recurso;
 
 typedef t_recurso* tp_recurso;
