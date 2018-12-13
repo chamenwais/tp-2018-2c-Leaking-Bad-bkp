@@ -185,6 +185,7 @@ int liberarMemoria(){
 	 log_info(LOG_SAFA,"Espero cabecera de la CPU");
 	 t_cabecera cabecera = recibirCabecera(sockCPU);
 	 tp_DTB id_DTB; //tengo que hacer malloc? TODO
+	 tp_tipoRecurso recurso;
 	 int idGDT;
 	 switch (cabecera.tipoDeMensaje){
 	 	 case BloquearDTB:
@@ -213,7 +214,39 @@ int liberarMemoria(){
 	 		 log_info(LOG_SAFA, "Se aborto el DTB %i", id_DTB->id_GDT);
 	 	 break;
 	 	 case RetenerRecurso:
+	 		 recurso = prot_recibir_CPU_SAFA_retener_recurso(sockCPU);
 	 		 log_info(LOG_SAFA, "CPU pide el recurso %s");
+	 		 if(recursoEstaEnTabla(recurso->recurso)){
+	 			 if(recursoEstaAsignado(recurso)){
+	 				 log_info(LOG_SAFA, "El recurso %s esta tomado", recurso->recurso);
+	 				 enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoDenegada, sizeof(RespuestaASolicitudDeRecursoDenegada));
+	 				 bool coincideIDBlq(void* node) {
+	 					 return ((((tp_DTB) node)->id_GDT)==idGDT);
+	 				 }
+	 				 id_DTB=list_remove_by_condition(ejecutando, coincideIDBlq);
+	 				 list_add(bloqueados, id_DTB);
+	 				 log_info(LOG_SAFA, "Se bloqueo el DTB %i", id_DTB->id_GDT);
+	 			 }else{
+	 				 log_info(LOG_SAFA, "El recurso %s esta libre", recurso->recurso);
+	 				 enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoAfirmativa, sizeof(RespuestaASolicitudDeRecursoAfirmativa));
+	 				 log_info(LOG_SAFA, "Asigno el recurso %s al DTB %s", recurso->recurso, recurso->id_GDT);
+	 				 bool coincideIDRec(void* node) {
+	   					 return strcmp((((tp_tipoRecurso) node)->recurso),recurso->recurso);
+	  				 }
+	 				 tp_recurso rec = list_remove(tabla_recursos, coincideIDRec);
+	 				 rec->valor = rec->valor - 1;
+	 				 list_add(tabla_recursos, rec);
+	 			 }
+	 		 }else{
+	 			 log_info(LOG_SAFA, "El Recurso %s no existe, paso a crearlo", recurso->recurso);
+	 			 tp_recurso recurso_creado = calloc(1, sizeof(t_recurso));
+	 			 strcpy(recurso_creado->nombre, recurso->recurso);
+	 			 recurso_creado->valor = 1;
+	 			 list_add(tabla_recursos, recurso_creado);
+	 			 log_info(LOG_SAFA, "Se agrego el recurso %s a la tabla", recurso_creado->nombre);
+	 			 enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoAfirmativa, sizeof(RespuestaASolicitudDeRecursoAfirmativa));
+	 			 log_info(LOG_SAFA, "Recurso %s asignado a la CPU", recurso_creado->nombre);
+	 		 }
 	 	 break;
 	 }
 	 }
@@ -568,19 +601,25 @@ void pasarSafaOperativo(){
 	}
 }
 
-/*int enviarDTBaCPU(t_DTB * dtb, int sockCPU) {
-	t_DTB msj;
-	msj.escriptorio = calloc(1,sizeof(dtb->escriptorio));
-	strcpy(msj.escriptorio, dtb->escriptorio);
-	msj.id_GDT = dtb->id_GDT;
-	msj.iniGDT = dtb->iniGDT;
-	msj.program_counter = dtb->program_counter;
-	msj.quantum = dtb->quantum;
-	msj.tabla_dir_archivos = dtb->tabla_dir_archivos;
-	int size = sizeof(msj);
-	enviar(sockCPU, &msj, size);
-	list_remove(listos, 0);
-	list_add(ejecutando, dtb);
-	log_debug(LOG_SAFA, "Envia DTB a CPU");
-	return EXIT_SUCCESS;
-}*/
+bool recursoEstaEnTabla(char* rec){
+	tp_recurso recurso;
+	bool coincideNombre(void* node){
+		return strcmp((((tp_recurso) node)->nombre), rec);
+	}
+	bool ret = list_any_satisfy(tabla_recursos, coincideNombre);
+	return ret;
+}
+
+bool recursoEstaAsignado(char* rec){
+	tp_recurso recurso;
+	bool coincideNombre(void* node){
+		return strcmp((((tp_recurso) node)->nombre), rec);
+	}
+	recurso = list_find(tabla_recursos, coincideNombre);
+	if(recurso->valor < 0){
+		return true;
+	}else{
+		return false;
+	}
+}
+

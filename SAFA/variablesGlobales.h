@@ -34,6 +34,8 @@ typedef struct recurso{
 	int valor;
 }t_recurso;
 
+typedef t_recurso* tp_recurso;
+
 enum ESTADO {
 	CORRUPTO,
 	OPERATIVO
