@@ -75,5 +75,8 @@ void tratar_archivo_inexistente_en_mdj_flush(tp_datosEnMemoria pedido_flush,
 		int socket_safa);
 void tratar_espacio_insuficiente_mdj_flush(int socket_safa,
 		tp_datosEnMemoria pedido_flush);
+int * adaptar_sockets_sin_mp_para_hilo(int CPU_Fd, int Safa_fd, int filesystem_fd);
+void operacion_crear_archivo(int *sockets);
+t_cabecera crear_archivo(int socket_mdj, tp_crearLineasArch mensaje_cpu);
 
 #endif /* CONEXIONESENTRANTES_H_ */
