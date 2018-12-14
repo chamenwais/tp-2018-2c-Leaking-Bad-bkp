@@ -78,5 +78,7 @@ void tratar_espacio_insuficiente_mdj_flush(int socket_safa,
 int * adaptar_sockets_sin_mp_para_hilo(int CPU_Fd, int Safa_fd, int filesystem_fd);
 void operacion_crear_archivo(int *sockets);
 t_cabecera crear_archivo(int socket_mdj, tp_crearLineasArch mensaje_cpu);
+void loguear_y_avisar_a_safa_creacion_erronea(int sockfd_safa, int pid);
+void informar_operacion_crear_erronea(int socket_safa, int pid);
 
 #endif /* CONEXIONESENTRANTES_H_ */
