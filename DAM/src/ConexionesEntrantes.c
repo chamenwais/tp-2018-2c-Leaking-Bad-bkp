@@ -516,10 +516,21 @@ void operacion_crear_archivo(int *sockets){
 	enviarCabecera(socket_CPU,CrearLineasEnArchivoEjecutandose,sizeof(CrearLineasEnArchivoEjecutandose));
 	t_cabecera respuesta_creacion_path = crear_archivo(socket_mdj, pedido_creacion);
 	if(!cabecera_correcta(&respuesta_creacion_path)){
-		//TODO crear funcion que informa el error de creacion a safa
+		//informa el error de creacion a safa
+		loguear_y_avisar_a_safa_creacion_erronea(socket_safa,pedido_creacion->id_GDT);
 	} else {
 		loguear_cabecera_recibida(CONST_NAME_MDJ);
-		//TODO validar el enum respuesta, informar el error o exito de creacion a safa
+		//valida el enum respuesta TODO falta diferenciar falta de espacio o archivo ya existe
+		if(ArchivoNoCreado==respuesta_creacion_path.tipoDeMensaje){
+			//informar el error creacion a safa
+			logger_DAM(escribir_loguear, l_warning,"Hubo un error de espacio insuficiente en MDJ al crear el archivo");
+			informar_operacion_crear_erronea(socket_safa, pedido_creacion->id_GDT);
+			return;
+		}
+		//informar el exito de creacion a safa
+		logger_DAM(escribir_loguear, l_trace,"El archivo %s se creo en disco",pedido_creacion->path);
+		informar_operacion_crear_exitosa(socket_safa,pedido_creacion->id_GDT);
+		free(pedido_creacion->path);
 	}
 }
 
@@ -530,4 +541,25 @@ t_cabecera crear_archivo(int socket_mdj, tp_crearLineasArch mensaje_cpu) {
 	t_cabecera respuesta_creacion = recibirCabecera(socket_mdj);
 	pthread_mutex_unlock(&MX_FS);
 	return respuesta_creacion;
+}
+
+void loguear_y_avisar_a_safa_creacion_erronea(int sockfd_safa, int pid){
+	logger_DAM(escribir_loguear, l_warning,"Hubo un error de comunicacion con MDJ al crear el archivo");
+	informar_operacion_crear_erronea(sockfd_safa, pid);
+}
+
+void informar_operacion_crear_erronea(int socket_safa, int pid) {
+	pthread_mutex_lock(&MX_SAFA);
+	enviarCabecera(socket_safa, CrearLineasEnArchivoNoFinalizado, sizeof(CrearLineasEnArchivoNoFinalizado));
+	prot_enviar_DMA_SAFA_crearArchivo(pid, socket_safa);
+	pthread_mutex_unlock(&MX_SAFA);
+}
+
+void informar_operacion_crear_exitosa(int socket_safa, int pid){
+	pthread_mutex_lock(&MX_SAFA);
+	enviarCabecera(socket_safa, CrearLineasEnArchivoFinalizadoOk, sizeof(CrearLineasEnArchivoFinalizadoOk));
+	prot_enviar_DMA_SAFA_crearArchivo(pid, socket_safa);
+	pthread_mutex_unlock(&MX_SAFA);
+	logger_DAM(escribir_loguear, l_trace,
+				"Se informo a safa la creacion del archivo para el pid [%d]", pid);
 }
