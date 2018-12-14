@@ -17,6 +17,7 @@ int inicializarLog(){
 int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 
 	t_config* configuracion = config_create(ubicacionDelArchivoConfiguracion);
+	char* alg;
 
 	log_info(LOG_SAFA, "Abriendo la configuracion de SAFA");
 
@@ -27,10 +28,25 @@ int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 		exit(EXIT_FAILURE);
 	}
 
-	if (!config_has_property(configuracion, "ALGORITMO_PLANIF")) {
-		log_error(LOG_SAFA, "No esta el algoritmo de planificacion");
-		config_destroy(configuracion);
-		exit(EXIT_FAILURE);
+	if (config_has_property(configuracion, "ALGORITMO_PLANIF")) {
+		//log_error(LOG_SAFA, "No esta el algoritmo de planificacion");
+		alg = config_get_string_value(configuracion, "ALGORITMO_PLANIF");
+		//log_info(LOG_SAFA, "alg es %s", alg);
+		if (string_equals_ignore_case(alg,"RR")){
+						//Round Robin
+						algoritmo_planificacion = ROUND_ROBIN;
+						log_info(LOG_SAFA, "Se obtuvo el alg de planificacion Round Robin del archivo de config");
+		}else if (string_equals_ignore_case(alg,"VRR")){
+						//Virtual Round Robin
+						algoritmo_planificacion = VIRTUAL_RR;
+						log_info(LOG_SAFA, "Se obtuvo el alg de planificacion Virtual RR del archivo de config");
+		}else if (string_equals_ignore_case(alg, "BOAF")){
+						//BOAF
+						algoritmo_planificacion = BOAF;
+						log_info(LOG_SAFA, "Se obtuvo el algo de planificacion BOAF del archivo de config");
+		}
+		//config_destroy(configuracion);
+		//exit(EXIT_FAILURE);
 	}
 
 	if (!config_has_property(configuracion, "QUANTUM")) {
@@ -53,7 +69,7 @@ int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 
 	configSAFA.puerto =	config_get_int_value(configuracion, "PUERTO");
 
-	configSAFA.algoritmo_planif = string_duplicate(config_get_string_value(configuracion, "ALGORITMO_PLANIF"));
+	//configSAFA.algoritmo_planif = string_duplicate(config_get_string_value(configuracion, "ALGORITMO_PLANIF"));
 
 	configSAFA.quantum = config_get_int_value(configuracion, "QUANTUM");
 
@@ -61,10 +77,13 @@ int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 
 	configSAFA.retardo = config_get_int_value(configuracion,"RETARDO");
 
+
+	free(alg);
 	config_destroy(configuracion);
 
 	return EXIT_SUCCESS;
 }
+
 
 int inicializarVariablesSAFA(){
 	estadoSAFA = CORRUPTO; //Se inicializa en estado CORRUPTO
@@ -464,6 +483,7 @@ tp_DTB crear_DTB(char* path){
 
 
 int iniciarPLP(){
+	printf("entra a iniciarPLP");
 	int resultadoDeCrearHilo = pthread_create(
 		&hiloPLP, NULL, funcionHiloPLP, &configSAFA);
 	if(resultadoDeCrearHilo){
@@ -497,6 +517,7 @@ void *funcionHiloPLP(void *arg){
 }
 
 int planificar_PLP(){
+	printf("entra a planificar_PLP");
 	tp_DTB idDTB;
 	//lockearListas();
 	log_info(LOG_SAFA,"PLP en accion");
@@ -506,7 +527,7 @@ int planificar_PLP(){
 		++hayDummy;
 		list_add(listos, idDTB);
 		pthread_mutex_unlock(&mutexDePausaPCP);
-		log_info(LOG_SAFA,"DTB listo para planificar %d",idDTB);
+		log_info(LOG_SAFA,"DTB listo para planificar %d",idDTB->id_GDT);
 		}else{
 			log_error(LOG_SAFA, "AWANTIIIAAAA, EMOCIONADO: Ya existe un DTB Dummy");
 		}
@@ -530,17 +551,19 @@ int iniciarPCP(){
 
 void* funcionHiloPlanif(void *arg){
 	char *ret="Cerrando hilo PCP";
-
+	log_info(LOG_SAFA,"PCP inicia bloqueado");
+	//log_info(LOG_SAFA, "Alg es %i", algoritmo_planificacion);
 	while(safa_conectado){
-		//log_info(LOGGER,"Lockeando semaforo de pausa de planificacion");
+		//log_info(LOG_SAFA,"Lockeando semaforo de pausa de planificacion");
 		pthread_mutex_lock(&mutexDePausaPCP);
+		log_info(LOG_SAFA,"Lockeando semaforo de pausa de planificacion");
 
 		//log_info(LOGGER,"Planifico");
 		//if(safa_conectado)
 			planificar();
 
 		//log_info(LOGGER,"Deslockeando semaforo de pausa de planificacion");
-		pthread_mutex_unlock(&mutexDePausaPCP);
+		//pthread_mutex_unlock(&mutexDePausaPCP);
 		}
 
 	pthread_exit(ret);
@@ -554,12 +577,13 @@ int planificar(){
 		tp_DTB DTB;
 		int idDTB;
 		//lockearListas();
-		idDTB=proximoDTBAPlanificar();
+		idDTB = proximoDTBAPlanificar();
 		log_info(LOG_SAFA,"Proximo DTB a planificar %d",idDTB);
 		DTB = buscarDTBPorId(idDTB);
 		//ahora ya tengo el DTB entero que necesito enviar a CPU //
 		int proxCPUaUsar = list_remove(cpu_libres, 0);
 		list_add(cpu_ejecutando, proxCPUaUsar);
+		//log_info(LOG_SAFA, "id_GDT: %i program_counter %i iniGDT %i escriptorio %s quantum %i cpu %i", DTB->id_GDT, DTB->program_counter, DTB->iniGDT, DTB->escriptorio, DTB->quantum, proxCPUaUsar);
 		prot_enviar_SAFA_CPU_DTB(DTB->id_GDT, DTB->program_counter, DTB->iniGDT, DTB->escriptorio, DTB->tabla_dir_archivos, DTB->quantum, proxCPUaUsar);
 		log_info(LOG_SAFA, "Se envio el DTB %i a la CPU %i", DTB->id_GDT, proxCPUaUsar);
 		list_remove(listos, 0);
@@ -572,26 +596,45 @@ int planificar(){
 
 int proximoDTBAPlanificar(){
 	int idDTBAPlanificar = 0;
-	if(list_size(listos) < configSAFA.grado_multiprogramacion){
-			log_info(LOG_SAFA,"Hay mas procesos para ejecutar");
-			if(string_equals_ignore_case(configSAFA.algoritmo_planif, "RR")){
+	/*if(list_size(listos) < configSAFA.grado_multiprogramacion){
+			log_info(LOG_SAFA,"Hay mas procesos para ejecutar");*/
+	switch(algoritmo_planificacion){
+		case ROUND_ROBIN:
+			log_info(LOG_SAFA, "El algoritmo de planif es ROUND ROBIN");
+			idDTBAPlanificar=calcularDTBAPlanificarConRR();
+		break;
+		case VIRTUAL_RR:
+			log_info(LOG_SAFA, "El algoritmo de planif es VIRTUAL ROUND ROBIN");
+			idDTBAPlanificar=calcularDTBAPlanificarConVRR();
+		break;
+		case BOAF:
+			log_info(LOG_SAFA, "El algoritmo de planif es BOAF");
+			idDTBAPlanificar=calcularDTBAPlanificarConBOAF();
+	}
+			/*if(strcmp(configSAFA.algoritmo_planif,"RR") == 0){
+				printf("Entre por RR");
 				log_info(LOG_SAFA, "El algoritmo de planif es ROUND ROBIN");
 				idDTBAPlanificar=calcularDTBAPlanificarConRR();
+				return idDTBAPlanificar;
 			}
-			if(string_equals_ignore_case(configSAFA.algoritmo_planif, "VRR")){
+			if(strcmp(configSAFA.algoritmo_planif,"VRR") == 0){
+				printf("Entre por VRR");
 				log_info(LOG_SAFA, "El algoritmo de planif es VIRTUAL ROUND ROBIN");
 				idDTBAPlanificar=calcularDTBAPlanificarConVRR();
+				return idDTBAPlanificar;
 			}
-			if(string_equals_ignore_case(configSAFA.algoritmo_planif, "BOAF")){
-							log_info(LOG_SAFA, "El algoritmo de planif es BIG ONE ALWAYS FIRST");
-							idDTBAPlanificar=calcularDTBAPlanificarConBOAF();
-						}
-		log_info(LOG_SAFA,"Proximo DTB a planififcar: %d ",idDTBAPlanificar);
+			if(strcmp(configSAFA.algoritmo_planif,"BOAF") == 0){
+				printf("Entre por BOAF");
+				log_info(LOG_SAFA, "El algoritmo de planif es BIG ONE ALWAYS FIRST");
+				idDTBAPlanificar=calcularDTBAPlanificarConBOAF();
+				return idDTBAPlanificar;
+			}
+		//log_info(LOG_SAFA,"Proximo DTB a planificar: %d ",idDTBAPlanificar);*/
 		return idDTBAPlanificar;
 
-	}
-	log_info(LOG_SAFA, "No hay mas DTB para ser ejecutados");
-	return idDTBAPlanificar;
+	//}
+	//log_error(LOG_SAFA, "No hay mas DTB para ser ejecutados");
+	//return EXIT_FAILURE;
 }
 
 int calcularDTBAPlanificarConRR(){

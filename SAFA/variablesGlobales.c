@@ -19,6 +19,7 @@ int resultadoComElDiego;
 bool safa_conectado;
 int id;
 int hayDummy;
+int algoritmo_planificacion;
 t_list* nuevos;
 t_list* listos;
 t_list* ejecutando;

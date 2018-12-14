@@ -12,6 +12,11 @@
 #include <commons/collections/list.h>
 #include "pthread.h"
 
+//Algoritmos de Planif
+#define ROUND_ROBIN 0
+#define VIRTUAL_RR 1
+#define BOAF 2
+
 typedef struct defConfiguracionSAFA {
 	int puerto;
 	char* algoritmo_planif;
@@ -54,6 +59,7 @@ extern int resultadoComElDiego;
 extern bool safa_conectado;
 extern int id;
 extern int hayDummy;
+extern int algoritmo_planificacion;
 extern t_list* nuevos;
 extern t_list* listos;
 extern t_list* ejecutando;
