@@ -90,6 +90,8 @@ void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 					adaptar_sockets_para_hilo(socket_CPU_solicitante,socket_fm9,socket_safa,socket_filesystem));
 			break;
 		case CrearLineasEnArchivo:
+			pthread_create(&hilo_correspondiente_a_pedido,&atributo_detachable,(void *)operacion_crear_archivo,
+					adaptar_sockets_sin_mp_para_hilo(socket_CPU_solicitante,socket_safa,socket_filesystem));
 			break;
 		case EliminarArchivoDeDisco:
 			break;
@@ -177,6 +179,14 @@ int * adaptar_sockets_para_hilo(int CPU_Fd, int fm9_Fd, int Safa_fd, int filesys
 	sockets[1]=fm9_Fd;
 	sockets[2]=Safa_fd;
 	sockets[3]=filesystem_fd;
+	return sockets;
+}
+
+int * adaptar_sockets_sin_mp_para_hilo(int CPU_Fd, int Safa_fd, int filesystem_fd){
+	int * sockets=calloc(3,sizeof(int));
+	sockets[0]=CPU_Fd;
+	sockets[1]=Safa_fd;
+	sockets[2]=filesystem_fd;
 	return sockets;
 }
 
@@ -493,4 +503,31 @@ enum MENSAJES tratar_inexistencia_archivo_mp(t_cabecera respuesta_validez_archiv
 		informar_operacion_flush_erronea(socket_safa, info_cpu);
 	}
 	return tipo_de_mensaje;
+}
+
+void operacion_crear_archivo(int *sockets){
+	int socket_CPU=sockets[0];
+	int socket_safa=sockets[1];
+	int socket_mdj=sockets[2];
+	free(sockets);
+	tp_crearLineasArch pedido_creacion=prot_recibir_CPU_DMA_crear_lineas_arch(socket_CPU);
+	logger_DAM(escribir_loguear, l_trace,"Ehhh, voy a crear [%s] con [%d] lineas",
+			pedido_creacion->path, pedido_creacion->cant_lineas);
+	enviarCabecera(socket_CPU,CrearLineasEnArchivoEjecutandose,sizeof(CrearLineasEnArchivoEjecutandose));
+	t_cabecera respuesta_creacion_path = crear_archivo(socket_mdj, pedido_creacion);
+	if(!cabecera_correcta(&respuesta_creacion_path)){
+		//TODO crear funcion que informa el error de creacion a safa
+	} else {
+		loguear_cabecera_recibida(CONST_NAME_MDJ);
+		//TODO validar el enum respuesta, informar el error o exito de creacion a safa
+	}
+}
+
+t_cabecera crear_archivo(int socket_mdj, tp_crearLineasArch mensaje_cpu) {
+	pthread_mutex_lock(&MX_FS);
+	enviarCabecera(socket_mdj, CrearArchivo, sizeof(CrearArchivo));
+	prot_enviar_DMA_FS_CrearArchivo(mensaje_cpu->path, mensaje_cpu->cant_lineas,socket_mdj);
+	t_cabecera respuesta_creacion = recibirCabecera(socket_mdj);
+	pthread_mutex_unlock(&MX_FS);
+	return respuesta_creacion;
 }
