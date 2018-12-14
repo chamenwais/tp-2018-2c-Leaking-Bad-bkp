@@ -596,3 +596,18 @@ tp_DTB prot_recibir_SAFA_CPU_DTB(int sock){
 	return DTB;
 
 }
+
+void prot_enviar_DMA_SAFA_crearArchivo(int id_GDT, int sock){
+	int * p_id_GDT=malloc(sizeof(int));
+	*p_id_GDT=id_GDT;
+	enviar(sock,p_id_GDT,sizeof(int));
+	free(p_id_GDT);
+}
+
+int prot_recibir_DMA_SAFA_crearArchivo(int sock){
+	int * p_id_GDT=malloc(sizeof(int));
+	recibir(sock,p_id_GDT,sizeof(int));
+	int retorno=*p_id_GDT;
+	free(p_id_GDT);
+	return retorno;
+}
