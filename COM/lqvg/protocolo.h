@@ -164,5 +164,7 @@ tp_crearLineasArch prot_recibir_CPU_DMA_crear_lineas_arch(int sock);
 tp_eliminarArch prot_recibir_CPU_DAM_eliminar_arch_de_disco(int sock);
 int prot_recibir_CPU_SAFA_bloquear_DTB(int sock);
 int prot_recibir_CPU_SAFA_abortar_DTB(int sock);
+void prot_enviar_DMA_SAFA_crearArchivo(int id_GDT, int sock);
+int prot_recibir_DMA_SAFA_crearArchivo(int sock);
 
 #endif /* LQVG_PROTOCOLO_H_ */
