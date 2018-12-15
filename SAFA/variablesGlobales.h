@@ -12,6 +12,11 @@
 #include <commons/collections/list.h>
 #include "pthread.h"
 
+//Algoritmos de Planif
+#define ROUND_ROBIN 0
+#define VIRTUAL_RR 1
+#define BOAF 2
+
 typedef struct defConfiguracionSAFA {
 	int puerto;
 	char* algoritmo_planif;
@@ -29,6 +34,14 @@ typedef struct defConfiguracionSAFA {
 	int quantum;
 } t_DTB;*/
 
+typedef struct recurso{
+	char* nombre;
+	int valor;
+	t_list* gdts_en_espera;
+}t_recurso;
+
+typedef t_recurso* tp_recurso;
+
 enum ESTADO {
 	CORRUPTO,
 	OPERATIVO
@@ -45,6 +58,8 @@ extern int fd_DMA;
 extern int resultadoComElDiego;
 extern bool safa_conectado;
 extern int id;
+extern int hayDummy;
+extern int algoritmo_planificacion;
 extern t_list* nuevos;
 extern t_list* listos;
 extern t_list* ejecutando;
@@ -54,7 +69,10 @@ extern t_list* auxVirtualRR;
 extern t_list* cpu_libres;
 extern t_list* cpu_ejecutando;
 extern t_list* dtbConEqGrandeAbierto;
+extern t_list* tabla_recursos;
+extern t_list* lista_espera_recursos;
 extern pthread_mutex_t mutexDePausaDePlanificacion;
+extern pthread_mutex_t mutexDePausaPCP;
 extern bool DAM_conectado;
 
 

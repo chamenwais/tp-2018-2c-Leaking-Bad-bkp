@@ -17,6 +17,7 @@ int inicializarLog(){
 int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 
 	t_config* configuracion = config_create(ubicacionDelArchivoConfiguracion);
+	char* alg;
 
 	log_info(LOG_SAFA, "Abriendo la configuracion de SAFA");
 
@@ -27,10 +28,25 @@ int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 		exit(EXIT_FAILURE);
 	}
 
-	if (!config_has_property(configuracion, "ALGORITMO_PLANIF")) {
-		log_error(LOG_SAFA, "No esta el algoritmo de planificacion");
-		config_destroy(configuracion);
-		exit(EXIT_FAILURE);
+	if (config_has_property(configuracion, "ALGORITMO_PLANIF")) {
+		//log_error(LOG_SAFA, "No esta el algoritmo de planificacion");
+		alg = config_get_string_value(configuracion, "ALGORITMO_PLANIF");
+		//log_info(LOG_SAFA, "alg es %s", alg);
+		if (string_equals_ignore_case(alg,"RR")){
+						//Round Robin
+						algoritmo_planificacion = ROUND_ROBIN;
+						log_info(LOG_SAFA, "Se obtuvo el alg de planificacion Round Robin del archivo de config");
+		}else if (string_equals_ignore_case(alg,"VRR")){
+						//Virtual Round Robin
+						algoritmo_planificacion = VIRTUAL_RR;
+						log_info(LOG_SAFA, "Se obtuvo el alg de planificacion Virtual RR del archivo de config");
+		}else if (string_equals_ignore_case(alg, "BOAF")){
+						//BOAF
+						algoritmo_planificacion = BOAF;
+						log_info(LOG_SAFA, "Se obtuvo el algo de planificacion BOAF del archivo de config");
+		}
+		//config_destroy(configuracion);
+		//exit(EXIT_FAILURE);
 	}
 
 	if (!config_has_property(configuracion, "QUANTUM")) {
@@ -53,7 +69,7 @@ int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 
 	configSAFA.puerto =	config_get_int_value(configuracion, "PUERTO");
 
-	configSAFA.algoritmo_planif = string_duplicate(config_get_string_value(configuracion, "ALGORITMO_PLANIF"));
+	//configSAFA.algoritmo_planif = string_duplicate(config_get_string_value(configuracion, "ALGORITMO_PLANIF"));
 
 	configSAFA.quantum = config_get_int_value(configuracion, "QUANTUM");
 
@@ -61,10 +77,13 @@ int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 
 	configSAFA.retardo = config_get_int_value(configuracion,"RETARDO");
 
+
+	free(alg);
 	config_destroy(configuracion);
 
 	return EXIT_SUCCESS;
 }
+
 
 int inicializarVariablesSAFA(){
 	estadoSAFA = CORRUPTO; //Se inicializa en estado CORRUPTO
@@ -72,6 +91,7 @@ int inicializarVariablesSAFA(){
 	safa_conectado = true;
 	id = 1;
 	DAM_conectado = false;
+	hayDummy = 0;
 	return EXIT_SUCCESS;
 }
 
@@ -92,6 +112,11 @@ int inicializarSemaforosSAFA(){
 		log_error(LOG_SAFA,"No se pudo inicializar el semaforo de planificacion");
 		exit(1);
 	}
+	if (pthread_mutex_init(&mutexDePausaPCP, NULL) != 0) {
+			/*Para pausar la planificacion*/
+		log_error(LOG_SAFA,"No se pudo inicializar el semaforo de planificacion");
+		exit(1);
+	}
 	return EXIT_SUCCESS;
  }
 
@@ -106,6 +131,7 @@ int inicializarListas(){
 	cpu_libres = list_create();
 	cpu_ejecutando = list_create();
 	dtbConEqGrandeAbierto = list_create();
+	tabla_recursos = list_create();
 	return EXIT_SUCCESS;
 }
 
@@ -120,6 +146,7 @@ int liberarMemoria(){
 	list_destroy_and_destroy_elements(cpu_libres, free);
 	list_destroy_and_destroy_elements(cpu_ejecutando, free);
 	list_destroy_and_destroy_elements(dtbConEqGrandeAbierto, free);
+	list_destroy_and_destroy_elements(tabla_recursos, free);
 
 	log_info(LOG_SAFA, "Habemus memoria liberada");
 	return EXIT_SUCCESS;
@@ -128,6 +155,7 @@ int liberarMemoria(){
  void *funcionHiloComDMA(void *arg){//TODO:
 		//Trabajar con el Diegote eeeehhhhhh
 	DAM_conectado = true;
+	while(DAM_conectado){
 	log_info(LOG_SAFA,"Espero cabecera del DMA");
 	t_cabecera cabecera = recibirCabecera(fd_DMA);
 	tp_datosEnMemoria datos_recibidos;
@@ -143,6 +171,7 @@ int liberarMemoria(){
 			datos_recibidos = prot_recibir_DMA_SAFA_datosEnMemoria(fd_DMA);
 			//ver que es lo que me manda DAM
 			break;
+	}
 	}
 	resultadoComElDiego=EXIT_SUCCESS;
 	return resultadoComElDiego;
@@ -177,20 +206,115 @@ int liberarMemoria(){
 	 if((list_size(cpu_libres)==1)&&(list_size(cpu_ejecutando)==0)){
 	 pasarSafaOperativo();
 	 }
+	 while(safa_conectado){
 	 log_info(LOG_SAFA,"Espero cabecera de la CPU");
 	 t_cabecera cabecera = recibirCabecera(sockCPU);
 	 tp_DTB id_DTB; //tengo que hacer malloc? TODO
-	 //TODO: CPU me manda el DTB a bloquear, tengo q crear la variable INT? CHAR?
+	 tp_tipoRecurso recurso;
+	 int idGDT;
 	 switch (cabecera.tipoDeMensaje){
 	 	 case BloquearDTB:
-	 		 log_info(LOG_SAFA, "CPU me pide bloquear el DTB %i");
+	 		 idGDT = prot_recibir_CPU_SAFA_bloquear_DTB(sockCPU);
+	 		 log_info(LOG_SAFA, "CPU me pide bloquear el DTB %i", idGDT);
 	 		 bool coincideID(void* node) {
-	 		 return ((((tp_DTB) node)->id_GDT)==id_DTB->id_GDT);
+	 		 return ((((tp_DTB) node)->id_GDT)==idGDT);
 	 		 }
 	 		 id_DTB=list_remove_by_condition(ejecutando, coincideID);
+	 		 if(id_DTB->iniGDT == 0){//se cambia el flag del dummy al bloquearlo
+	 			 log_info(LOG_SAFA, "el DTB Dummy se bloquea, pasa flag a 1");
+	 			 id_DTB->iniGDT = 1;
+	 			 --hayDummy;
+	 			pthread_mutex_unlock(&mutexDePausaDePlanificacion);//ahora puedo aceptar otro dummy
+	 		 }
 	 		 list_add(bloqueados, id_DTB);
 	 		 log_info(LOG_SAFA, "Se bloqueo el DTB %i", id_DTB->id_GDT);
 	 	 break;
+	 	 case AbortarDTB:
+	 		 idGDT = prot_recibir_CPU_SAFA_abortar_DTB(sockCPU);
+	 		 log_info(LOG_SAFA, "CPU me pide abortar el DTB %i", idGDT);
+	 		 bool coincideID_Abortar(void* node){
+	 		 return((((tp_DTB) node)->id_GDT)==idGDT);
+	 		 }
+	 		 id_DTB=list_remove_by_condition(ejecutando, coincideID_Abortar);
+	 		 list_add(terminados, id_DTB);
+	 		 log_info(LOG_SAFA, "Se aborto el DTB %i", id_DTB->id_GDT);
+	 	 break;
+	 	 case RetenerRecurso:
+	 		 recurso = prot_recibir_CPU_SAFA_retener_recurso(sockCPU);
+	 		 log_info(LOG_SAFA, "CPU pide el recurso %s");
+	 		 if(recursoEstaEnTabla(recurso->recurso)){
+	 			 if(recursoEstaAsignado(recurso->recurso)){
+	 				 log_info(LOG_SAFA, "El recurso %s esta tomado", recurso->recurso);
+	 				 enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoDenegada, sizeof(RespuestaASolicitudDeRecursoDenegada));
+	 				 bool coincideIDBlq(void* node) {
+	 					 return ((((tp_DTB) node)->id_GDT)==recurso->id_GDT);
+	 				 }
+	 				 id_DTB=list_remove_by_condition(ejecutando, coincideIDBlq);
+	 				 list_add(bloqueados, id_DTB);
+	 				 log_info(LOG_SAFA, "Se bloqueo el DTB %i", id_DTB->id_GDT);
+	 				 agregarGdtAColaRecurso(recurso);
+	 				 log_info(LOG_SAFA, "Se agrego el GDT a la cola de espera");
+	 			 }else{
+	 				 log_info(LOG_SAFA, "El recurso %s esta libre", recurso->recurso);
+	 				 enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoAfirmativa, sizeof(RespuestaASolicitudDeRecursoAfirmativa));
+	 				 log_info(LOG_SAFA, "Asigno el recurso %s al DTB %s", recurso->recurso, recurso->id_GDT);
+	 				 bool coincideIDRec(void* node) {
+	   					 return strcmp((((tp_tipoRecurso) node)->recurso),recurso->recurso);
+	  				 }
+	 				 tp_recurso rec = list_remove(tabla_recursos, coincideIDRec);
+	 				 rec->valor = rec->valor - 1;
+	 				 list_add(tabla_recursos, rec);
+	 			 }
+	 		 }else{
+	 			 log_info(LOG_SAFA, "El Recurso %s no existe, paso a crearlo", recurso->recurso);
+	 			 tp_recurso recurso_creado = calloc(1, sizeof(t_recurso));
+	 			 strcpy(recurso_creado->nombre, recurso->recurso);
+	 			 recurso_creado->valor = 1;
+	 			 recurso_creado->gdts_en_espera = list_create();
+	 			 list_add(tabla_recursos, recurso_creado);
+	 			 log_info(LOG_SAFA, "Se agrego el recurso %s a la tabla", recurso_creado->nombre);
+	 			 enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoAfirmativa, sizeof(RespuestaASolicitudDeRecursoAfirmativa));
+	 			 log_info(LOG_SAFA, "Recurso %s asignado a la CPU", recurso_creado->nombre);
+	 		 }
+	 	 break;
+	 	 case LiberarRecurso:
+	 		 recurso = prot_recibir_CPU_SAFA_liberar_recurso(sockCPU);
+	 		 log_info(LOG_SAFA, "CPU pide liberar el recurso %s", recurso->recurso);
+	 		 if(recursoEstaEnTabla(recurso->recurso)){
+	 			 tp_recurso recurso_tabla;
+	 			bool coincideNombre3(void* node){
+	 				return strcmp((((tp_recurso) node)->nombre), recurso->recurso);
+	 			}
+	 			 recurso_tabla = list_remove_by_condition(tabla_recursos, coincideNombre3);
+	 			 recurso_tabla->valor = recurso_tabla->valor + 1;
+	 			 //obtengo el primer gdt que esta bloqueado
+	 			 int idGDT;
+	 			 idGDT = list_remove(recurso_tabla->gdts_en_espera, 0);
+	 			 list_add(tabla_recursos, recurso_tabla);
+	 			 log_info(LOG_SAFA, "Recurso %s liberado", recurso_tabla->nombre);
+	 			 //Desbloqueo el GDT
+	 			 tp_DTB bloqDTB;
+	 				bool coincideId(void* node) {
+	 					return ((((tp_DTB) node)->id_GDT)==idGDT);
+	 					}
+	 			 bloqDTB = list_remove_by_condition(bloqueados, coincideId);
+	 			 list_add(listos, bloqDTB);
+	 			 log_info(LOG_SAFA, "El GDT %i ahora esta en READY", bloqDTB->id_GDT);
+	 			 //TODO deberia enviar respuesta alguna a CPU?
+	 		 }else{
+	 			log_info(LOG_SAFA, "El Recurso %s no existe, paso a crearlo", recurso->recurso);
+	 				tp_recurso recurso_creado = calloc(1, sizeof(t_recurso));
+	 				strcpy(recurso_creado->nombre, recurso->recurso);
+	 				recurso_creado->valor = 1;
+	 				recurso_creado->gdts_en_espera = list_create();
+	 				list_add(tabla_recursos, recurso_creado);
+	 				log_info(LOG_SAFA, "Se agrego el recurso %s a la tabla", recurso_creado->nombre);
+	 				//enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoAfirmativa, sizeof(RespuestaASolicitudDeRecursoAfirmativa));
+	 				log_info(LOG_SAFA, "Recurso %s asignado a la CPU", recurso_creado->nombre);
+	 		 }
+	 	break;
+
+	 }
 	 }
 	return EXIT_SUCCESS;
 }
@@ -294,11 +418,12 @@ void *funcionHiloConsola(void *arg){
 			 * (cualquier otro DTB lo tendrá en 1). */
 			if(estadoSAFA==CORRUPTO){
 				log_error(LOG_SAFA, "SAFA se encuentra en estado Corrupto, no se puede continuar");
-				//TODO ver que hacer en este caso
+
 			}else if(instruccion[1]!=NULL){
 					printf("Creando DTB para escriptorio: %s/n", instruccion[1]);
-					tp_DTB nuevo_DTB = crear_DTB(instruccion[1]);
+					tp_DTB nuevo_DTB = crear_DTB(instruccion[1]);//se crea con 1. el PLP lo pasa a 0 cuando es dummy
 					list_add(nuevos, nuevo_DTB);//agregar DTB a cola de NEW
+					pthread_mutex_unlock(&mutexDePausaDePlanificacion);//habilito PLP
 					log_info(LOG_SAFA, "Se agrega el nuevo DTB a la lista de Nuevos");
 					}else{
 					printf("Falta el path del escriptorio, pediselo a Donofrio y reintenta/n");
@@ -347,15 +472,18 @@ tp_DTB crear_DTB(char* path){
 	new_DTB->id_GDT = id;
 	log_info(LOG_SAFA, "DTB %i creado", id);
 	id++;
+	new_DTB->escriptorio = malloc(strlen(path)+1);
 	strcpy(new_DTB->escriptorio, path);
-	new_DTB->iniGDT = 0;// TODO solo uno tiene q enviarse con cero?
-	new_DTB->program_counter = 0;
+	new_DTB->iniGDT = 1;
+	new_DTB->program_counter = 1;
 	new_DTB->tabla_dir_archivos = list_create();
 	new_DTB->quantum = configSAFA.quantum;
 	return new_DTB;
 }
 
+
 int iniciarPLP(){
+	printf("entra a iniciarPLP");
 	int resultadoDeCrearHilo = pthread_create(
 		&hiloPLP, NULL, funcionHiloPLP, &configSAFA);
 	if(resultadoDeCrearHilo){
@@ -374,10 +502,10 @@ void *funcionHiloPLP(void *arg){
 
 	while(safa_conectado){
 		//log_info(LOGGER,"Lockeando semaforo de pausa de planificacion");
-		//pthread_mutex_lock(&mutexDePausaDePlanificacion);
+		pthread_mutex_lock(&mutexDePausaDePlanificacion);
 
-		//log_info(LOGGER,"Planifico");
-		if(safa_conectado && list_size(nuevos)<configSAFA.grado_multiprogramacion){
+		log_info(LOG_SAFA,"Corre PLP");
+		if((list_size(nuevos) + list_size(ejecutando) + list_size (bloqueados) - hayDummy)<configSAFA.grado_multiprogramacion){
 			planificar_PLP();
 		}
 		//log_info(LOGGER,"Deslockeando semaforo de pausa de planificacion");
@@ -389,13 +517,19 @@ void *funcionHiloPLP(void *arg){
 }
 
 int planificar_PLP(){
+	printf("entra a planificar_PLP");
 	tp_DTB idDTB;
 	//lockearListas();
 	log_info(LOG_SAFA,"PLP en accion");
-	if(list_size(nuevos)>0){
+	if(list_size(nuevos)>0 && hayDummy == 0){
 		idDTB=list_remove(nuevos, 0);
+		idDTB->iniGDT = 0; //lo desbloqueo como Dummy
+		++hayDummy;
 		list_add(listos, idDTB);
-		log_info(LOG_SAFA,"DTB listo para planificar %d",idDTB);
+		pthread_mutex_unlock(&mutexDePausaPCP);
+		log_info(LOG_SAFA,"DTB listo para planificar %d",idDTB->id_GDT);
+		}else{
+			log_error(LOG_SAFA, "AWANTIIIAAAA, EMOCIONADO: Ya existe un DTB Dummy");
 		}
 	//deslockearListas();
 	return EXIT_SUCCESS;
@@ -417,17 +551,19 @@ int iniciarPCP(){
 
 void* funcionHiloPlanif(void *arg){
 	char *ret="Cerrando hilo PCP";
-
+	log_info(LOG_SAFA,"PCP inicia bloqueado");
+	//log_info(LOG_SAFA, "Alg es %i", algoritmo_planificacion);
 	while(safa_conectado){
-		//log_info(LOGGER,"Lockeando semaforo de pausa de planificacion");
-		pthread_mutex_lock(&mutexDePausaDePlanificacion);
+		//log_info(LOG_SAFA,"Lockeando semaforo de pausa de planificacion");
+		pthread_mutex_lock(&mutexDePausaPCP);
+		log_info(LOG_SAFA,"Lockeando semaforo de pausa de planificacion");
 
 		//log_info(LOGGER,"Planifico");
-		if(safa_conectado)
+		//if(safa_conectado)
 			planificar();
 
 		//log_info(LOGGER,"Deslockeando semaforo de pausa de planificacion");
-		pthread_mutex_unlock(&mutexDePausaDePlanificacion);
+		//pthread_mutex_unlock(&mutexDePausaPCP);
 		}
 
 	pthread_exit(ret);
@@ -435,19 +571,23 @@ void* funcionHiloPlanif(void *arg){
 }
 
 int planificar(){
-	tp_DTB DTB;
-	int idDTB;
-	//lockearListas();
+
 	log_info(LOG_SAFA,"Vamo a planificarno");
-	if(list_size(listos)>0 && list_size(ejecutando) < configSAFA.grado_multiprogramacion){
-		idDTB=proximoDTBAPlanificar();
+	if(list_size(listos)>0){
+		tp_DTB DTB;
+		int idDTB;
+		//lockearListas();
+		idDTB = proximoDTBAPlanificar();
 		log_info(LOG_SAFA,"Proximo DTB a planificar %d",idDTB);
 		DTB = buscarDTBPorId(idDTB);
 		//ahora ya tengo el DTB entero que necesito enviar a CPU //
 		int proxCPUaUsar = list_remove(cpu_libres, 0);
 		list_add(cpu_ejecutando, proxCPUaUsar);
+		//log_info(LOG_SAFA, "id_GDT: %i program_counter %i iniGDT %i escriptorio %s quantum %i cpu %i", DTB->id_GDT, DTB->program_counter, DTB->iniGDT, DTB->escriptorio, DTB->quantum, proxCPUaUsar);
 		prot_enviar_SAFA_CPU_DTB(DTB->id_GDT, DTB->program_counter, DTB->iniGDT, DTB->escriptorio, DTB->tabla_dir_archivos, DTB->quantum, proxCPUaUsar);
-
+		log_info(LOG_SAFA, "Se envio el DTB %i a la CPU %i", DTB->id_GDT, proxCPUaUsar);
+		list_remove(listos, 0);
+		list_add(ejecutando, DTB);
 
 	}
 	//deslockearListas();
@@ -455,29 +595,46 @@ int planificar(){
 }
 
 int proximoDTBAPlanificar(){
-	int idDTBAPlanificar = -1;
-	if(list_size(ejecutando) < configSAFA.grado_multiprogramacion){
-		log_info(LOG_SAFA,"No hay DTBs ejecutando");
-		if(list_size(listos)>0){
-			log_info(LOG_SAFA,"Hay mas procesos para ejecutar");
-			if(string_equals_ignore_case(configSAFA.algoritmo_planif, "RR")){
+	int idDTBAPlanificar = 0;
+	/*if(list_size(listos) < configSAFA.grado_multiprogramacion){
+			log_info(LOG_SAFA,"Hay mas procesos para ejecutar");*/
+	switch(algoritmo_planificacion){
+		case ROUND_ROBIN:
+			log_info(LOG_SAFA, "El algoritmo de planif es ROUND ROBIN");
+			idDTBAPlanificar=calcularDTBAPlanificarConRR();
+		break;
+		case VIRTUAL_RR:
+			log_info(LOG_SAFA, "El algoritmo de planif es VIRTUAL ROUND ROBIN");
+			idDTBAPlanificar=calcularDTBAPlanificarConVRR();
+		break;
+		case BOAF:
+			log_info(LOG_SAFA, "El algoritmo de planif es BOAF");
+			idDTBAPlanificar=calcularDTBAPlanificarConBOAF();
+	}
+			/*if(strcmp(configSAFA.algoritmo_planif,"RR") == 0){
+				printf("Entre por RR");
 				log_info(LOG_SAFA, "El algoritmo de planif es ROUND ROBIN");
 				idDTBAPlanificar=calcularDTBAPlanificarConRR();
+				return idDTBAPlanificar;
 			}
-			if(string_equals_ignore_case(configSAFA.algoritmo_planif, "VRR")){
+			if(strcmp(configSAFA.algoritmo_planif,"VRR") == 0){
+				printf("Entre por VRR");
 				log_info(LOG_SAFA, "El algoritmo de planif es VIRTUAL ROUND ROBIN");
 				idDTBAPlanificar=calcularDTBAPlanificarConVRR();
+				return idDTBAPlanificar;
 			}
-			if(string_equals_ignore_case(configSAFA.algoritmo_planif, "BOAF")){
-							log_info(LOG_SAFA, "El algoritmo de planif es BIG ONE ALWAYS FIRST");
-							idDTBAPlanificar=calcularDTBAPlanificarConBOAF();
-						}
-		log_info(LOG_SAFA,"Proximo DTB a planififcar: %d ",idDTBAPlanificar);
+			if(strcmp(configSAFA.algoritmo_planif,"BOAF") == 0){
+				printf("Entre por BOAF");
+				log_info(LOG_SAFA, "El algoritmo de planif es BIG ONE ALWAYS FIRST");
+				idDTBAPlanificar=calcularDTBAPlanificarConBOAF();
+				return idDTBAPlanificar;
+			}
+		//log_info(LOG_SAFA,"Proximo DTB a planificar: %d ",idDTBAPlanificar);*/
 		return idDTBAPlanificar;
-		}
-	}
-	log_info(LOG_SAFA, "No hay mas DTB para ser ejecutados");
-	return idDTBAPlanificar;
+
+	//}
+	//log_error(LOG_SAFA, "No hay mas DTB para ser ejecutados");
+	//return EXIT_FAILURE;
 }
 
 int calcularDTBAPlanificarConRR(){
@@ -534,19 +691,36 @@ void pasarSafaOperativo(){
 	}
 }
 
-/*int enviarDTBaCPU(t_DTB * dtb, int sockCPU) {
-	t_DTB msj;
-	msj.escriptorio = calloc(1,sizeof(dtb->escriptorio));
-	strcpy(msj.escriptorio, dtb->escriptorio);
-	msj.id_GDT = dtb->id_GDT;
-	msj.iniGDT = dtb->iniGDT;
-	msj.program_counter = dtb->program_counter;
-	msj.quantum = dtb->quantum;
-	msj.tabla_dir_archivos = dtb->tabla_dir_archivos;
-	int size = sizeof(msj);
-	enviar(sockCPU, &msj, size);
-	list_remove(listos, 0);
-	list_add(ejecutando, dtb);
-	log_debug(LOG_SAFA, "Envia DTB a CPU");
-	return EXIT_SUCCESS;
-}*/
+bool recursoEstaEnTabla(char* rec){
+	tp_recurso recurso;
+	bool coincideNombre(void* node){
+		return strcmp((((tp_recurso) node)->nombre), rec);
+	}
+	bool ret = list_any_satisfy(tabla_recursos, coincideNombre);
+	return ret;
+}
+
+bool recursoEstaAsignado(char* rec){
+	tp_recurso recurso;
+	bool coincideNombre2(void* node){
+		return strcmp((((tp_recurso) node)->nombre), rec);
+	}
+	recurso = list_find(tabla_recursos, coincideNombre2);
+	if(recurso->valor <= 0){
+		return true;
+	}else{
+		return false;
+	}
+}
+
+void agregarGdtAColaRecurso(tp_tipoRecurso recurso){
+	tp_recurso recu;
+	bool coincideNombreCola(void* node){
+		return strcmp((((tp_recurso) node)->nombre), recurso->recurso);
+		}
+	recu = list_remove_by_condition(tabla_recursos, coincideNombreCola);
+	list_add(recu->gdts_en_espera, recurso->id_GDT);
+	recu->valor = recu->valor - 1;
+	list_add(tabla_recursos, recu);
+}
+

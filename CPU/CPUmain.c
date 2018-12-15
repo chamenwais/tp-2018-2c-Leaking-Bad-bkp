@@ -163,7 +163,7 @@ void iniciar_operacion_dummy(tp_DTB dtb){
 
 void solicitar_a_FM9_la_sentencia(tp_DTB dtb){
 	enviarCabecera(serverMEM, PedirLineaParaEjecutar, sizeof(PedirLineaParaEjecutar));
-	prot_enviar_CPU_FM9_pedir_linea(dtb->escriptorio, dtb->id_GDT, dtb->program_counter, serverMEM);
+	prot_enviar_CPU_FM9_pedir_linea(dtb->escriptorio, dtb->id_GDT, dtb->program_counter, serverMEM);//pc es numero de linea
 	logger_CPU(escribir_loguear, l_trace,"Le he pedido a FM9 la sentencia que debo ejecutar...");
 }
 
@@ -313,7 +313,6 @@ void actualizar_dtb_liberar_archivo(char * path, tp_DTB dtb){
 	path_archivo_para_comparar = path;
 	list_remove_by_condition(dtb->tabla_dir_archivos, &tienen_el_mismo_nombre);
 	///se lo tengo que enviar a safa?? lo hace safa??
-	///esto lo hace fm9?
 }
 
 void liberar_archivo_abierto(char * path, tp_DTB dtb){

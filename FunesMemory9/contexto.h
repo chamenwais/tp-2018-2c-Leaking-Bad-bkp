@@ -88,5 +88,6 @@ typedef struct conexion_cpu t_conexion_cpu;
 extern t_conexion_cpu conexiones_cpu[MAX_CLIENTES];
 extern t_list * archivos_cargandose;
 extern t_list * archivos_devolviendose;
+extern char * path_archivo_para_comparar;
 
 #endif /* CONTEXTO_H_ */

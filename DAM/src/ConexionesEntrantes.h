@@ -75,5 +75,16 @@ void tratar_archivo_inexistente_en_mdj_flush(tp_datosEnMemoria pedido_flush,
 		int socket_safa);
 void tratar_espacio_insuficiente_mdj_flush(int socket_safa,
 		tp_datosEnMemoria pedido_flush);
+int * adaptar_sockets_sin_mp_para_hilo(int CPU_Fd, int Safa_fd, int filesystem_fd);
+void operacion_crear_archivo(int *sockets);
+t_cabecera crear_archivo(int socket_mdj, tp_crearLineasArch mensaje_cpu);
+void loguear_y_avisar_a_safa_creacion_erronea(int sockfd_safa, int pid);
+void informar_operacion_crear_erronea(int socket_safa, int pid);
+void informar_operacion_crear_exitosa(int socket_safa, int pid);
+void operacion_eliminar_archivo(int *sockets);
+t_cabecera eliminar_archivo(int socket_mdj, tp_eliminarArch mensaje_cpu);
+void loguear_y_avisar_a_safa_eliminacion_erronea(int sockfd_safa, int pid);
+void informar_operacion_eliminar_erronea(int socket_safa, int pid);
+void informar_operacion_eliminar_exitosa(int socket_safa, int pid);
 
 #endif /* CONEXIONESENTRANTES_H_ */

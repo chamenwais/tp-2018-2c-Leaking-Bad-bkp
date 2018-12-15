@@ -153,6 +153,7 @@ tp_datosObtenidosDeProtocolo prot_recibir_FM9_DMA_devolverDatos(int sock);
 void prot_enviar_DMA_SAFA_finFlush(char* path, int pid, int sock);
 tp_pathPid prot_recibir_DMA_SAFA_finFlush(int sock);
 void prot_enviar_CPU_FM9_pedir_linea(char * path, int id, int pc, int sock);
+void prot_enviar_CPU_FM9_linea_pedida(char * linea, int pc, int sock);
 tp_lineaCPU prot_recibir_CPU_FM9_pedir_linea(int sock);
 void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char* escriptorio, t_list* lista, int quantum, int sock);
 tp_DTB prot_recibir_SAFA_CPU_DTB(int sock);
@@ -168,7 +169,14 @@ void prot_enviar_CPU_FM9_liberar_archivo(char * path, int id_GDT, int sock);
 tp_liberarArchivo prot_enviar_CPU_FM9_recibir_liberar_archivo(int sock);
 void prot_enviar_CPU_DMA_crear_lineas_arch(char * path, int cant_lineas, int id_GDT, int sock);
 tp_crearLineasArch prot_recibir_CPU_DMA_crear_lineas_arch(int sock);
+void prot_enviar_CPU_DAM_eliminar_arch_de_disco(char * path, int id_GDT, int sock);
 tp_eliminarArch prot_recibir_CPU_DAM_eliminar_arch_de_disco(int sock);
 void prot_enviar_FS_DMA_datosObtenidos_serializado(t_datosObtenidos datosObtenidos, int sock);
+int prot_recibir_CPU_SAFA_bloquear_DTB(int sock);
+int prot_recibir_CPU_SAFA_abortar_DTB(int sock);
+void prot_enviar_DMA_SAFA_crearArchivo(int id_GDT, int sock);
+int prot_recibir_DMA_SAFA_crearArchivo(int sock);
+void prot_enviar_DMA_SAFA_eliminarArchivo(int id_GDT, int sock);
+int prot_recibir_DMA_SAFA_eliminarArchivo(int sock);
 
 #endif /* LQVG_PROTOCOLO_H_ */

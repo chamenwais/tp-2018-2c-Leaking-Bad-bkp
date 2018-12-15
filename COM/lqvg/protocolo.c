@@ -218,6 +218,13 @@ void prot_enviar_FM9_DMA_cargaEnMemoria(int memory_address, int sock){
 	enviar(sock,&memory_address,sizeof(memory_address));
 }
 
+void prot_enviar_CPU_FM9_linea_pedida(char * linea, int pc, int sock){
+	int linea_size = strlen(linea)+1;
+	enviar(sock,&linea_size,sizeof(linea_size));
+	enviar(sock,linea,linea_size);
+	enviar(sock,&pc,sizeof(pc));
+}
+
 tp_lineaCPU prot_recibir_CPU_FM9_pedir_linea(int sock){
 	int tam_linea;
 	tp_lineaCPU recibido = malloc(sizeof(tp_lineaCPU));
@@ -361,8 +368,20 @@ void prot_enviar_CPU_SAFA_abortar_DTB(int id_GDT, int sock){
 	enviar(sock,&id_GDT,sizeof(id_GDT));
 }
 
+int prot_recibir_CPU_SAFA_abortar_DTB(int sock){
+	int idGDT;
+	recibir(sock, &idGDT, sizeof(int));
+	return idGDT;
+}
+
 void prot_enviar_CPU_SAFA_bloquear_DTB(int id_GDT, int sock){
 	enviar(sock,&id_GDT,sizeof(id_GDT));
+}
+
+int prot_recibir_CPU_SAFA_bloquear_DTB(int sock){
+	int idGDT;
+	recibir(sock, &idGDT, sizeof(int));
+	return idGDT;
 }
 
 tp_obtenerArchivo prot_recibir_DMA_FM9_obtenerArchivo(int sock){
@@ -615,4 +634,34 @@ tp_DTB prot_recibir_SAFA_CPU_DTB(int sock){
 
 	return DTB;
 
+}
+
+void prot_enviar_DMA_SAFA_crearArchivo(int id_GDT, int sock){
+	int * p_id_GDT=malloc(sizeof(int));
+	*p_id_GDT=id_GDT;
+	enviar(sock,p_id_GDT,sizeof(int));
+	free(p_id_GDT);
+}
+
+int prot_recibir_DMA_SAFA_crearArchivo(int sock){
+	int * p_id_GDT=malloc(sizeof(int));
+	recibir(sock,p_id_GDT,sizeof(int));
+	int retorno=*p_id_GDT;
+	free(p_id_GDT);
+	return retorno;
+}
+
+void prot_enviar_DMA_SAFA_eliminarArchivo(int id_GDT, int sock){
+	int * p_id_GDT=malloc(sizeof(int));
+	*p_id_GDT=id_GDT;
+	enviar(sock,p_id_GDT,sizeof(int));
+	free(p_id_GDT);
+}
+
+int prot_recibir_DMA_SAFA_eliminarArchivo(int sock){
+	int * p_id_GDT=malloc(sizeof(int));
+	recibir(sock,p_id_GDT,sizeof(int));
+	int retorno=*p_id_GDT;
+	free(p_id_GDT);
+	return retorno;
 }

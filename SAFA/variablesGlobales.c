@@ -18,6 +18,8 @@ int fd_DMA;
 int resultadoComElDiego;
 bool safa_conectado;
 int id;
+int hayDummy;
+int algoritmo_planificacion;
 t_list* nuevos;
 t_list* listos;
 t_list* ejecutando;
@@ -27,6 +29,9 @@ t_list* auxVirtualRR;
 t_list* cpu_ejecutando;
 t_list* cpu_libres;
 t_list* dtbConEqGrandeAbierto;
+t_list* tabla_recursos;
+t_list* lista_espera_recursos;
 pthread_mutex_t mutexDePausaDePlanificacion;
+pthread_mutex_t mutexDePausaPCP;
 bool DAM_conectado;
 

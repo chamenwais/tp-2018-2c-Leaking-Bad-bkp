@@ -14,6 +14,8 @@ int main(int argc, char** argv){
 	//Inicio el Log y variables//
 	inicializarLog();
 	inicializarSemaforosSAFA();
+	pthread_mutex_lock(&mutexDePausaDePlanificacion); //la planif del PLP arranca pausada
+	pthread_mutex_lock(&mutexDePausaPCP);//la planif del PCP arranca pausada
 	inicializarVariablesSAFA(); // estado = CORRUPTO
 	inicializarListas(); //inicializo listas planificacion
 	/*Levanto archivo de configuracion*/
@@ -34,10 +36,13 @@ int main(int argc, char** argv){
 	//Iniciar Consola//
 	 iniciarConsola();
 
+	//Iniciar Planificacion//
+	 if(iniciarPLP()==EXIT_FAILURE) finalizarTodo();
+	 if(iniciarPCP()==EXIT_FAILURE) finalizarTodo();
+
 	//Iniciar escucha//
 	if(escuchar()==EXIT_FAILURE) finalizarTodo();
-	if(iniciarPLP()==EXIT_FAILURE) finalizarTodo();
-	if(iniciarPCP()==EXIT_FAILURE) finalizarTodo();
+
 
 	liberarMemoria();
 }
