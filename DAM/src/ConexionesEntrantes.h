@@ -80,5 +80,11 @@ void operacion_crear_archivo(int *sockets);
 t_cabecera crear_archivo(int socket_mdj, tp_crearLineasArch mensaje_cpu);
 void loguear_y_avisar_a_safa_creacion_erronea(int sockfd_safa, int pid);
 void informar_operacion_crear_erronea(int socket_safa, int pid);
+void informar_operacion_crear_exitosa(int socket_safa, int pid);
+void operacion_eliminar_archivo(int *sockets);
+t_cabecera eliminar_archivo(int socket_mdj, tp_eliminarArch mensaje_cpu);
+void loguear_y_avisar_a_safa_eliminacion_erronea(int sockfd_safa, int pid);
+void informar_operacion_eliminar_erronea(int socket_safa, int pid);
+void informar_operacion_eliminar_exitosa(int socket_safa, int pid);
 
 #endif /* CONEXIONESENTRANTES_H_ */
