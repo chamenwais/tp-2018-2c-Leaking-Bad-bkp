@@ -30,12 +30,7 @@ typedef struct defMetadata {
 } t_metadata;
 typedef t_metadata* tp_metadata;
 
-typedef struct defDatosObtenidos {
-	enum MENSAJES resultado;
-	char * datos;
-} t_datosObtenidos;
 
-typedef t_metadata* tp_metadata;
 typedef struct defHiloDMA {
 	pthread_attr_t attr;
 	pthread_t thread;

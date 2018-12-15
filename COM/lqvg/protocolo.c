@@ -17,6 +17,45 @@ void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTo
 	}
 }
 
+void prot_enviar_FS_DMA_datosObtenidos_serializado(t_datosObtenidos datosObtenidos, int sock){
+	//66 envia
+	int sizeDeLaEsctructura=sizeof(t_datosObtenidosDeProtocolo);
+	enviar(sock,&(datosObtenidos.resultado),sizeof(datosObtenidos.resultado));
+	if(datosObtenidos.resultado==DatosObtenidos){
+		int enviado=0;
+		int sizeDeMallocsiezDeMalloc=sizeof(long int)+datosObtenidos.size;
+		//printf("\nsize de datos: %d\nsize de malloc: %d\n",datosObtenidos.size, sizeDeMallocsiezDeMalloc);
+		char*datos=malloc(sizeDeMallocsiezDeMalloc);
+		memcpy(datos,&(datosObtenidos.size),sizeof(long int));
+		enviado=enviado+sizeof(int long);
+		memcpy(datos+enviado,datosObtenidos.datos,datosObtenidos.size);
+		for(int i=0;i<datosObtenidos.size;i++)printf("%c",datosObtenidos.datos[i]);
+		enviado=enviado+datosObtenidos.size;
+		enviar(sock,datos,enviado);
+		//printf("Enviando:%d=%d+%d\n",enviado,sizeof(long int),datosObtenidos.size);
+	}
+}
+
+tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos_serializado(int sock){
+	//66 recibir
+	int resultado;
+	char*datos;
+	tp_datosObtenidosDeProtocolo obtenidos=malloc(sizeof(t_datosObtenidosDeProtocolo));
+	recibir(sock,&resultado,sizeof(resultado));
+	if(resultado==DatosObtenidos){
+		int tamanio_total_archivo;
+		//en este caso tengo datos para recibir
+		recibir(sock,&(obtenidos->size),4);
+		//printf("\nsize: %d\n",obtenidos->size);
+		obtenidos->buffer = malloc(obtenidos->size);
+		recibir(sock,obtenidos->buffer,obtenidos->size);
+		/*printf("\nbuffer");
+		for(int i=0;i<obtenidos->size;i++)printf("%c",obtenidos->buffer[i]);
+		printf("\n");*/
+		}
+	return obtenidos;
+}
+
 tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos(int sock){
 	//1 recibir
 	int resultado;
@@ -24,7 +63,7 @@ tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos(int sock){
 	recibir(sock,&resultado,sizeof(resultado));
 	if(resultado==DatosObtenidos){
 		//en este caso tengo datos para recibir
-		obtenidos = malloc(sizeof(tp_datosObtenidosDeProtocolo));
+		//obtenidos = malloc(sizeof(tp_datosObtenidosDeProtocolo));
 		recibir(sock,&(obtenidos->tamanio_total_archivo),sizeof(obtenidos->tamanio_total_archivo));
 		recibir(sock,&(obtenidos->size),sizeof(&(obtenidos->size)));
 		obtenidos->buffer = malloc(obtenidos->size);

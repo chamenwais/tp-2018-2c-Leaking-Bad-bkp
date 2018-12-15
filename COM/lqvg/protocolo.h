@@ -27,9 +27,17 @@ typedef t_crearArchivo* tp_crearArchivo;
 typedef struct datosObtenidos{
 	int tamanio_total_archivo;
 	char* buffer;
-	int size;
-} t_datosObtenidosDeProtocolo;
+	long int size;
+} __attribute__((packed))
+t_datosObtenidosDeProtocolo;
 typedef t_datosObtenidosDeProtocolo* tp_datosObtenidosDeProtocolo;
+
+typedef struct defDatosObtenidos {
+	enum MENSAJES resultado;
+	char * datos;
+	long int size;
+} t_datosObtenidos;
+typedef t_datosObtenidos* tp_datosObtenidos;
 
 typedef struct stru_abrirPath{
 	char* path;
@@ -161,5 +169,6 @@ tp_liberarArchivo prot_enviar_CPU_FM9_recibir_liberar_archivo(int sock);
 void prot_enviar_CPU_DMA_crear_lineas_arch(char * path, int cant_lineas, int id_GDT, int sock);
 tp_crearLineasArch prot_recibir_CPU_DMA_crear_lineas_arch(int sock);
 tp_eliminarArch prot_recibir_CPU_DAM_eliminar_arch_de_disco(int sock);
+void prot_enviar_FS_DMA_datosObtenidos_serializado(t_datosObtenidos datosObtenidos, int sock);
 
 #endif /* LQVG_PROTOCOLO_H_ */

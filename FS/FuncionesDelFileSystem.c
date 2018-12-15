@@ -1291,10 +1291,13 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 	log_info(LOGGER,"Llamo a la funcion para obtener los datos");
 	t_datosObtenidos datosObtenidos = obtenerDatos(parametrosDeObtenerDatos->path,
 		parametrosDeObtenerDatos->offset,parametrosDeObtenerDatos->size);
+	log_info(LOGGER,"Obteniendo logitud del los datos");
 	int tamanioTotalDelArchivo=obtenerLongigutDelArchivo(parametrosDeObtenerDatos->path);
-	prot_enviar_FS_DMA_datosObtenidos(datosObtenidos.datos, tamanioTotalDelArchivo,
-			datosObtenidos.resultado, fileDescriptorActual);
 	log_info(LOGGER,"Enviando respuesta de datos obtenidos al DMA");
+	//prot_enviar_FS_DMA_datosObtenidos(datosObtenidos.datos, tamanioTotalDelArchivo,
+	//		datosObtenidos.resultado, fileDescriptorActual);
+	log_info(LOGGER,"Voy a enviar los datos obtenidos por el FD: %d",fileDescriptorActual);
+	prot_enviar_FS_DMA_datosObtenidos_serializado(datosObtenidos, fileDescriptorActual);
 	free(datosObtenidos.datos);
 	return EXIT_SUCCESS;
 }
@@ -1309,6 +1312,7 @@ t_datosObtenidos obtenerDatos(char *path, long int offset, long int size){
 	t_datosObtenidos datosObtendios;
 	long int bytesLeidos=0;
 	datosObtendios.datos=malloc(sizeof(char)*size);
+	datosObtendios.size=size;
 	char *ubicacionDelArchivoDeMetadata=string_new();
 	string_append(&ubicacionDelArchivoDeMetadata,configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivoDeMetadata, "/Archivos/");
@@ -1381,10 +1385,9 @@ t_datosObtenidos obtenerDatos(char *path, long int offset, long int size){
 						}
 					free(archivoDeBloque);
 					}//fin del for
-
-				log_info(LOGGER,"Se pudo recuperar todo el archivo %s devolviendo datos",ubicacionDelArchivoDeMetadata);
 				datosObtendios.resultado=DatosObtenidos;
-				free(ubicacionDelArchivoDeMetadata);
+				//free(ubicacionDelArchivoDeMetadata);
+				log_info(LOGGER,"Se pudo recuperar todo el archivo devolviendo datos");
 				pthread_mutex_unlock(&mutexSistemaDeArchivos);
 				return datosObtendios;
 			}else{
