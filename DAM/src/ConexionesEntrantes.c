@@ -94,8 +94,12 @@ void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 					adaptar_sockets_sin_mp_para_hilo(socket_CPU_solicitante,socket_safa,socket_filesystem));
 			break;
 		case EliminarArchivoDeDisco:
+			pthread_create(&hilo_correspondiente_a_pedido,&atributo_detachable,(void *)operacion_eliminar_archivo,
+					adaptar_sockets_sin_mp_para_hilo(socket_CPU_solicitante,socket_safa,socket_filesystem));
 			break;
 		default:
+			logger_DAM(escribir_loguear, l_warning,
+						"El CPU no se hizo entender hermano");
 			break;
 	}
 	pthread_attr_destroy(&atributo_detachable);
@@ -522,7 +526,7 @@ void operacion_crear_archivo(int *sockets){
 		loguear_cabecera_recibida(CONST_NAME_MDJ);
 		//valida el enum respuesta TODO falta diferenciar falta de espacio o archivo ya existe
 		if(ArchivoNoCreado==respuesta_creacion_path.tipoDeMensaje){
-			//informar el error creacion a safa
+			//informar el error de creacion a safa
 			logger_DAM(escribir_loguear, l_warning,"Hubo un error de espacio insuficiente en MDJ al crear el archivo");
 			informar_operacion_crear_erronea(socket_safa, pedido_creacion->id_GDT);
 			return;
@@ -562,4 +566,62 @@ void informar_operacion_crear_exitosa(int socket_safa, int pid){
 	pthread_mutex_unlock(&MX_SAFA);
 	logger_DAM(escribir_loguear, l_trace,
 				"Se informo a safa la creacion del archivo para el pid [%d]", pid);
+}
+
+void operacion_eliminar_archivo(int *sockets){
+	int socket_CPU=sockets[0];
+	int socket_safa=sockets[1];
+	int socket_mdj=sockets[2];
+	free(sockets);
+	tp_eliminarArch pedido_eliminacion=prot_recibir_CPU_DAM_eliminar_arch_de_disco(socket_CPU);
+	logger_DAM(escribir_loguear, l_trace,"Ehhh, voy a eliminar %s",pedido_eliminacion->path);
+	enviarCabecera(socket_CPU,EliminarArchivoDeDiscoEjecutandose,sizeof(EliminarArchivoDeDiscoEjecutandose));
+	t_cabecera respuesta_eliminacion_path = eliminar_archivo(socket_mdj, pedido_eliminacion);
+	if(!cabecera_correcta(&respuesta_eliminacion_path)){
+		//informa el error de la eliminacion a safa
+		loguear_y_avisar_a_safa_eliminacion_erronea(socket_safa,pedido_eliminacion->id_GDT);
+	} else {
+		loguear_cabecera_recibida(CONST_NAME_MDJ);
+		//valida el enum respuesta
+		if(ArchivoNoBorrado==respuesta_eliminacion_path.tipoDeMensaje){
+			//informar el error de la eliminacion a SAFA
+			logger_DAM(escribir_loguear, l_warning,"El archivo no existe en MDJ");
+			informar_operacion_eliminar_erronea(socket_safa, pedido_eliminacion->id_GDT);
+			return;
+		}
+		//informar el exito de la eliminacion a Safa
+		logger_DAM(escribir_loguear, l_trace,"El archivo %s se elimino del disco",pedido_eliminacion->path);
+		informar_operacion_eliminar_exitosa(socket_safa,pedido_eliminacion->id_GDT);
+		free(pedido_eliminacion->path);
+	}
+}
+
+t_cabecera eliminar_archivo(int socket_mdj, tp_eliminarArch mensaje_cpu) {
+	pthread_mutex_lock(&MX_FS);
+	enviarCabecera(socket_mdj, BorrarArchivo, sizeof(BorrarArchivo));
+	prot_enviar_DMA_FS_path(mensaje_cpu->path,socket_mdj);
+	t_cabecera respuesta_eliminacion = recibirCabecera(socket_mdj);
+	pthread_mutex_unlock(&MX_FS);
+	return respuesta_eliminacion;
+}
+
+void loguear_y_avisar_a_safa_eliminacion_erronea(int sockfd_safa, int pid){
+	logger_DAM(escribir_loguear, l_warning,"Hubo un error de comunicacion con MDJ al eliminar el archivo");
+	informar_operacion_eliminar_erronea(sockfd_safa, pid);
+}
+
+void informar_operacion_eliminar_erronea(int socket_safa, int pid) {
+	pthread_mutex_lock(&MX_SAFA);
+	enviarCabecera(socket_safa, EliminarArchivoDeDiscoNoFinalizado, sizeof(EliminarArchivoDeDiscoNoFinalizado));
+	prot_enviar_DMA_SAFA_eliminarArchivo(pid, socket_safa);
+	pthread_mutex_unlock(&MX_SAFA);
+}
+
+void informar_operacion_eliminar_exitosa(int socket_safa, int pid){
+	pthread_mutex_lock(&MX_SAFA);
+	enviarCabecera(socket_safa, EliminarArchivoDeDiscoFinalizadoOk, sizeof(EliminarArchivoDeDiscoFinalizadoOk));
+	prot_enviar_DMA_SAFA_eliminarArchivo(pid, socket_safa);
+	pthread_mutex_unlock(&MX_SAFA);
+	logger_DAM(escribir_loguear, l_trace,
+					"Se informo a safa la eliminacion del archivo para el pid [%d]", pid);
 }
