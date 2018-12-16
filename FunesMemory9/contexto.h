@@ -85,6 +85,18 @@ struct conexion_cpu {
 };
 typedef struct conexion_cpu t_conexion_cpu;
 
+struct tabla_segmentos{
+	int pid;
+	t_list * entradas;
+};
+typedef struct tabla_segmentos t_tabla_segmentos;
+
+struct entrada_tabla_paginas{
+	int pagina;
+	int marco;
+};
+typedef struct entrada_tabla_paginas t_entrada_tabla_paginas;
+
 extern t_conexion_cpu conexiones_cpu[MAX_CLIENTES];
 extern t_list * archivos_cargandose;
 extern t_list * archivos_devolviendose;
