@@ -20,3 +20,6 @@ t_list * archivos_cargandose = NULL;
 t_list * archivos_devolviendose = NULL;
 t_conexion_cpu conexiones_cpu[MAX_CLIENTES];
 char * path_archivo_para_comparar;
+
+t_list * tablas_de_segmentos=NULL;
+t_list * bitmap_marcos_libres=NULL;

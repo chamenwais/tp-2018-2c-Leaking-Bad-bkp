@@ -63,6 +63,9 @@ extern char * MEMORIA_FISICA;
 extern int GLOBAL_SEGUIR;
 extern pthread_t threadConsola;
 
+extern t_list * tablas_de_segmentos;
+extern t_list * bitmap_marcos_libres;
+
 struct archivo_cargandose{
 	int pid;
 	char * buffer_archivo;
