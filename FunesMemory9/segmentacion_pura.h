@@ -25,7 +25,6 @@ struct hueco{
 };
 typedef struct hueco t_hueco;
 
-extern t_list * tablas_de_segmentos;
 extern t_list * lista_de_huecos;
 
 void inicializar_lista_de_huecos();
@@ -38,19 +37,15 @@ void crear_estructuras_esquema_segmentacion();
 void cargar_parte_archivo_en_segmento(int DAM_fd);
 void destruir_estructuras_esquema_segmentacion();
 void eliminar_lista_de_entradas(void * tabla_segmentos);
-t_archivo_cargandose* cargar_buffer_archivo(tp_cargarEnMemoria parte_archivo);
 t_hueco* tomar_hueco_con_limite_mas_grande();
 bool archivo_mas_grande_que_hueco(int tamanio_en_lineas_archivo,const t_hueco* hueco);
 bool archivo_igual_al_hueco(int tamanio_archivo_en_linas,const t_hueco* hueco_usado);
 t_hueco* tomar_hueco();
 void actualizar_info_tabla_de_huecos(int tamanio_archivo_en_memoria, t_hueco* hueco);
-int separar_en_lineas(t_archivo_cargandose * archivo_cargado, char** archivo_separado_en_lineas);
 int actualizar_tabla_segmentos(tp_cargarEnMemoria parte_archivo, int nueva_base, int nuevo_limite);
 void copiar_archivo_a_memoria_fisica(size_t tamanio_archivo_en_memoria, t_hueco* hueco, char* archivo_separado_en_lineas);
 int crear_nueva_entrada_tabla_de_segmentos(tp_cargarEnMemoria parte_archivo, int nueva_base, int nuevo_limite);
-void informar_carga_segmento_exitosa(int indice_entrada_archivo_en_tabla_segmentos, tp_cargarEnMemoria parte_archivo, int DAM_fd);
 void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id);
-int todavia_falta_mandar_pedazo_de_archivo(tp_cargarEnMemoria pedazo_actual, t_archivo_cargandose * archivo_cargandose);
 void obtener_parte_archivo_con_segmentacion(int DAM_fd);
 t_archivo_devolviendose* filtrar_info_archivo_devolviendose(int id_dtb);
 bool trozo_faltante_es_menor_que_transfersize(t_archivo_devolviendose* info_trozo_archivo, int transfer_size);

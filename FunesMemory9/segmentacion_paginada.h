@@ -19,6 +19,7 @@ struct entrada_tabla_segmentos_pag{
 };
 typedef struct entrada_tabla_segmentos_pag t_entrada_tabla_segmentos_pag;
 
+
 /*** Segmentacion paginada ***/
 
 void crear_estructuras_esquema_segmentacion_paginada();
@@ -29,4 +30,6 @@ void obtener_parte_archivo_con_segmentacion_paginada(int DAM_fd);
 void darle_una_linea_al_cpu_segmentacion_paginada(int sock);
 void asignar_datos_a_linea_segmentacion_paginada(int sock);
 void liberar_archivo_abierto_segmentacion_paginada(int sock);
+
+
 #endif /* SEGMENTACION_PAGINADA_H_ */
