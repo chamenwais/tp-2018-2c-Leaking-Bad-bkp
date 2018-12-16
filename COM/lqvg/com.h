@@ -76,6 +76,8 @@ enum MENSAJES {
 	RespuestaASolicitudDeRecursoDenegada,
 	LiberarArchivoAbierto,
 	LiberarArchivoAbiertoEjecutandose,
+	EspacionInsuficiente,
+	ArchivoYaExiste
 };
 
 typedef struct {

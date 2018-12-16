@@ -1202,11 +1202,13 @@ int crearArchivo(char *ubicacionDelArchivo, int cantidadDeBytes, char *path){
 			}else{
 				if(resultadoDeGuardarDatos==ArchivoNoEncontrado){
 					log_error(LOGGER,"Error interno de guardar datos");
+					return ArchivoNoCreado;
 					}
 				if(resultadoDeGuardarDatos==NoHayMasBloquesLibres){
 					log_error(LOGGER,"No hay mas bloques libres");
+					return EspacionInsuficiente;
 					}
-				return ArchivoNoCreado;
+
 				}
 		}else{
 			pthread_mutex_unlock(&mutexSistemaDeArchivos);
@@ -1216,7 +1218,7 @@ int crearArchivo(char *ubicacionDelArchivo, int cantidadDeBytes, char *path){
 	}else{
 		pthread_mutex_unlock(&mutexSistemaDeArchivos);
 		log_info(LOGGER,"El archivo ya existe");
-		return ArchivoNoCreado;
+		return ArchivoYaExiste;
 	}
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 }
