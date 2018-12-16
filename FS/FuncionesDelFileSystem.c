@@ -946,7 +946,7 @@ void *hiloDePedidoDeDMA(void* arg){
 	int cabecera = (int)arg;
 	iniciarTrabajoConElDMA(cabecera);
 	log_info(LOGGER,"Finalizando pedido del DMA");
-	free(arg);
+	//free(arg);
 	pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	return EXIT_SUCCESS;
 }
@@ -1106,8 +1106,9 @@ int crearArchivoDeConsola(char *path, int cantidadDeBytes){
 int crearArchivoDeDMA(int FDDMA){
 	/* Recibe del DMA los valores: path
 	 */
-	tp_crearArchivo dataParaCrearElArchivo=prot_recibir_DMA_FS_CrearArchivo(FDDMA);
-	log_info(LOGGER,"Recibiendo el path: \"%s\", para crear el archivo",dataParaCrearElArchivo->path);
+	tp_crearArchivo dataParaCrearElArchivo=prot_recibir_DMA_FS_CrearArchivo_serializado(FDDMA);
+	log_info(LOGGER,"Recibiendo el path: \"%s\", para crear el archivo, con size %d",
+			dataParaCrearElArchivo->path,dataParaCrearElArchivo->size);
 	char*ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Archivos/");
@@ -1285,7 +1286,7 @@ int obtenerDatosDeConsola(char *path, long int offset, long int Size){
 
 int obtenerDatosDeDMA(int fileDescriptorActual){
 	log_info(LOGGER,"Voy a recibir los datos a guardar por el FD: %d",fileDescriptorActual);
-	tp_obtenerDatos parametrosDeObtenerDatos = prot_recibir_DMA_FS_obtenerDatos(fileDescriptorActual);
+	tp_obtenerDatos parametrosDeObtenerDatos = prot_recibir_DMA_FS_obtenerDatos_serializado(fileDescriptorActual);
 	log_info(LOGGER,"Path:%s | Offset:%d | Size:%d",
 		parametrosDeObtenerDatos->path,parametrosDeObtenerDatos->offset,parametrosDeObtenerDatos->size);
 	log_info(LOGGER,"Llamo a la funcion para obtener los datos");
@@ -1298,7 +1299,7 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 	//		datosObtenidos.resultado, fileDescriptorActual);
 	log_info(LOGGER,"Voy a enviar los datos obtenidos por el FD: %d",fileDescriptorActual);
 	prot_enviar_FS_DMA_datosObtenidos_serializado(datosObtenidos, fileDescriptorActual);
-	free(datosObtenidos.datos);
+	//free(datosObtenidos.datos);
 	return EXIT_SUCCESS;
 }
 
@@ -1362,14 +1363,19 @@ t_datosObtenidos obtenerDatos(char *path, long int offset, long int size){
 						}else{
 							if(i==0){
 								//Primer bloque
+								log_info(LOGGER,"Leer en primer arch desde %d",leerEnPrimerArchivoDesde);
 								bytesALeer=configuracionDeMetadata.tamanioBloques-leerEnPrimerArchivoDesde;
 								fseek(archivo, leerEnPrimerArchivoDesde, SEEK_SET);
+								if(numeroDeBloqueDeFinDeLectura==numeroDeBloqueDeInicioDeLectura){
+									bytesALeer=size-bytesLeidos;
+									}
 							}else{
 								//Ultimo bloque
 								bytesALeer=size-bytesLeidos;
 								}
 							}
-						log_info(LOGGER,"Leyendo del archivo %s, %d bytes",archivoDeBloque,bytesALeer);
+						log_info(LOGGER,"Leyendo del archivo %s, %d bytes, desde %d, size %d",
+								archivoDeBloque,bytesALeer,bytesLeidos,size);
 						fread(&datosObtendios.datos[bytesLeidos],sizeof(char),bytesALeer,archivo);
 						bytesLeidos=bytesALeer+bytesLeidos;
 						bloqueActual++;
@@ -1417,7 +1423,7 @@ int guardarDatosDeConsola(char *path, long int offset, long int size, char *Buff
 
 int guardarDatosDeDMA(int fileDescriptorActual){
 	log_info(LOGGER,"Voy a recibir los datos a guardar por el FD: %d",fileDescriptorActual);
-	tp_obtenerDatos datos = prot_recibir_FS_DMA_guardarDatos(fileDescriptorActual);
+	tp_obtenerDatos datos = prot_recibir_FS_DMA_guardarDatos_serializado(fileDescriptorActual);
 	log_info(LOGGER,"Recibi los datos");
 	log_info(LOGGER,"Path:%s | Offset:%d | Size:%d | Buffer:%s",
 			datos->path,datos->offset,datos->size,datos->buffer);

@@ -17,44 +17,6 @@ void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTo
 	}
 }
 
-void prot_enviar_FS_DMA_datosObtenidos_serializado(t_datosObtenidos datosObtenidos, int sock){
-	//66 envia
-	int sizeDeLaEsctructura=sizeof(t_datosObtenidosDeProtocolo);
-	enviar(sock,&(datosObtenidos.resultado),sizeof(datosObtenidos.resultado));
-	if(datosObtenidos.resultado==DatosObtenidos){
-		int enviado=0;
-		int sizeDeMallocsiezDeMalloc=sizeof(long int)+datosObtenidos.size;
-		//printf("\nsize de datos: %d\nsize de malloc: %d\n",datosObtenidos.size, sizeDeMallocsiezDeMalloc);
-		char*datos=malloc(sizeDeMallocsiezDeMalloc);
-		memcpy(datos,&(datosObtenidos.size),sizeof(long int));
-		enviado=enviado+sizeof(int long);
-		memcpy(datos+enviado,datosObtenidos.datos,datosObtenidos.size);
-		for(int i=0;i<datosObtenidos.size;i++)printf("%c",datosObtenidos.datos[i]);
-		enviado=enviado+datosObtenidos.size;
-		enviar(sock,datos,enviado);
-		//printf("Enviando:%d=%d+%d\n",enviado,sizeof(long int),datosObtenidos.size);
-	}
-}
-
-tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos_serializado(int sock){
-	//66 recibir
-	int resultado;
-	char*datos;
-	tp_datosObtenidosDeProtocolo obtenidos=malloc(sizeof(t_datosObtenidosDeProtocolo));
-	recibir(sock,&resultado,sizeof(resultado));
-	if(resultado==DatosObtenidos){
-		int tamanio_total_archivo;
-		//en este caso tengo datos para recibir
-		recibir(sock,&(obtenidos->size),4);
-		//printf("\nsize: %d\n",obtenidos->size);
-		obtenidos->buffer = malloc(obtenidos->size);
-		recibir(sock,obtenidos->buffer,obtenidos->size);
-		/*printf("\nbuffer");
-		for(int i=0;i<obtenidos->size;i++)printf("%c",obtenidos->buffer[i]);
-		printf("\n");*/
-		}
-	return obtenidos;
-}
 
 tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos(int sock){
 	//1 recibir
@@ -69,6 +31,47 @@ tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos(int sock){
 		obtenidos->buffer = malloc(obtenidos->size);
 		recibir(sock,obtenidos->buffer,obtenidos->size);
 	}
+	return obtenidos;
+}
+
+void prot_enviar_FS_DMA_datosObtenidos_serializado(t_datosObtenidos datosObtenidos, int sock){
+	//s1 envia
+	int sizeDeLaEsctructura=sizeof(t_datosObtenidosDeProtocolo);
+	enviar(sock,&(datosObtenidos.resultado),sizeof(datosObtenidos.resultado));
+	if(datosObtenidos.resultado==DatosObtenidos){
+		int enviado=0;
+		int sizeDeMallocsiezDeMalloc=sizeof(long int)+datosObtenidos.size;
+		//printf("\nsize de datos: %d\nsize de malloc: %d\n",datosObtenidos.size, sizeDeMallocsiezDeMalloc);
+		char*datos=malloc(sizeDeMallocsiezDeMalloc);
+		memcpy(datos,&(datosObtenidos.size),sizeof(long int));
+		enviado=enviado+sizeof(int long);
+		memcpy(datos+enviado,datosObtenidos.datos,datosObtenidos.size);
+		//for(int i=0;i<datosObtenidos.size;i++)printf("%c",datosObtenidos.datos[i]);
+		enviado=enviado+datosObtenidos.size;
+		enviar(sock,datos,enviado);
+		//printf("Enviando:%d=%d+%d\n",enviado,sizeof(long int),datosObtenidos.size);
+	}
+}
+
+tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos_serializado(int sock){
+	//s1 recibir
+	int resultado;
+	char*datos;
+	tp_datosObtenidosDeProtocolo obtenidos=malloc(sizeof(t_datosObtenidosDeProtocolo));
+	recibir(sock,&resultado,sizeof(resultado));
+	//printf("Recibi el resultado de obtener datos\n");
+	if(resultado==DatosObtenidos){
+		int tamanio_total_archivo;
+		//printf("Datos obtenidos\n");
+		//en este caso tengo datos para recibir
+		recibir(sock,&(obtenidos->size),4);
+		//printf("\nsize: %d\n",obtenidos->size);
+		obtenidos->buffer = malloc(obtenidos->size);
+		recibir(sock,obtenidos->buffer,obtenidos->size);
+		//printf("\nbuffer");
+		//for(int i=0;i<obtenidos->size;i++)printf("%c",obtenidos->buffer[i]);
+		//printf("\n");
+		}
 	return obtenidos;
 }
 
@@ -89,6 +92,41 @@ tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos(int sock){
 	recibir(sock,&tam,sizeof(tam));
 	recibido->path = malloc(tam);
 	recibir(sock,recibido->path,tam);
+	recibir(sock,&(recibido->offset),sizeof(recibido->offset));
+	recibir(sock,&(recibido->size),sizeof(recibido->size));
+	return recibido;
+}
+
+void prot_enviar_DMA_FS_obtenerDatos_serializado(t_obtenerDatos datos, int sock){
+	//s2 envia
+	int tam = strlen(datos.path)+1;
+	int sizeDeMallocsiezDeMalloc=sizeof(int)+sizeof(long int)*2+tam;
+	/*printf("\nsize de datos: %d\nsize de malloc: %d\ntam:%d\nsize de un char:%d\ndatos:%s\n",
+			datos.size, sizeDeMallocsiezDeMalloc,tam,sizeof(char),datos.path);
+	*/
+	char*datosAEnviar=malloc(sizeDeMallocsiezDeMalloc);
+	int enviado=0;
+	memcpy(datosAEnviar,&tam,sizeof(int));
+	enviado=sizeof(int)+enviado;
+	memcpy(datosAEnviar+enviado,datos.path,tam);
+	enviado=tam+enviado;
+	memcpy(datosAEnviar+enviado,&(datos.offset),sizeof(long int));
+	enviado=sizeof(long int)+enviado;
+	memcpy(datosAEnviar+enviado,&(datos.size),sizeof(long int));
+	enviado=sizeof(long int)+enviado;
+	enviar(sock,datosAEnviar,enviado);
+	return;
+}
+
+tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos_serializado(int sock){
+	//s2 recibe
+	int tam;
+	tp_obtenerDatos recibido = malloc(sizeof(t_obtenerDatos));
+	recibir(sock,&tam,sizeof(tam));
+	char*aux=malloc(tam);
+	recibir(sock,aux,tam);
+	recibido->path=aux;
+	for(int i=0;i<tam;i++)printf("%c",recibido->path[i]);
 	recibir(sock,&(recibido->offset),sizeof(recibido->offset));
 	recibir(sock,&(recibido->size),sizeof(recibido->size));
 	return recibido;
@@ -141,6 +179,55 @@ void prot_enviar_DMA_FS_guardarDatos(char *path, long int offset, long int size,
 
 tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos(int sock){
 	//4 recibe
+	int tam;
+	tp_obtenerDatos datos = malloc(sizeof(t_obtenerDatos));
+	recibir(sock,&tam,sizeof(tam));
+	char*path = malloc(tam);
+	recibir(sock,path,tam);
+	datos->path=path;
+	int size, offset;
+	recibir(sock,&offset,sizeof(offset));
+	datos->offset=offset;
+	recibir(sock,&size,sizeof(size));
+	datos->size=size;
+	int tam2;
+	recibir(sock,&tam2,sizeof(tam2));
+	char*buffer = malloc(tam2);
+	recibir(sock,buffer,tam2);
+	datos->buffer=buffer;
+	printf("Enviando: Path(%d) %s | Offset %d | Size %d | Buffer(%d) %s\n",
+		tam,path,offset,size,tam2,buffer);
+	return datos;
+}
+
+void prot_enviar_DMA_FS_guardarDatos_serializado(t_obtenerDatos datos, int sock){
+	//s4 envia
+	int tamPath = strlen(datos.path)+1;
+	int tamBuffer = strlen(datos.buffer);
+	int sizeDeMallocsiezDeMalloc=sizeof(int)+sizeof(long int)*2+tamPath+tamBuffer;
+
+	char*datosAEnviar=malloc(sizeDeMallocsiezDeMalloc);
+	int enviado=0;
+	memcpy(datosAEnviar+enviado,&tamPath,sizeof(int));
+	enviado=sizeof(int)+enviado;
+	memcpy(datosAEnviar+enviado,datos.path,tamPath);
+	enviado=tamPath+enviado;
+	memcpy(datosAEnviar+enviado,&(datos.offset),sizeof(long int));
+	enviado=sizeof(long int)+enviado;
+	memcpy(datosAEnviar+enviado,&(datos.size),sizeof(long int));
+	enviado=sizeof(long int)+enviado;
+	memcpy(datosAEnviar+enviado,&tamBuffer,sizeof(int));
+	enviado=sizeof(int)+enviado;
+	memcpy(datosAEnviar+enviado,datos.buffer,tamBuffer);
+	enviado=tamBuffer+enviado;
+	enviar(sock,datosAEnviar,enviado);
+	printf("Enviando: Path(%d) %s | Offset %d | Size %d | Buffer(%d) %s\n",
+		tamPath,datos.path,datos.offset,datos.size,tamBuffer,datos.buffer);
+	return;
+}
+
+tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos_serializado(int sock){
+	//s4 recibe
 	int tam;
 	tp_obtenerDatos datos = malloc(sizeof(t_obtenerDatos));
 	recibir(sock,&tam,sizeof(tam));
@@ -281,6 +368,35 @@ tp_crearArchivo prot_recibir_DMA_FS_CrearArchivo(int sock){
 	recibir(sock,cadena,size);
 	data->path=cadena;
 	recibir(sock,&(data->size),sizeof(data->size));
+	return data;
+}
+
+void prot_enviar_DMA_FS_CrearArchivo_serializado(t_crearArchivo dataDelArchivo,int sock){
+	//s10 recibe
+	int tam = strlen(dataDelArchivo.path)+1;
+	int sizeDeMallocsiezDeMalloc=sizeof(long int)+tam+sizeof(int);
+	char*datosAEnviar=malloc(sizeDeMallocsiezDeMalloc);
+	int enviado=0;
+	memcpy(datosAEnviar+enviado,&tam,sizeof(int));
+	enviado=sizeof(int)+enviado;
+	memcpy(datosAEnviar+enviado,dataDelArchivo.path,tam);
+	enviado=tam+enviado;
+	memcpy(datosAEnviar+enviado,&(dataDelArchivo.size),sizeof(int));
+	enviado=sizeof(int)+enviado;
+	enviar(sock,datosAEnviar,enviado);
+	return;
+}
+
+tp_crearArchivo prot_recibir_DMA_FS_CrearArchivo_serializado(int sock){
+	//s10 envia
+	tp_crearArchivo data = malloc(sizeof(tp_crearArchivo));
+	char* path;
+	int size;
+	recibir(sock,&size,sizeof(int));
+	char*cadena = malloc(size);
+	recibir(sock,cadena,size);
+	data->path=cadena;
+	recibir(sock,&(data->size),sizeof(int));
 	return data;
 }
 

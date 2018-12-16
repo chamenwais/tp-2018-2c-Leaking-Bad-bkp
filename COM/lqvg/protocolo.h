@@ -12,16 +12,18 @@
 
 typedef struct stru_obtenerDatos{
 	char* path;
-	unsigned long int offset;
-	unsigned long int size;
+	long int offset;
+	long int size;
 	char* buffer;
-} t_obtenerDatos;
+} __attribute__((packed))
+t_obtenerDatos;
 typedef t_obtenerDatos* tp_obtenerDatos;
 
 typedef struct stru_crearArchivo{
 	char* path;
 	int size;
-} t_crearArchivo;
+} __attribute__((packed))
+t_crearArchivo;
 typedef t_crearArchivo* tp_crearArchivo;
 
 typedef struct datosObtenidos{
@@ -178,5 +180,13 @@ void prot_enviar_DMA_SAFA_crearArchivo(int id_GDT, int sock);
 int prot_recibir_DMA_SAFA_crearArchivo(int sock);
 void prot_enviar_DMA_SAFA_eliminarArchivo(int id_GDT, int sock);
 int prot_recibir_DMA_SAFA_eliminarArchivo(int sock);
+void prot_enviar_FS_DMA_datosObtenidos_serializado(t_datosObtenidos datosObtenidos, int sock);
+tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos_serializado(int sock);
+void prot_enviar_DMA_FS_obtenerDatos_serializado(t_obtenerDatos datos, int sock);
+tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos_serializado(int sock);
+void prot_enviar_DMA_FS_guardarDatos_serializado(t_obtenerDatos datos, int sock);
+tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos_serializado(int sock);
+void prot_enviar_DMA_FS_CrearArchivo_serializado(t_crearArchivo dataDelArchivo,int sock);
 
+tp_crearArchivo prot_recibir_DMA_FS_CrearArchivo_serializado(int sock);
 #endif /* LQVG_PROTOCOLO_H_ */
