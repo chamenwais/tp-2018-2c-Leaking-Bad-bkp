@@ -19,12 +19,6 @@ struct entrada_tabla_segmentos{
 };
 typedef struct entrada_tabla_segmentos t_entrada_tabla_segmentos;
 
-struct tabla_segmentos{
-	int pid;
-	t_list * entradas;
-};
-typedef struct tabla_segmentos t_tabla_segmentos;
-
 struct hueco{
 	int base;
 	int limite;

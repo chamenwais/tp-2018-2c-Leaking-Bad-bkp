@@ -137,7 +137,7 @@ bool realizar_operacion_liberar(tp_liberarArchivo paquete_liberar){
 	t_hueco* hueco;
 	t_entrada_tabla_segmentos * entrada_segmento;
 
-	if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,paquete_liberar->id_GDT)){
+	if(list_any_satisfy_comparing(tablas_de_segmentos, &tiene_tabla_de_segmentos, paquete_liberar->id_GDT)){
 		t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(paquete_liberar->id_GDT);
 		path_archivo_para_comparar = paquete_liberar->path;
 		entrada_segmento = list_find(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
@@ -151,7 +151,7 @@ bool realizar_operacion_liberar(tp_liberarArchivo paquete_liberar){
 }
 
 void liberar_archivo_abierto_segmentacion_pura(int sock){
-	tp_liberarArchivo paquete_liberar = prot_recibir_CPU_FM9_recibir_liberar_archivo(sock);
+	tp_liberarArchivo paquete_liberar = prot_recibir_CPU_FM9_liberar_archivo(sock);
 	if(realizar_operacion_liberar(paquete_liberar)){
 		enviarCabecera(sock, LiberarArchivoAbiertoEjecutandose, sizeof(LiberarArchivoAbiertoEjecutandose));
 		logger_funesMemory9(escribir_loguear, l_info,"Se le aviso al CPU solicitante que se esta liberando el archivo deseado\n");
@@ -211,7 +211,7 @@ int separar_en_lineas(t_archivo_cargandose * archivo_cargado, char** archivo_sep
 	//Convierto el stream a string para poder usar funciones de string de las commons
 	archivo_cargado->buffer_archivo=realloc(archivo_cargado->buffer_archivo, archivo_cargado->recibido_actualmente+1);
 	archivo_cargado->buffer_archivo[archivo_cargado->recibido_actualmente]='\0';
-	char ** lineas=string_split(archivo_cargado->buffer_archivo,"");
+	char ** lineas=string_split(archivo_cargado->buffer_archivo,"\n");
 	int cant_lineas=-1;
 	for(cant_lineas=0;lineas[cant_lineas]!=NULL;cant_lineas++){
 		if(cant_lineas==0){
@@ -267,7 +267,7 @@ t_tabla_segmentos* buscar_tabla_de_segmentos(int pid) {
 }
 
 void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id){
-	if(id == NULL){
+	if(id == -1){
 		logger_funesMemory9(escribir_loguear, l_error,"Falta el ID del DTB, proba de nuevo\n");
 	}else{
 		t_entrada_tabla_segmentos * entrada_segmento;

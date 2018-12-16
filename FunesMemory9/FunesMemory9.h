@@ -37,7 +37,8 @@ int consola_derivar_comando(char * buffer);
 void inicializar_conexiones_cpu(void);
 void *consola();
 int consola_leer_stdin(char *read_buffer, size_t max_len);
-
+void validar_parametro_consola(char ** parametro);
+void limpiar_token_consola(char* token);
 
 /*** Funciones y variables necesarias a intercambiar segun el esquema de memoria utilizado ***/
 void (*crear_estructuras_esquema[3])();

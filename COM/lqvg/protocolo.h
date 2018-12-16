@@ -166,7 +166,7 @@ void prot_enviar_CPU_SAFA_retener_recurso(char * recurso, int id_GDT, int sock);
 void prot_enviar_CPU_SAFA_liberar_recurso(char * recurso, int id_GDT, int sock);
 tp_tipoRecurso prot_recibir_CPU_SAFA_liberar_recurso(int sock);
 void prot_enviar_CPU_FM9_liberar_archivo(char * path, int id_GDT, int sock);
-tp_liberarArchivo prot_enviar_CPU_FM9_recibir_liberar_archivo(int sock);
+tp_liberarArchivo prot_recibir_CPU_FM9_liberar_archivo(int sock);
 void prot_enviar_CPU_DMA_crear_lineas_arch(char * path, int cant_lineas, int id_GDT, int sock);
 tp_crearLineasArch prot_recibir_CPU_DMA_crear_lineas_arch(int sock);
 void prot_enviar_CPU_DAM_eliminar_arch_de_disco(char * path, int id_GDT, int sock);

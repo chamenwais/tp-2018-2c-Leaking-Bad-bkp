@@ -542,7 +542,7 @@ tp_crearLineasArch prot_recibir_CPU_DMA_crear_lineas_arch(int sock){
 	return crear_lineas_arch;
 }
 
-tp_liberarArchivo prot_recibir_CPU_FM9_recibir_liberar_archivo(int sock){
+tp_liberarArchivo prot_recibir_CPU_FM9_liberar_archivo(int sock){
 	tp_liberarArchivo liberar_archivo;
 	int tam_path;
 	recibir(sock,&tam_path,sizeof(int));
