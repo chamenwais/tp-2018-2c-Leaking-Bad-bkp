@@ -7,11 +7,28 @@
 #include "segmentacion_paginada.h"
 
 void crear_estructuras_esquema_segmentacion_paginada(){
-
+	tablas_de_segmentos=list_create();
+	inicializar_bitmap_de_marcos_libres();
+	archivos_cargandose=list_create();
+	archivos_devolviendose=list_create();
 }
 
 void cargar_parte_archivo_en_segmento_paginado(int DAM_fd){
-
+	tp_cargarEnMemoria parte_archivo=prot_recibir_DMA_FM9_cargarEnMemoria(DAM_fd);
+	t_archivo_cargandose * archivo_de_proceso_cargandose = cargar_buffer_archivo(parte_archivo);
+	if(todavia_falta_mandar_pedazo_de_archivo(parte_archivo, archivo_de_proceso_cargandose)){
+		logger_funesMemory9(escribir_loguear, l_trace,"Se acumulo una parte del archivo en un buffer\n");
+		prot_enviar_FM9_DMA_cargaEnMemoria(0, DAM_fd);
+		return;
+	}
+	logger_funesMemory9(escribir_loguear, l_trace,
+			"Ya se obtuvo el archivo y se intentara agregar el segmento paginado en la memoria principal\n");
+	if(true/*TODO ver como averiguas que no hay mas marcos libres*/){
+		informar_espacio_insuficiente(DAM_fd);
+		return;
+	}
+	char * archivo_separado_en_lineas=NULL;
+	int cantidad_de_lineas=separar_en_lineas(archivo_de_proceso_cargandose,&archivo_separado_en_lineas);
 }
 
 void destruir_estructuras_esquema_segmentacion_paginada(){

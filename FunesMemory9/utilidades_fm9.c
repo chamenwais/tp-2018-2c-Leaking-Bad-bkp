@@ -271,3 +271,91 @@ void remover_caracter(char * string_afectado, char caracter){
 	}
 	*dst = '\0';
 }
+
+t_archivo_cargandose * cargar_buffer_archivo(tp_cargarEnMemoria parte_archivo) {
+	t_archivo_cargandose * archivo_de_proceso_cargandose;
+	size_t tamanio_parte_archivo = strlen(parte_archivo->buffer);
+	if (el_archivo_ya_se_estaba_cargando(parte_archivo)) {
+		//El pedazo de archivo es conocido, hay que obtener la info que ya veníamos cargando
+		obtener_archivo_en_curso_de_carga(parte_archivo, &archivo_de_proceso_cargandose);
+		//TODO agregar algunas validaciones para no tener efectos adversos en el realloc
+		size_t tamanio_archivo_cargandose= strlen(archivo_de_proceso_cargandose->buffer_archivo);
+		archivo_de_proceso_cargandose->buffer_archivo=realloc(archivo_de_proceso_cargandose->buffer_archivo,
+				tamanio_archivo_cargandose+tamanio_parte_archivo);
+	} else {
+		//El pedazo de archivo es nuevo, hay que crear el structure del mismo.
+		archivo_de_proceso_cargandose=malloc(sizeof(t_archivo_cargandose));
+		archivo_de_proceso_cargandose->pid = parte_archivo->pid;
+		archivo_de_proceso_cargandose->recibido_actualmente=0;
+		archivo_de_proceso_cargandose->buffer_archivo=malloc(tamanio_parte_archivo);
+		//Tambien se agrega elemento de archivo cargandose a la lista
+		logger_funesMemory9(escribir_loguear, l_trace,"Se agrega a la lista, un elemento por archivo cargandose del proceso %d\n"
+					,parte_archivo->pid);
+		list_add(archivos_cargandose,archivo_de_proceso_cargandose);
+	}
+	archivo_de_proceso_cargandose->recibido_actualmente +=tamanio_parte_archivo;
+	memcpy(archivo_de_proceso_cargandose->buffer_archivo, parte_archivo->buffer,tamanio_parte_archivo);
+	free(parte_archivo->buffer);
+	return archivo_de_proceso_cargandose;
+}
+
+int todavia_falta_mandar_pedazo_de_archivo(tp_cargarEnMemoria pedazo_actual, t_archivo_cargandose * archivo_cargandose){
+	return archivo_cargandose->recibido_actualmente<pedazo_actual->file_size;
+}
+
+/**
+ * @DESC:Va sacando lineas desde el buffer del archivo.
+ * Por cada linea, reservar memoria, y copia la linea al buffer del archivo separado en lineas de a tamanios de linea
+ * hasta que queda un pedazo menor al tamanio de una linea, el cual tambien copia.
+ */
+int separar_en_lineas(t_archivo_cargandose * archivo_cargado, char** archivo_separado_en_lineas){
+	//Convierto el stream a string para poder usar funciones de string de las commons
+	archivo_cargado->buffer_archivo=realloc(archivo_cargado->buffer_archivo, archivo_cargado->recibido_actualmente+1);
+	archivo_cargado->buffer_archivo[archivo_cargado->recibido_actualmente]='\0';
+	char ** lineas=string_split(archivo_cargado->buffer_archivo,"\n");
+	int cant_lineas=-1;
+	for(cant_lineas=0;lineas[cant_lineas]!=NULL;cant_lineas++){
+		if(cant_lineas==0){
+			//se esta creando la primer linea, se usa malloc
+			*archivo_separado_en_lineas=malloc(TAMANIO_MAX_LINEA);
+		} else {
+			//no es la primer linea, hay que usar realloc
+			*archivo_separado_en_lineas=realloc(*archivo_separado_en_lineas,TAMANIO_MAX_LINEA);
+		}
+		string_append(archivo_separado_en_lineas,lineas[cant_lineas]);
+		//Le tengo que agregar nuevamente el \n porque el split se lo quita
+		string_append(archivo_separado_en_lineas,"\n");
+		//Le sumo uno por el  que tenia originalmente
+		int tamanio_linea_separada = string_length(lineas[cant_lineas])+1;
+		if (tamanio_linea_separada < TAMANIO_MAX_LINEA) {
+			//Si la linea del archivo es mas chica que el tamanio de linea, completo con $
+			int cantidad_sobrante=TAMANIO_MAX_LINEA-tamanio_linea_separada;
+			char * relleno_sobrante=string_repeat('$',cantidad_sobrante);
+			string_append(archivo_separado_en_lineas,relleno_sobrante);
+		} else if (tamanio_linea_separada>TAMANIO_MAX_LINEA){
+			logger_funesMemory9(escribir_loguear, l_warning,
+						"Se exedio el tamanio de una linea\n");
+			return -1;
+		}
+
+	}
+	free(archivo_cargado->buffer_archivo);
+	return cant_lineas;
+}
+
+void informar_carga_segmento_exitosa(int indice_entrada_archivo_en_tabla_segmentos, tp_cargarEnMemoria parte_archivo, int DAM_fd) {
+	logger_funesMemory9(escribir_loguear, l_info,
+			"Se creo el segmento %d para el archivo %s\n",
+			indice_entrada_archivo_en_tabla_segmentos, parte_archivo->path);
+	prot_enviar_FM9_DMA_cargaEnMemoria(
+			indice_entrada_archivo_en_tabla_segmentos, DAM_fd);
+}
+
+void inicializar_bitmap_de_marcos_libres() {
+	bitmap_marcos_libres = list_create();
+	int cantidad_de_marcos=(int)TAMANIO_MEMORIA / TAMANIO_PAGINA;
+	int indicador_de_marco_libre=0;
+	for(int marco=0;marco<cantidad_de_marcos;marco++){
+		list_add(bitmap_marcos_libres,&indicador_de_marco_libre);
+	}
+}
