@@ -101,8 +101,8 @@ void interpretar_mensaje_cpu(enum MENSAJES mensaje, int cpu_socket){
 			logger_funesMemory9(escribir_loguear, l_info, "El cpu solicito liberar un archivo abierto\n");
 			(liberar_archivo_abierto[MODO_EJECUCION])(cpu_socket);
 			break;
-
 		default:
+			logger_funesMemory9(escribir_loguear, l_warning, "No se le entendio nada al cpu\n");
 			break;
 	}
 }
@@ -117,8 +117,8 @@ void interpretar_mensaje_del_diego(enum MENSAJES mensaje, int DMA_socket){
 			logger_funesMemory9(escribir_loguear, l_info, "El Diego quiere hacerle flush a un archivo\n");
 			(obtener_parte_archivo[MODO_EJECUCION])(DMA_socket);
 			break;
-		//TODO agregar otros pedidos de DMA
 		default:
+			logger_funesMemory9(escribir_loguear, l_warning, "El Diego esta re duro y no se le entiende nada\n");
 			break;
 	}
 }
@@ -241,6 +241,20 @@ void realizar_dump(int id){
 	(buscar_informacion_administrativa[MODO_EJECUCION])(id);
 }
 
+void validar_parametro_consola(char ** parametro){
+	if(*parametro!=NULL){
+		return;
+	}
+	*parametro="-1";
+}
+
+void limpiar_token_consola(char* token) {
+	if (token != NULL) {
+		free(token);
+		token = NULL;
+	}
+}
+
 int consola_derivar_comando(char * buffer){
 
 	int comando_key;
@@ -254,19 +268,18 @@ int consola_derivar_comando(char * buffer){
 	// Obtiene la clave del comando a ejecutar para el switch
 	comando_key = consola_obtener_key_comando(comando);
 
+	validar_parametro_consola(&parametro1);
+
 	switch(comando_key){
 		case dump:
-			realizar_dump((int)parametro1);
+			realizar_dump((int)atoi(parametro1));
 			break;
 	}
 
 	//Limpio el parametro 1
-	if(parametro1 != NULL){
-		free(parametro1);
-		parametro1 = NULL;
-	}
+	limpiar_token_consola(parametro1);
+	limpiar_token_consola(comando);
 
-	free(comando);
 	return res;
 }
 

@@ -56,6 +56,7 @@ void crear_hilos_conexiones_entrantes(int socket_fm9, int socket_safa, int socke
 						loguear_y_cerrar_comunicacion_erronea_con_CPU(
 								iterador_conexiones_existentes);
 						FD_CLR(iterador_conexiones_existentes, &lista_fd_maestra);
+						continue;
 					}
 					loguear_cabecera_recibida(CONST_NAME_CPU);
 					clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(

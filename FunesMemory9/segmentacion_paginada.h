@@ -12,6 +12,13 @@
 #include "utilidades_fm9.h"
 #include "utilidades_para_listas.h"
 
+struct entrada_tabla_segmentos_pag{
+	t_list * base;
+	int limite;
+	char * archivo;
+};
+typedef struct entrada_tabla_segmentos_pag t_entrada_tabla_segmentos_pag;
+
 /*** Segmentacion paginada ***/
 
 void crear_estructuras_esquema_segmentacion_paginada();
