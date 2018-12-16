@@ -37,7 +37,7 @@ int atender_nuevo_cpu(int serv_socket){
 
 	logger_funesMemory9(escribir_loguear,l_trace,"\nSe aceptó un nuevo cpu, conexión (%d)\n", new_client_sock);
 
-	//Lo agrego a la lista de conexiones esi actuales
+	//Lo agrego a la lista de conexiones con cpu actuales
 	for (int i = 0; i < MAX_CLIENTES; ++i) {
 
 		if (conexiones_cpu[i].socket == NO_SOCKET) {
@@ -62,7 +62,7 @@ void crear_hilo_conexion(int socket, void*funcion_a_ejecutar(int)){
 
 t_cabecera recibir_mensaje_cpu(t_conexion_cpu conexion_cpu){
 
-	logger_funesMemory9(escribir_loguear,l_debug,"Llegó un nuevo mensaje desde el ESI %d!\n",conexion_cpu.pid);
+	logger_funesMemory9(escribir_loguear,l_debug,"Llegó un nuevo mensaje desde el CPU %d!\n",conexion_cpu.pid);
 	t_cabecera cabecera=recibirCabecera(conexion_cpu.socket);
 	interpretar_mensaje_cpu(cabecera.tipoDeMensaje, conexion_cpu.socket);
 
