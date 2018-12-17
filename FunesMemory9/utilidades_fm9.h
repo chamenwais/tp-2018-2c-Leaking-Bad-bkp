@@ -31,5 +31,11 @@ bool el_proceso_tiene_archivo_devolviendose(void * archivo_devolviendose, int pi
 void (*destruir_estructuras_esquema[3])();
 void borrar_info_archivo_devolviendose(int pid);
 void remover_caracter(char * string_afectado, char caracter);
+t_archivo_cargandose* cargar_buffer_archivo(tp_cargarEnMemoria parte_archivo);
+int todavia_falta_mandar_pedazo_de_archivo(tp_cargarEnMemoria pedazo_actual, t_archivo_cargandose * archivo_cargandose);
+int separar_en_lineas(t_archivo_cargandose * archivo_cargado, char** archivo_separado_en_lineas);
+void informar_carga_segmento_exitosa(int indice_entrada_archivo_en_tabla_segmentos,
+		tp_cargarEnMemoria parte_archivo, int DAM_fd);
+void inicializar_bitmap_de_marcos_libres();
 
 #endif /* UTILIDADES_FM9_H_ */

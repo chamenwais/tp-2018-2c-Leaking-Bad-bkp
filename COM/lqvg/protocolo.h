@@ -78,14 +78,21 @@ typedef struct stru_pathPid{
 } t_pathPid;
 typedef t_pathPid* tp_pathPid;
 
-typedef struct stru_lineaParaCPU{
+typedef struct stru_lineaCPU{
 	char* linea;
+	int id_GTD;
 	int pc;
 } t_lineaCPU;
 typedef t_lineaCPU* tp_lineaCPU;
 
+typedef struct stru_lineaParaCPU{
+	char* linea;
+} t_lineaParaCPU;
+typedef t_lineaParaCPU* tp_lineaParaCPU;
+
 typedef struct stru_asigarDatos{
 	int id_GDT;
+	int pc;
 	char * datos;
 	char * linea;
 	char * path;
@@ -155,11 +162,11 @@ tp_datosObtenidosDeProtocolo prot_recibir_FM9_DMA_devolverDatos(int sock);
 void prot_enviar_DMA_SAFA_finFlush(char* path, int pid, int sock);
 tp_pathPid prot_recibir_DMA_SAFA_finFlush(int sock);
 void prot_enviar_CPU_FM9_pedir_linea(char * path, int id, int pc, int sock);
-void prot_enviar_CPU_FM9_linea_pedida(char * linea, int pc, int sock);
+void prot_enviar_CPU_FM9_linea_pedida(char * linea, int sock);
 tp_lineaCPU prot_recibir_CPU_FM9_pedir_linea(int sock);
 void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char* escriptorio, t_list* lista, int quantum, int sock);
 tp_DTB prot_recibir_SAFA_CPU_DTB(int sock);
-void prot_enviar_CPU_FM9_asignar_datos_linea(char * datos, char * linea, char * path, int id_GDT, int sock);
+void prot_enviar_CPU_FM9_asignar_datos_linea(char * datos, char * linea, char * path, int id_GDT, int pc, int sock);
 void prot_enviar_CPU_SAFA_abortar_DTB(int id_GDT, int sock);
 tp_asignarDatosLinea prot_recibir_CPU_FM9_asignar_datos_linea(int sock);
 void prot_enviar_CPU_SAFA_bloquear_DTB(int id_GDT, int sock);
@@ -187,6 +194,7 @@ tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos_serializado(int sock);
 void prot_enviar_DMA_FS_guardarDatos_serializado(t_obtenerDatos datos, int sock);
 tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos_serializado(int sock);
 void prot_enviar_DMA_FS_CrearArchivo_serializado(t_crearArchivo dataDelArchivo,int sock);
-
 tp_crearArchivo prot_recibir_DMA_FS_CrearArchivo_serializado(int sock);
+tp_lineaParaCPU prot_recibir_CPU_FM9_linea_pedida(int sock);
+
 #endif /* LQVG_PROTOCOLO_H_ */

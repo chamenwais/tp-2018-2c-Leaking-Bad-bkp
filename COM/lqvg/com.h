@@ -65,6 +65,7 @@ enum MENSAJES {
 	FinalizarTrabajoConElFS,
 	PedirLineaParaEjecutar,
 	NoHuboProblemaConLaLineaParaCpu,
+	HuboProblemaConLaLineaParaCpu,
 	ErrorSegmentoPagina,
 	AsignarDatosALinea,
 	AsignarDatosALineaEjecutandose,
@@ -77,7 +78,9 @@ enum MENSAJES {
 	LiberarArchivoAbierto,
 	LiberarArchivoAbiertoEjecutandose,
 	EspacionInsuficiente,
-	ArchivoYaExiste
+	ArchivoYaExiste,
+	LiberarArchivoAbiertoNoFinalizado,
+	FalloDeSegmentoMemoria
 };
 
 typedef struct {

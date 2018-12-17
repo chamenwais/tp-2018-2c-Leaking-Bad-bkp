@@ -43,6 +43,7 @@ void eliminar_archivo_de_mdj(char * path, tp_DTB dtb);
 void realizar_la_operacion_que_corresponda_segun(t_operacion resultado_del_parseado, tp_DTB dtb);
 void proceder_con_lectura_escriptorio(tp_DTB dtb);
 void recibir_dtb_y_delegar(tp_DTB dtb);
+tp_DTB recibir_SAFA_CPU_DTB(int sock);
 
 #endif /* CPUmain_H_ */
 

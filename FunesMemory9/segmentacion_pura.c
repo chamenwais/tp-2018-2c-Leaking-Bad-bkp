@@ -7,7 +7,6 @@
 
 #include "segmentacion_pura.h"
 
-t_list * tablas_de_segmentos=NULL;
 t_list * lista_de_huecos=NULL;
 
 int el_proceso_tiene_tabla_de_segmentos() {
@@ -86,64 +85,110 @@ void copiar_archivo_a_memoria_fisica(size_t tamanio_archivo_en_memoria,
 	free(archivo_separado_en_lineas);
 }
 
-void informar_carga_segmento_exitosa(int indice_entrada_archivo_en_tabla_segmentos, tp_cargarEnMemoria parte_archivo, int DAM_fd) {
-	logger_funesMemory9(escribir_loguear, l_info,
-			"Se creo el segmento %d para el archivo %s\n",
-			indice_entrada_archivo_en_tabla_segmentos, parte_archivo->path);
-	prot_enviar_FM9_DMA_cargaEnMemoria(
-			indice_entrada_archivo_en_tabla_segmentos, DAM_fd);
-}
-
-t_archivo_cargandose * cargar_buffer_archivo(tp_cargarEnMemoria parte_archivo) {
-	t_archivo_cargandose * archivo_de_proceso_cargandose;
-	size_t tamanio_parte_archivo = strlen(parte_archivo->buffer);
-	if (el_archivo_ya_se_estaba_cargando(parte_archivo)) {
-		//El pedazo de archivo es conocido, hay que obtener la info que ya veníamos cargando
-		obtener_archivo_en_curso_de_carga(parte_archivo, &archivo_de_proceso_cargandose);
-		//TODO agregar algunas validaciones para no tener efectos adversos en el realloc
-		size_t tamanio_archivo_cargandose= strlen(archivo_de_proceso_cargandose->buffer_archivo);
-		archivo_de_proceso_cargandose->buffer_archivo=realloc(archivo_de_proceso_cargandose->buffer_archivo,
-				tamanio_archivo_cargandose+tamanio_parte_archivo);
-	} else {
-		//El pedazo de archivo es nuevo, hay que crear el structure del mismo.
-		archivo_de_proceso_cargandose=malloc(sizeof(t_archivo_cargandose));
-		archivo_de_proceso_cargandose->pid = parte_archivo->pid;
-		archivo_de_proceso_cargandose->recibido_actualmente=0;
-		archivo_de_proceso_cargandose->buffer_archivo=malloc(tamanio_parte_archivo);
-		//Tambien se agrega elemento de archivo cargandose a la lista
-		logger_funesMemory9(escribir_loguear, l_trace,"Se agrega a la lista, un elemento por archivo cargandose del proceso %d\n"
-					,parte_archivo->pid);
-		list_add(archivos_cargandose,archivo_de_proceso_cargandose);
-	}
-	archivo_de_proceso_cargandose->recibido_actualmente +=tamanio_parte_archivo;
-	memcpy(archivo_de_proceso_cargandose->buffer_archivo, parte_archivo->buffer,tamanio_parte_archivo);
-	free(parte_archivo->buffer);
-	return archivo_de_proceso_cargandose;
-}
-
-void darle_una_linea_al_cpu_segmentacion_pura(int sock){
-
-}
-
-void asignar_datos_a_linea_segmentacion_pura(int sock){
-
-}
-
 bool tienen_el_mismo_nombre(void * arch1){
 	return string_equals_ignore_case(path_archivo_para_comparar, (char*)arch1);
 }
 
+void darle_una_linea_al_cpu_segmentacion_pura(int sock){
+/*	tp_lineaCPU paquete_asignar_linea;
+	paquete_asignar_linea = prot_recibir_CPU_FM9_pedir_linea(sock);
+
+	if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,paquete_asignar_linea->id_GDT)){
+		t_entrada_tabla_segmentos * entrada_segmento;
+		t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(paquete_asignar_linea->id_GDT);
+		path_archivo_para_comparar = paquete_asignar_linea->linea;
+		entrada_segmento = list_find(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
+
+		if(paquete_asignar_linea->pc > entrada_segmento->limite){
+			enviarCabecera(sock, HuboProblemaConLaLineaParaCpu, sizeof(HuboProblemaConLaLineaParaCpu));
+		}else{
+			int primer_byte_archivo = (entrada_segmento->base)*TAMANIO_MAX_LINEA;
+			char * direccion_base_archivo = MEMORIA_FISICA + primer_byte_archivo;
+			int cant_bytes_hasta_linea = (paquete_asignar_linea->pc)*TAMANIO_MAX_LINEA;
+			char * linea = malloc(TAMANIO_MAX_LINEA+1);
+			memcpy(linea,direccion_base_archivo+cant_bytes_hasta_linea,TAMANIO_MAX_LINEA);
+			//TODO aca faltan mallocs
+			char* linea_auxiliar = string_duplicate(linea);
+			string_trim(&linea_auxiliar);
+			char** split = string_n_split(linea_auxiliar, 2, "$");
+			char * linea_para_cpu = split[0];
+			int largo = strlen(linea_para_cpu);
+			linea_para_cpu[largo]='\0';
+			prot_enviar_CPU_FM9_linea_pedida(linea_para_cpu, sock);
+		}
+	}else{
+		enviarCabecera(sock, HuboProblemaConLaLineaParaCpu, sizeof(HuboProblemaConLaLineaParaCpu));
+	}
+*/
+}
+
+void asignar_datos_a_linea_segmentacion_pura(int sock){
+	/*	tp_asignarDatosLinea paquete_asignar_datos_linea;
+		paquete_asignar_datos_linea = prot_recibir_CPU_FM9_asignar_datos_linea(sock);
+
+		//se repite todo hasta obtener la linea
+		//no hacer el malloc
+		//ver cuanto queda entre el barra n y el tam max de linea, si alcanza para meter lo que piden
+
+		if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,paquete_asignar_datos_linea->id_GDT)){
+			t_entrada_tabla_segmentos * entrada_segmento;
+			t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(paquete_asignar_datos_linea->id_GDT);
+			path_archivo_para_comparar = paquete_asignar_datos_linea->path;
+			entrada_segmento = list_find(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
+
+			if(paquete_asignar_datos_linea->pc > entrada_segmento->limite){
+				logger_funesMemory9(escribir_loguear, l_error,"20002");
+				enviarCabecera(sock, FalloDeSegmentoMemoria, sizeof(FalloDeSegmentoMemoria));
+			}else{
+				int primer_byte_archivo = (entrada_segmento->base)*TAMANIO_MAX_LINEA;
+				char * direccion_base_archivo = MEMORIA_FISICA + primer_byte_archivo;
+
+				int cant_bytes_hasta_linea = paquete_asignar_datos_linea->pc *TAMANIO_MAX_LINEA;
+				char * linea = malloc(TAMANIO_MAX_LINEA+1);
+				memcpy(linea,direccion_base_archivo+cant_bytes_hasta_linea,TAMANIO_MAX_LINEA);
+				linea[TAMANIO_MAX_LINEA]='\0';
+
+				int cuanto_ocupa_lo_que_voy_a_meter = strlen(paquete_asignar_datos_linea->datos);
+				char* linea_auxiliar = string_duplicate(linea);
+				string_trim(&linea_auxiliar);
+				char** split = string_n_split(linea_auxiliar, 2, "\n");
+				char * info_linea = split[0];
+				char * lo_que_resta = split[1];
+				int size_lo_que_resta = strlen(lo_que_resta);
+				lo_que_resta[size_lo_que_resta]="\n";
+
+				int desde_barra_n_hasta_final_linea = TAMANIO_MAX_LINEA - (strlen(lo_que_resta)+1);
+				//todo eso ver si es mayor o igual que lo tengo que meter
+				//si esta todo bien, asigno los datos, sino seg fault 20003
+				//int cuantos_signos_pesos = desde_barra_n_hasta_final_linea - cuanto_ocupa_lo_que_voy_a_meter;
+				// char * sobrante = string_repeat($, cuantos_signos_pesos);
+				// string_append(&datos, sobrante);
+				//memcpy(direccion_base_archivo+cant_bytes_hasta_linea+    strlen de lo que resta +1,
+				//          datos, desde_barra_n_hasta_final_linea);
+				//
+			}
+		}
+	*/
+}
+
+void agregar_info_tabla_de_huecos(t_hueco * hueco){
+	list_add(lista_de_huecos, hueco);
+}
+
 bool realizar_operacion_liberar(tp_liberarArchivo paquete_liberar){
-	t_hueco* hueco;
 	t_entrada_tabla_segmentos * entrada_segmento;
 
-	if(list_any_satisfy_comparing(tablas_de_segmentos, &tiene_tabla_de_segmentos, paquete_liberar->id_GDT)){
+	if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,paquete_liberar->id_GDT)){
+		t_hueco* hueco;
 		t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(paquete_liberar->id_GDT);
 		path_archivo_para_comparar = paquete_liberar->path;
 		entrada_segmento = list_find(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
-		int tamanio_archivo_en_memoria = (entrada_segmento->limite)*TAMANIO_MAX_LINEA;
+		hueco->base = entrada_segmento->base;
+		hueco->limite = entrada_segmento->limite;
+
 		list_remove_by_condition(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
-		actualizar_info_tabla_de_huecos(tamanio_archivo_en_memoria, hueco);
+		//agregar hueco
+		agregar_info_tabla_de_huecos(hueco);
 		return true;
 	}else{
 		return false;
@@ -157,6 +202,7 @@ void liberar_archivo_abierto_segmentacion_pura(int sock){
 		logger_funesMemory9(escribir_loguear, l_info,"Se le aviso al CPU solicitante que se esta liberando el archivo deseado\n");
 	}else{
 		logger_funesMemory9(escribir_loguear, l_error,"40002\n");
+		enviarCabecera(sock, LiberarArchivoAbiertoNoFinalizado, sizeof(LiberarArchivoAbiertoNoFinalizado));
 	}
 	free(paquete_liberar);
 }
@@ -166,11 +212,12 @@ void cargar_parte_archivo_en_segmento(int DAM_fd){
 	t_archivo_cargandose * archivo_de_proceso_cargandose = cargar_buffer_archivo(parte_archivo);
 	//TODO agregar validaciones de posibles errores
 	if(todavia_falta_mandar_pedazo_de_archivo(parte_archivo, archivo_de_proceso_cargandose)){
-		logger_funesMemory9(escribir_loguear, l_trace,"Se acumulo una parte del archivo en un buffer");
+		logger_funesMemory9(escribir_loguear, l_trace,"Se acumulo una parte del archivo en un buffer\n");
 		prot_enviar_FM9_DMA_cargaEnMemoria(0, DAM_fd);
 		return;
 	}
-	logger_funesMemory9(escribir_loguear, l_trace,"Ya se obtuvo el archivo y se intentara agregar el segmento en la memoria principal\n");
+	logger_funesMemory9(escribir_loguear, l_trace,
+			"Ya se obtuvo el archivo y se intentara agregar el segmento en la memoria principal\n");
 	if(lista_de_huecos==NULL||list_is_empty(lista_de_huecos)){
 		informar_espacio_insuficiente(DAM_fd);
 		return;
@@ -200,46 +247,6 @@ void cargar_parte_archivo_en_segmento(int DAM_fd){
 	informar_carga_segmento_exitosa(indice_entrada_archivo_en_tabla_segmentos,
 			parte_archivo, DAM_fd);
 	return;
-}
-
-/**
- * @DESC:Va sacando lineas desde el buffer del archivo.
- * Por cada linea, reservar memoria, y copia la linea al buffer del archivo separado en lineas de a tamanios de linea
- * hasta que queda un pedazo menor al tamanio de una linea, el cual tambien copia.
- */
-int separar_en_lineas(t_archivo_cargandose * archivo_cargado, char** archivo_separado_en_lineas){
-	//Convierto el stream a string para poder usar funciones de string de las commons
-	archivo_cargado->buffer_archivo=realloc(archivo_cargado->buffer_archivo, archivo_cargado->recibido_actualmente+1);
-	archivo_cargado->buffer_archivo[archivo_cargado->recibido_actualmente]='\0';
-	char ** lineas=string_split(archivo_cargado->buffer_archivo,"\n");
-	int cant_lineas=-1;
-	for(cant_lineas=0;lineas[cant_lineas]!=NULL;cant_lineas++){
-		if(cant_lineas==0){
-			//se esta creando la primer linea, se usa malloc
-			*archivo_separado_en_lineas=malloc(TAMANIO_MAX_LINEA);
-		} else {
-			//no es la primer linea, hay que usar realloc
-			*archivo_separado_en_lineas=realloc(*archivo_separado_en_lineas,TAMANIO_MAX_LINEA);
-		}
-		string_append(archivo_separado_en_lineas,lineas[cant_lineas]);
-		//Le tengo que agregar nuevamente el \n porque el split se lo quita
-		string_append(archivo_separado_en_lineas,"\n");
-		//Le sumo uno por el  que tenia originalmente
-		int tamanio_linea_separada = string_length(lineas[cant_lineas])+1;
-		if (tamanio_linea_separada < TAMANIO_MAX_LINEA) {
-			//Si la linea del archivo es mas chica que el tamanio de linea, completo con $
-			int cantidad_sobrante=TAMANIO_MAX_LINEA-tamanio_linea_separada;
-			char * relleno_sobrante=string_repeat('$',cantidad_sobrante);
-			string_append(archivo_separado_en_lineas,relleno_sobrante);
-		} else if (tamanio_linea_separada>TAMANIO_MAX_LINEA){
-			logger_funesMemory9(escribir_loguear, l_warning,
-						"Se exedio el tamanio de una linea\n");
-			return -1;
-		}
-
-	}
-	free(archivo_cargado->buffer_archivo);
-	return cant_lineas;
 }
 
 void inicializar_lista_de_huecos() {
@@ -344,10 +351,6 @@ int crear_nueva_entrada_tabla_de_segmentos(tp_cargarEnMemoria parte_archivo, int
 		 return agregar_entrada_tabla_segmentos(parte_archivo, (*p_tabla_segmentos).entradas, nueva_base, nuevo_limite);
 	}
 	return -1;
-}
-
-int todavia_falta_mandar_pedazo_de_archivo(tp_cargarEnMemoria pedazo_actual, t_archivo_cargandose * archivo_cargandose){
-	return archivo_cargandose->recibido_actualmente<pedazo_actual->file_size;
 }
 
 t_archivo_devolviendose* filtrar_info_archivo_devolviendose(int id_dtb){
