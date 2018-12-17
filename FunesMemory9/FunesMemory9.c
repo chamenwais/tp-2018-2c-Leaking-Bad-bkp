@@ -16,7 +16,7 @@ void stdin_no_bloqueante(void){
 
 void iniciar_funes_memory_9(char * path){
 	inicializar_logger();
-	logger_funesMemory9(escribir_loguear, l_warning,"Hola! Soy Funes Memory 9, a sus ordenes... :)\n");
+	logger_funesMemory9(escribir_loguear, l_info,"Hola! Soy Funes Memory 9, a sus ordenes... :)\n");
 	cargar_archivo_de_configuracion(path);
 	configurar_signals();
 }
@@ -62,7 +62,7 @@ void crear_hilo_conexion(int socket, void*funcion_a_ejecutar(int)){
 
 t_cabecera recibir_mensaje_cpu(t_conexion_cpu conexion_cpu){
 
-	logger_funesMemory9(escribir_loguear,l_debug,"Llegó un nuevo mensaje desde el CPU %d!\n",conexion_cpu.pid);
+	logger_funesMemory9(escribir_loguear,l_info,"Llegó un nuevo mensaje desde el CPU %d!\n",conexion_cpu.pid);
 	t_cabecera cabecera=recibirCabecera(conexion_cpu.socket);
 	interpretar_mensaje_cpu(cabecera.tipoDeMensaje, conexion_cpu.socket);
 
@@ -71,7 +71,7 @@ t_cabecera recibir_mensaje_cpu(t_conexion_cpu conexion_cpu){
 
 bool cabecera_es_invalida_dam(t_cabecera cabecera){
 	if(sizeof(cabecera) != 0 && cabecera.tamanio>0){
-		logger_funesMemory9(escribir_loguear,l_trace,"El Diego dijo algo, vamos a tratar de entenderlo\n");
+		logger_funesMemory9(escribir_loguear,l_info,"El Diego dijo algo, vamos a tratar de entenderlo\n");
 		return false;
 	}
 	logger_funesMemory9(escribir_loguear,l_error,"No se le entendio nada al Diego, se cerrara la conexion\n");
@@ -133,7 +133,7 @@ t_cabecera recibir_mensaje_dam(int socket_DMA){
 }
 
 int comunicarse_con_dam(int socket_escucha){
-	logger_funesMemory9(escribir_loguear, l_trace,"Voy a esperar al Diego\n");
+	logger_funesMemory9(escribir_loguear, l_info,"Voy a esperar al Diego\n");
 
 	int socket_dam=aceptarConexion(socket_escucha);
 

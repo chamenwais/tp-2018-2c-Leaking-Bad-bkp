@@ -90,12 +90,12 @@ bool tienen_el_mismo_nombre(void * arch1){
 }
 
 void darle_una_linea_al_cpu_segmentacion_pura(int sock){
-/*	tp_lineaCPU paquete_asignar_linea;
+	tp_lineaCPU paquete_asignar_linea;
 	paquete_asignar_linea = prot_recibir_CPU_FM9_pedir_linea(sock);
 
-	if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,paquete_asignar_linea->id_GDT)){
+	if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,paquete_asignar_linea->id_GTD)){
 		t_entrada_tabla_segmentos * entrada_segmento;
-		t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(paquete_asignar_linea->id_GDT);
+		t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(paquete_asignar_linea->id_GTD);
 		path_archivo_para_comparar = paquete_asignar_linea->linea;
 		entrada_segmento = list_find(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
 
@@ -119,11 +119,11 @@ void darle_una_linea_al_cpu_segmentacion_pura(int sock){
 	}else{
 		enviarCabecera(sock, HuboProblemaConLaLineaParaCpu, sizeof(HuboProblemaConLaLineaParaCpu));
 	}
-*/
+
 }
 
 void asignar_datos_a_linea_segmentacion_pura(int sock){
-	/*	tp_asignarDatosLinea paquete_asignar_datos_linea;
+/*	tp_asignarDatosLinea paquete_asignar_datos_linea;
 		paquete_asignar_datos_linea = prot_recibir_CPU_FM9_asignar_datos_linea(sock);
 
 		//se repite todo hasta obtener la linea
@@ -168,7 +168,7 @@ void asignar_datos_a_linea_segmentacion_pura(int sock){
 				//
 			}
 		}
-	*/
+*/
 }
 
 void agregar_info_tabla_de_huecos(t_hueco * hueco){
