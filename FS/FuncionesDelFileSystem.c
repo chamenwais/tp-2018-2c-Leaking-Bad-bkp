@@ -298,6 +298,7 @@ void *funcionHiloConsola(void *arg){
 		printf("Comando desconocido\n");
 		}}}}}}}}}}}}}}}}}
 		free(linea);
+		free(instruccion);
 		//for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
 		//free(instruccion);
 		free(ubicacionDelPunteroDeLaConsola);
@@ -466,6 +467,7 @@ int obtenerLongigutDelArchivo(char* path){
 		if(!config_has_property(configuracion,"TAMANIO")) {
 			log_error(LOGGER,"No esta el valor TAMANIO en el archivo");
 			config_destroy(configuracion);
+			free(ubicacionDelArchivo);
 			pthread_mutex_unlock(&mutexSistemaDeArchivos);
 			return longitudDelArchivo;
 			}
@@ -473,6 +475,7 @@ int obtenerLongigutDelArchivo(char* path){
 		log_info(LOGGER,"El tamaño del archivo fue recuperado: %d",longitudDelArchivo);
 	}else{
 		log_error(LOGGER,"No existe el archivo %s",ubicacionDelArchivo);
+		free(ubicacionDelArchivo);
 		pthread_mutex_unlock(&mutexSistemaDeArchivos);
 		return longitudDelArchivo;
 		}
@@ -1063,6 +1066,7 @@ int validarArchivoDeDMA(int FDDMA){
 	log_info(LOGGER,"Recibiendo el path: \"%s\", para validar el archivo",path);
 	enviarCabecera(FDDMA, validarArchivo(path), 1);
 	log_info(LOGGER,"Enviando respuesta de validar archivo al DMA");
+	free(path);
 	return EXIT_SUCCESS;
 }
 
@@ -1234,6 +1238,7 @@ int borrarArchivoDeDMA(int fileDescriptorActual){
 	int resultadoDelBorrado=borrarArchivo(path);
 	enviarCabecera(fileDescriptorActual, resultadoDelBorrado, 1);
 	log_info(LOGGER,"Resultado de borrar al archivo enviado al DMA (%d)",resultadoDelBorrado);
+	free(path);
 	return EXIT_SUCCESS;
 }
 
@@ -1253,6 +1258,7 @@ int borrarArchivo(char *path){
 			bitarray_clean_bit(bitmap,numeroDeBloque);
 			bajarADiscoBitmap();
 			}
+		list_destroy(metadata->bloques);
 		free(metadata);
 		if(remove(ubicacionDelArchivoDeMetadata)==0){
 			log_info(LOGGER,"Se elimino el archivo de metadata: %s",ubicacionDelArchivoDeMetadata);
@@ -1304,6 +1310,9 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 	log_info(LOGGER,"Voy a enviar los datos obtenidos por el FD: %d",fileDescriptorActual);
 	prot_enviar_FS_DMA_datosObtenidos_serializado(datosObtenidos, fileDescriptorActual);
 	//free(datosObtenidos.datos);
+	free(parametrosDeObtenerDatos->path);
+	free(parametrosDeObtenerDatos->buffer);
+	free(parametrosDeObtenerDatos);
 	return EXIT_SUCCESS;
 }
 
@@ -1355,6 +1364,8 @@ t_datosObtenidos obtenerDatos(char *path, long int offset, long int size){
 						datosObtendios.resultado=ArchivoNoEncontrado;
 						free(datosObtendios.datos);
 						free(ubicacionDelArchivoDeMetadata);
+						list_destroy(metadata->bloques);
+						free(metadata);
 						pthread_mutex_unlock(&mutexSistemaDeArchivos);
 						return datosObtendios;
 						}
@@ -1390,13 +1401,16 @@ t_datosObtenidos obtenerDatos(char *path, long int offset, long int size){
 						free(datosObtendios.datos);
 						free(ubicacionDelArchivoDeMetadata);
 						free(archivoDeBloque);
+						list_destroy(metadata->bloques);
+						free(metadata);
 						pthread_mutex_unlock(&mutexSistemaDeArchivos);
 						return datosObtendios;
 						}
 					free(archivoDeBloque);
 					}//fin del for
 				datosObtendios.resultado=DatosObtenidos;
-				//free(ubicacionDelArchivoDeMetadata);
+				list_destroy(metadata->bloques);
+				free(metadata);
 				log_info(LOGGER,"Se pudo recuperar todo el archivo devolviendo datos");
 				pthread_mutex_unlock(&mutexSistemaDeArchivos);
 				return datosObtendios;
@@ -1438,6 +1452,9 @@ int guardarDatosDeDMA(int fileDescriptorActual){
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
 	enviarCabecera(fileDescriptorActual, resultadoDeGuardarDatos, 1);
 	log_info(LOGGER,"Enviando respuesta de guardar datos al DMA");
+	free(datos->buffer);
+	free(datos->path);
+	free(datos);
 	return EXIT_SUCCESS;
 }
 
@@ -1499,6 +1516,8 @@ int guardarDatos(char *path, long int offset, long int size, char *Buffer){
 						}else{
 							log_error(LOGGER,"No hay mas bloques libres");
 							free(archivoDeBloque);
+							list_destroy(metadata->bloques);
+							free(metadata);
 							free(ubicacionDelArchivoDeMetadata);
 							return NoHayMasBloquesLibres;///no hay mas bloques libres
 							}
@@ -1554,6 +1573,8 @@ int guardarDatos(char *path, long int offset, long int size, char *Buffer){
 					actualizarMetaData(ubicacionDelArchivoDeMetadata,metadata);
 					}
 				free(ubicacionDelArchivoDeMetadata);
+				list_destroy(metadata->bloques);
+				free(metadata);
 				return DatosGuardados;
 			}else{
 				log_error(LOGGER,"No se pudo encontrar el archivo: %s",path);
