@@ -37,5 +37,10 @@ int separar_en_lineas(t_archivo_cargandose * archivo_cargado, char** archivo_sep
 void informar_carga_segmento_exitosa(int indice_entrada_archivo_en_tabla_segmentos,
 		tp_cargarEnMemoria parte_archivo, int DAM_fd);
 void inicializar_bitmap_de_marcos_libres();
+bool hay_marcos_libres();
+bool el_marco_esta_libre(void* marco);
+int contar_marcos_libres();
+bool archivo_ocupa_mas_marcos_que_disponibles(int lineas);
+t_list* obtener_marcos_libres();
 
 #endif /* UTILIDADES_FM9_H_ */

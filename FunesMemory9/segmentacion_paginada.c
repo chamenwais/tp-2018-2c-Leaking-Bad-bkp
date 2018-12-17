@@ -23,12 +23,22 @@ void cargar_parte_archivo_en_segmento_paginado(int DAM_fd){
 	}
 	logger_funesMemory9(escribir_loguear, l_trace,
 			"Ya se obtuvo el archivo y se intentara agregar el segmento paginado en la memoria principal\n");
-	if(true/*TODO ver como averiguas que no hay mas marcos libres*/){
+	if(!hay_marcos_libres()){
 		informar_espacio_insuficiente(DAM_fd);
 		return;
 	}
 	char * archivo_separado_en_lineas=NULL;
 	int cantidad_de_lineas=separar_en_lineas(archivo_de_proceso_cargandose,&archivo_separado_en_lineas);
+	if(cantidad_de_lineas<0){
+		informar_espacio_insuficiente(DAM_fd);
+		return;
+	}
+	if (archivo_ocupa_mas_marcos_que_disponibles(cantidad_de_lineas)) {
+		informar_espacio_insuficiente(DAM_fd);
+		return;
+	}
+	t_list * marcos_libres = obtener_marcos_libres();
+	copiar_archivo_en_marcos_libres(archivo_separado_en_lineas, cantidad_de_lineas, marcos_libres);
 }
 
 void destruir_estructuras_esquema_segmentacion_paginada(){
