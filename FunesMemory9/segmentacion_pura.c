@@ -85,29 +85,110 @@ void copiar_archivo_a_memoria_fisica(size_t tamanio_archivo_en_memoria,
 	free(archivo_separado_en_lineas);
 }
 
-void darle_una_linea_al_cpu_segmentacion_pura(int sock){
-
-}
-
-void asignar_datos_a_linea_segmentacion_pura(int sock){
-
-}
-
 bool tienen_el_mismo_nombre(void * arch1){
 	return string_equals_ignore_case(path_archivo_para_comparar, (char*)arch1);
 }
 
+void darle_una_linea_al_cpu_segmentacion_pura(int sock){
+/*	tp_lineaCPU paquete_asignar_linea;
+	paquete_asignar_linea = prot_recibir_CPU_FM9_pedir_linea(sock);
+
+	if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,paquete_asignar_linea->id_GDT)){
+		t_entrada_tabla_segmentos * entrada_segmento;
+		t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(paquete_asignar_linea->id_GDT);
+		path_archivo_para_comparar = paquete_asignar_linea->linea;
+		entrada_segmento = list_find(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
+
+		if(paquete_asignar_linea->pc > entrada_segmento->limite){
+			enviarCabecera(sock, HuboProblemaConLaLineaParaCpu, sizeof(HuboProblemaConLaLineaParaCpu));
+		}else{
+			int primer_byte_archivo = (entrada_segmento->base)*TAMANIO_MAX_LINEA;
+			char * direccion_base_archivo = MEMORIA_FISICA + primer_byte_archivo;
+			int cant_bytes_hasta_linea = (paquete_asignar_linea->pc)*TAMANIO_MAX_LINEA;
+			char * linea = malloc(TAMANIO_MAX_LINEA+1);
+			memcpy(linea,direccion_base_archivo+cant_bytes_hasta_linea,TAMANIO_MAX_LINEA);
+			//TODO aca faltan mallocs
+			char* linea_auxiliar = string_duplicate(linea);
+			string_trim(&linea_auxiliar);
+			char** split = string_n_split(linea_auxiliar, 2, "$");
+			char * linea_para_cpu = split[0];
+			int largo = strlen(linea_para_cpu);
+			linea_para_cpu[largo]='\0';
+			prot_enviar_CPU_FM9_linea_pedida(linea_para_cpu, sock);
+		}
+	}else{
+		enviarCabecera(sock, HuboProblemaConLaLineaParaCpu, sizeof(HuboProblemaConLaLineaParaCpu));
+	}
+*/
+}
+
+void asignar_datos_a_linea_segmentacion_pura(int sock){
+	/*	tp_asignarDatosLinea paquete_asignar_datos_linea;
+		paquete_asignar_datos_linea = prot_recibir_CPU_FM9_asignar_datos_linea(sock);
+
+		//se repite todo hasta obtener la linea
+		//no hacer el malloc
+		//ver cuanto queda entre el barra n y el tam max de linea, si alcanza para meter lo que piden
+
+		if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,paquete_asignar_datos_linea->id_GDT)){
+			t_entrada_tabla_segmentos * entrada_segmento;
+			t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(paquete_asignar_datos_linea->id_GDT);
+			path_archivo_para_comparar = paquete_asignar_datos_linea->path;
+			entrada_segmento = list_find(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
+
+			if(paquete_asignar_datos_linea->pc > entrada_segmento->limite){
+				logger_funesMemory9(escribir_loguear, l_error,"20002");
+				enviarCabecera(sock, FalloDeSegmentoMemoria, sizeof(FalloDeSegmentoMemoria));
+			}else{
+				int primer_byte_archivo = (entrada_segmento->base)*TAMANIO_MAX_LINEA;
+				char * direccion_base_archivo = MEMORIA_FISICA + primer_byte_archivo;
+
+				int cant_bytes_hasta_linea = paquete_asignar_datos_linea->pc *TAMANIO_MAX_LINEA;
+				char * linea = malloc(TAMANIO_MAX_LINEA+1);
+				memcpy(linea,direccion_base_archivo+cant_bytes_hasta_linea,TAMANIO_MAX_LINEA);
+				linea[TAMANIO_MAX_LINEA]='\0';
+
+				int cuanto_ocupa_lo_que_voy_a_meter = strlen(paquete_asignar_datos_linea->datos);
+				char* linea_auxiliar = string_duplicate(linea);
+				string_trim(&linea_auxiliar);
+				char** split = string_n_split(linea_auxiliar, 2, "\n");
+				char * info_linea = split[0];
+				char * lo_que_resta = split[1];
+				int size_lo_que_resta = strlen(lo_que_resta);
+				lo_que_resta[size_lo_que_resta]="\n";
+
+				int desde_barra_n_hasta_final_linea = TAMANIO_MAX_LINEA - (strlen(lo_que_resta)+1);
+				//todo eso ver si es mayor o igual que lo tengo que meter
+				//si esta todo bien, asigno los datos, sino seg fault 20003
+				//int cuantos_signos_pesos = desde_barra_n_hasta_final_linea - cuanto_ocupa_lo_que_voy_a_meter;
+				// char * sobrante = string_repeat($, cuantos_signos_pesos);
+				// string_append(&datos, sobrante);
+				//memcpy(direccion_base_archivo+cant_bytes_hasta_linea+    strlen de lo que resta +1,
+				//          datos, desde_barra_n_hasta_final_linea);
+				//
+			}
+		}
+	*/
+}
+
+void agregar_info_tabla_de_huecos(t_hueco * hueco){
+	list_add(lista_de_huecos, hueco);
+}
+
 bool realizar_operacion_liberar(tp_liberarArchivo paquete_liberar){
-	t_hueco* hueco;
 	t_entrada_tabla_segmentos * entrada_segmento;
 
-	if(list_any_satisfy_comparing(tablas_de_segmentos, &tiene_tabla_de_segmentos, paquete_liberar->id_GDT)){
+	if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,paquete_liberar->id_GDT)){
+		t_hueco* hueco;
 		t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(paquete_liberar->id_GDT);
 		path_archivo_para_comparar = paquete_liberar->path;
 		entrada_segmento = list_find(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
-		int tamanio_archivo_en_memoria = (entrada_segmento->limite)*TAMANIO_MAX_LINEA;
+		hueco->base = entrada_segmento->base;
+		hueco->limite = entrada_segmento->limite;
+
 		list_remove_by_condition(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
-		actualizar_info_tabla_de_huecos(tamanio_archivo_en_memoria, hueco);
+		//agregar hueco
+		agregar_info_tabla_de_huecos(hueco);
 		return true;
 	}else{
 		return false;
@@ -121,6 +202,7 @@ void liberar_archivo_abierto_segmentacion_pura(int sock){
 		logger_funesMemory9(escribir_loguear, l_info,"Se le aviso al CPU solicitante que se esta liberando el archivo deseado\n");
 	}else{
 		logger_funesMemory9(escribir_loguear, l_error,"40002\n");
+		enviarCabecera(sock, LiberarArchivoAbiertoNoFinalizado, sizeof(LiberarArchivoAbiertoNoFinalizado));
 	}
 	free(paquete_liberar);
 }

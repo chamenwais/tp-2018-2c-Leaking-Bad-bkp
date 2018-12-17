@@ -167,12 +167,12 @@ void solicitar_a_FM9_la_sentencia(tp_DTB dtb){
 	logger_CPU(escribir_loguear, l_trace,"Le he pedido a FM9 la sentencia que debo ejecutar...");
 }
 
-tp_lineaCPU * recibir_de_FM9_linea_a_parsear(tp_DTB dtb){
+tp_lineaParaCPU * recibir_de_FM9_linea_a_parsear(tp_DTB dtb){
 	t_cabecera respuesta_de_FM9 = recibirCabecera(serverMEM);
-	tp_lineaCPU linea_pedida;
+	tp_lineaParaCPU linea_pedida;
 
 	if(respuesta_de_FM9.tipoDeMensaje == NoHuboProblemaConLaLineaParaCpu){
-		linea_pedida = prot_recibir_CPU_FM9_pedir_linea(serverMEM);
+		linea_pedida = prot_recibir_CPU_FM9_linea_pedida(serverMEM);
 		logger_CPU(escribir_loguear, l_info,"Sentencia recibida");
 	}else{
 		logger_CPU(escribir_loguear, l_error, "Hubo un problema con FM9");
@@ -183,9 +183,8 @@ tp_lineaCPU * recibir_de_FM9_linea_a_parsear(tp_DTB dtb){
 	return linea_pedida;
 }
 
-void actualizar_program_counter(tp_DTB dtb, int pc){
-	pc++;
-	dtb->program_counter = pc;
+void actualizar_program_counter(tp_DTB dtb){
+	dtb->program_counter = dtb->program_counter+1;
 	logger_CPU(escribir_loguear, l_info,"Actualizado el program counter del dtb");
 }
 
@@ -231,13 +230,18 @@ void asignar_datos_a_linea(char * datos, char * linea, char * path, tp_DTB dtb){
 	if(chequear_si_archivo_esta_abierto(dtb)){
 		logger_CPU(escribir_loguear, l_info,"Voy a comunicarme con FM9 para asignar datos a linea.");
 		enviarCabecera(serverMEM, AsignarDatosALinea, sizeof(AsignarDatosALinea));
-		prot_enviar_CPU_FM9_asignar_datos_linea(datos, linea, path, dtb->id_GDT, serverMEM);
+		prot_enviar_CPU_FM9_asignar_datos_linea(datos, linea, path, dtb->id_GDT, dtb->program_counter, serverMEM);
 		logger_CPU(escribir_loguear, l_info,"Se le envio a FM9 la informacion necesaria");
 
 		t_cabecera respuesta_de_fm9 = recibirCabecera(serverMEM);
 
 		if(respuesta_de_fm9.tipoDeMensaje == AsignarDatosALineaEjecutandose){
 			logger_CPU(escribir_loguear, l_trace,"FM9 puso manos a la obra!");
+		}else{
+			if(respuesta_de_fm9.tipoDeMensaje == FalloDeSegmentoMemoria){
+				logger_CPU(escribir_loguear, l_error,"Fallo de segmento/memoria en FM9");
+				informar_a_safa_que_aborte_DTB(dtb);
+			}
 		}
 	}else{
 		logger_CPU(escribir_loguear, l_error,"20001");
@@ -306,6 +310,11 @@ void enviar_FM9_solicitud_liberar_archivo(char * path, tp_DTB dtb){
 
 	if(respuesta_de_fm9.tipoDeMensaje == LiberarArchivoAbiertoEjecutandose){
 		logger_CPU(escribir_loguear, l_trace,"FM9 se esta encargando del archivo en cuestion...");
+	}else{
+		if(respuesta_de_fm9.tipoDeMensaje == LiberarArchivoAbiertoNoFinalizado){
+			logger_CPU(escribir_loguear, l_error,"FM9 no pudo liberar el archivo");
+			informar_a_safa_que_aborte_DTB(dtb);
+		}
 	}
 }
 
@@ -398,8 +407,8 @@ void proceder_con_lectura_escriptorio(tp_DTB dtb){
 	for(int i=0;i++;i<unidad_de_tiempo){
 
 		solicitar_a_FM9_la_sentencia(dtb);
-		tp_lineaCPU paquete_linea = recibir_de_FM9_linea_a_parsear(dtb);
-		actualizar_program_counter(dtb, paquete_linea->pc);
+		tp_lineaParaCPU paquete_linea = recibir_de_FM9_linea_a_parsear(dtb);
+		actualizar_program_counter(dtb);
 		t_operacion resultado_del_parseado = parsear(paquete_linea->linea);
 		realizar_la_operacion_que_corresponda_segun(resultado_del_parseado, dtb);
 		//free(resultado_del_parseado);
@@ -409,7 +418,7 @@ void proceder_con_lectura_escriptorio(tp_DTB dtb){
 
 }
 
-void recibir_dtb_y_delegar(tp_DTB dtb) {
+void recibir_dtb_y_delegar(tp_DTB dtb){
 
 	dtb = prot_recibir_SAFA_CPU_DTB(serverSAFA);
 
@@ -427,7 +436,7 @@ void recibir_dtb_y_delegar(tp_DTB dtb) {
 }
 
 int main(int argc, char **argv){
-	tp_DTB * dtb;
+	tp_DTB * dtb = malloc(sizeof(tp_DTB));
 
 	inicializar_logger();
 	//Obtengo los datos del archivo de configuracion

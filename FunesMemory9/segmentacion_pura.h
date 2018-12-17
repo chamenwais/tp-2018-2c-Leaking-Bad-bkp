@@ -60,5 +60,7 @@ t_archivo_devolviendose* crear_elemento_en_archivos_devolviendose(t_entrada_tabl
 void darle_una_linea_al_cpu_segmentacion_pura(int sock);
 void asignar_datos_a_linea_segmentacion_pura(int sock);
 void liberar_archivo_abierto_segmentacion_pura(int sock);
+bool tienen_el_mismo_nombre(void * arch1);
+void agregar_info_tabla_de_huecos(t_hueco * hueco);
 
 #endif /* SEGMENTACION_PURA_H_ */

@@ -17,7 +17,6 @@ void prot_enviar_FS_DMA_datosObtenidos(char* datos, int resultado, int tamanioTo
 	}
 }
 
-
 tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos(int sock){
 	//1 recibir
 	int resultado;
@@ -305,20 +304,32 @@ void prot_enviar_FM9_DMA_cargaEnMemoria(int memory_address, int sock){
 	enviar(sock,&memory_address,sizeof(memory_address));
 }
 
-void prot_enviar_CPU_FM9_linea_pedida(char * linea, int pc, int sock){
+void prot_enviar_CPU_FM9_linea_pedida(char * linea, int sock){
 	int linea_size = strlen(linea)+1;
 	enviar(sock,&linea_size,sizeof(linea_size));
 	enviar(sock,linea,linea_size);
-	enviar(sock,&pc,sizeof(pc));
+}
+
+tp_lineaParaCPU prot_recibir_CPU_FM9_linea_pedida(int sock){
+	int tam_linea;
+	tp_lineaParaCPU recibido = malloc(sizeof(tp_lineaCPU));
+	recibir(sock, &tam_linea, sizeof(tam_linea));
+	recibido->linea = malloc(tam_linea);
+	recibir(sock,recibido->linea,tam_linea);
+	return recibido;
 }
 
 tp_lineaCPU prot_recibir_CPU_FM9_pedir_linea(int sock){
 	int tam_linea;
-	tp_lineaCPU recibido = malloc(sizeof(tp_lineaCPU));
+	int id_GDT;
+	int pc;
+	tp_lineaParaCPU recibido = malloc(sizeof(tp_lineaCPU));
 	recibir(sock, &tam_linea, sizeof(tam_linea));
 	recibido->linea = malloc(tam_linea);
 	recibir(sock,recibido->linea,tam_linea);
-	recibir(sock,&(recibido->pc),sizeof(recibido->pc));
+	recibir(sock,&id_GDT,sizeof(int));
+	recibir(sock,&pc,sizeof(int));
+
 	return recibido;
 }
 
@@ -440,23 +451,23 @@ void prot_enviar_DMA_FM9_obtenerArchivo(char* path, int pid, int memory_address,
 
 }
 
-void prot_enviar_CPU_FM9_asignar_datos_linea(char * datos, char * linea, char * path, int id_GDT, int sock){
+void prot_enviar_CPU_FM9_asignar_datos_linea(char * datos, char * linea, char * path, int id_GDT, int pc, int sock){
 	int tam_datos = strlen(datos);
 	int tam_linea = strlen(linea);
 	int tam_path = strlen(path);
 	int size_of_int = sizeof(int);
-	int tamanio_paquete_asignar_datos = tam_datos + tam_linea + tam_path + size_of_int;
+	int tamanio_paquete_asignar_datos = tam_datos + tam_linea + tam_path + (2*size_of_int);
 	char * paquete_asignar_datos = malloc(tamanio_paquete_asignar_datos);
 	paquete_asignar_datos[0]=id_GDT;
-	paquete_asignar_datos[4]=tam_datos;
-	memcpy(paquete_asignar_datos+4+4,datos,tam_datos);
-	paquete_asignar_datos[4+4+tam_datos]=tam_linea;
-	memcpy(paquete_asignar_datos+4+4+tam_datos+4,linea,tam_linea);
-	paquete_asignar_datos[4+4+tam_datos+4+tam_linea]=tam_path;
-	memcpy(paquete_asignar_datos+4+4+tam_datos+4+tam_linea+4,path,tam_path);
+	paquete_asignar_datos[4]=pc;
+	paquete_asignar_datos[8]=tam_datos;
+	memcpy(paquete_asignar_datos+4+4+4,datos,tam_datos);
+	paquete_asignar_datos[4+4+4+tam_datos]=tam_linea;
+	memcpy(paquete_asignar_datos+4+4+4+tam_datos+4,linea,tam_linea);
+	paquete_asignar_datos[4+4+4+tam_datos+4+tam_linea]=tam_path;
+	memcpy(paquete_asignar_datos+4+4+4+tam_datos+4+tam_linea+4,path,tam_path);
 	enviar(sock,paquete_asignar_datos,tamanio_paquete_asignar_datos);
 	free(paquete_asignar_datos);
-
 }
 
 tp_asignarDatosLinea prot_recibir_CPU_FM9_asignar_datos_linea(int sock){
@@ -465,6 +476,7 @@ tp_asignarDatosLinea prot_recibir_CPU_FM9_asignar_datos_linea(int sock){
 	int tam_linea;
 	int tam_path;
 	recibir(sock,&(asignar_datos_linea->id_GDT),sizeof(int));
+	recibir(sock,&(asignar_datos_linea->pc),sizeof(int));
 	recibir(sock,&tam_datos,sizeof(int));
 	asignar_datos_linea->datos=malloc(tam_datos+1);
 	recibir(sock,asignar_datos_linea->datos,tam_datos);
@@ -598,7 +610,6 @@ tp_tipoRecurso prot_recibir_CPU_SAFA_liberar_recurso(int sock){
 	return liberar_rec;
 }
 
-
 tp_tipoRecurso prot_recibir_CPU_SAFA_retener_recurso(int sock){
 	tp_tipoRecurso retener_rec;
 	int tam_recurso;
@@ -692,7 +703,6 @@ tp_eliminarArch prot_recibir_CPU_DAM_eliminar_arch_de_disco(int sock){
 	return eliminar_arch;
 }
 
-
 void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char* escriptorio, t_list* lista, int quantum, int sock){
 	//mando id_GDT
 	enviar(sock, &id_GDT, sizeof(id_GDT));
@@ -733,7 +743,6 @@ void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char*
 	enviar(sock, &quantum, sizeof(quantum));
 	//log_info(LOG_SAFA, "quantum: %i", quantum);
 }
-
 
 tp_DTB prot_recibir_SAFA_CPU_DTB(int sock){
 	//reservo memoria
