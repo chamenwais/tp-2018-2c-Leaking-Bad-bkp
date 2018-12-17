@@ -323,7 +323,7 @@ tp_lineaCPU prot_recibir_CPU_FM9_pedir_linea(int sock){
 	int tam_linea;
 	int id_GDT;
 	int pc;
-	tp_lineaParaCPU recibido = malloc(sizeof(tp_lineaCPU));
+	tp_lineaCPU recibido = malloc(sizeof(tp_lineaCPU));
 	recibir(sock, &tam_linea, sizeof(tam_linea));
 	recibido->linea = malloc(tam_linea);
 	recibir(sock,recibido->linea,tam_linea);
