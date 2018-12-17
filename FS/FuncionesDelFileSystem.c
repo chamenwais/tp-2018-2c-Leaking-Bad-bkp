@@ -1118,6 +1118,8 @@ int crearArchivoDeDMA(int FDDMA){
 	enviarCabecera(FDDMA, resultadoDeCrearElArchivo, 1);
 	log_info(LOGGER,"Enviando respuesta de crear archivo al DMA (%d)",resultadoDeCrearElArchivo);
 	free(ubicacionDelArchivo);
+	free(dataParaCrearElArchivo->path);
+	free(dataParaCrearElArchivo);
 	return resultadoDeCrearElArchivo;
 }
 
@@ -1427,8 +1429,10 @@ int guardarDatosDeDMA(int fileDescriptorActual){
 	log_info(LOGGER,"Voy a recibir los datos a guardar por el FD: %d",fileDescriptorActual);
 	tp_obtenerDatos datos = prot_recibir_FS_DMA_guardarDatos_serializado(fileDescriptorActual);
 	log_info(LOGGER,"Recibi los datos");
-	log_info(LOGGER,"Path:%s | Offset:%d | Size:%d | Buffer:%s",
-			datos->path,datos->offset,datos->size,datos->buffer);
+	//char bufferAux=string_new();
+	//string_append(&bufferAux, datos->buffer);
+	log_info(LOGGER,"Path:%s | Offset:%d | Size:%d | Buffer:",
+			datos->path,datos->offset,datos->size/*,bufferAux*/);
 	pthread_mutex_lock(&mutexSistemaDeArchivos);
 	int resultadoDeGuardarDatos=guardarDatos(datos->path,datos->offset,datos->size,datos->buffer);
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);

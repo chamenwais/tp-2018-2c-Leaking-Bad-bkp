@@ -244,8 +244,8 @@ tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos_serializado(int sock){
 	char*buffer = malloc(tam2);
 	recibir(sock,buffer,tam2);
 	datos->buffer=buffer;
-	printf("Enviando: Path(%d) %s | Offset %d | Size %d | Buffer(%d) %s\n",
-		tam,path,offset,size,tam2,buffer);
+	//printf("Enviando: Path(%d) %s | Offset %d | Size %d | Buffer(%d) %s\n",
+	//	tam,path,offset,size,tam2,buffer);
 	return datos;
 }
 
