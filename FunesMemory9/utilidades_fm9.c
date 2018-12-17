@@ -337,7 +337,6 @@ int separar_en_lineas(t_archivo_cargandose * archivo_cargado, char** archivo_sep
 						"Se exedio el tamanio de una linea\n");
 			return -1;
 		}
-
 	}
 	free(archivo_cargado->buffer_archivo);
 	return cant_lineas;
@@ -354,8 +353,37 @@ void informar_carga_segmento_exitosa(int indice_entrada_archivo_en_tabla_segment
 void inicializar_bitmap_de_marcos_libres() {
 	bitmap_marcos_libres = list_create();
 	int cantidad_de_marcos=(int)TAMANIO_MEMORIA / TAMANIO_PAGINA;
-	int indicador_de_marco_libre=0;
+	t_disponibilidad_marco marco_libre;
+	marco_libre.disponibilidad=0;
 	for(int marco=0;marco<cantidad_de_marcos;marco++){
-		list_add(bitmap_marcos_libres,&indicador_de_marco_libre);
+		marco_libre.indice=marco;
+		list_add(bitmap_marcos_libres,&marco_libre);
 	}
+}
+
+bool el_marco_esta_libre(void* marco){
+	return (*(t_disponibilidad_marco*)marco).disponibilidad==0;
+}
+
+bool hay_marcos_libres(){
+	return list_any_satisfy(bitmap_marcos_libres, &el_marco_esta_libre);
+}
+
+int contar_marcos_libres(){
+	return list_count_satisfying(bitmap_marcos_libres, &el_marco_esta_libre);
+}
+
+bool archivo_ocupa_mas_marcos_que_disponibles(int lineas){
+	int marcos_disponibles=contar_marcos_libres();
+	int lineas_disponibles=(marcos_disponibles*TAMANIO_PAGINA)/TAMANIO_MAX_LINEA;
+	return lineas_disponibles<lineas;
+}
+
+t_list* obtener_marcos_libres() {
+	return list_filter(bitmap_marcos_libres, &el_marco_esta_libre);
+}
+
+void copiar_archivo_en_marcos_libres(char * archivo, int lineas, t_list * marcos_libres){
+	//TODO terminar
+
 }

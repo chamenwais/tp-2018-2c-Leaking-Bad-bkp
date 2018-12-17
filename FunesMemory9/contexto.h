@@ -100,6 +100,14 @@ struct entrada_tabla_paginas{
 };
 typedef struct entrada_tabla_paginas t_entrada_tabla_paginas;
 
+struct disponibilidad_marco{
+	int indice;
+	int disponibilidad;
+};
+typedef struct disponibilidad_marco t_disponibilidad_marco;
+
+
+
 extern t_conexion_cpu conexiones_cpu[MAX_CLIENTES];
 extern t_list * archivos_cargandose;
 extern t_list * archivos_devolviendose;
