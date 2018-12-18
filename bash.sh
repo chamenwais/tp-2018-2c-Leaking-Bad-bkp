@@ -6,6 +6,13 @@ sudo make clean
 sudo make sudo make install
 cd ..
 cd ..
+git clone https://github.com/sisoputnfrba/so-commons-library.git
+cd so-commons-library
+sudo make uninstall
+sudo make clean
+sudo make
+sudo make install
+cd ..
 cd FS/Debug
 sudo make clean
 sudo make
@@ -13,9 +20,3 @@ git clone https://github.com/sisoputnfrba/fifa-examples.git
 cd ..
 cd ..
 cd ..
-git clone https://github.com/sisoputnfrba/so-commons-library.git
-cd so-commons-library
-sudo make uninstall
-sudo make clean
-sudo make
-sudo make install
