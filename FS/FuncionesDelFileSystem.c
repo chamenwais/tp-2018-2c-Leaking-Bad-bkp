@@ -949,7 +949,7 @@ void *hiloDePedidoDeDMA(void* arg){
 	int cabecera = (int)arg;
 	iniciarTrabajoConElDMA(cabecera);
 	log_info(LOGGER,"Finalizando pedido del DMA");
-	//free(arg);
+	free(arg);
 	pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	return EXIT_SUCCESS;
 }
@@ -991,8 +991,13 @@ void *funcionHiloComunicacionConElDMA(void *arg){
 				cabecera.tipoDeMensaje, cabecera.tamanio);
 			valorDeLaCabecera=malloc(sizeof(int));
 			valorDeLaCabecera=(int)cabecera.tipoDeMensaje;
+			pthread_attr_init(&attr);
+			pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
 			pthread_create(&thread, &attr,&hiloDePedidoDeDMA, valorDeLaCabecera);
 			log_info(LOGGER,"Voy a atender una conexion por el FD: %d", FDDMA);
+			int s = pthread_attr_destroy(&attr);
+			if (s != 0)
+				log_error(LOGGER,"error de la funcion pthread_attr_destroy");
 			}
 		}
 	log_info(LOGGER,"Cierro la conexion");
@@ -1149,6 +1154,9 @@ int crearCarpetas(char *carpetasACrear){
 	mkdir(directorio,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	log_info(LOGGER,"Directorio %s creado",directorio);
 	free(directorio);
+	for(i=0;carpetas[i]!=NULL;i++)
+		free(carpetas[i]);
+	free(carpetas);
 	return EXIT_SUCCESS;
 }
 
@@ -1506,7 +1514,9 @@ int guardarDatos(char *path, long int offset, long int size, char *Buffer){
 							//actualizo el bitarray
 							bitarray_set_bit(bitmap,numeroDeBloqueLibre);
 							bajarADiscoBitmap();
-							string_append(&archivoDeBloque, string_itoa(numeroDeBloqueLibre));
+							char*aux=string_itoa(numeroDeBloqueLibre);
+							string_append(&archivoDeBloque, aux);
+							free(aux);
 							//actualizo la lista y activo la bandera para actualizar mi archivo de metadata de ese archivo
 							list_add(metadata->bloques,numeroDeBloqueLibre);
 							log_info(LOGGER,"Creando el archivo de bloque%s",archivoDeBloque);
@@ -1646,8 +1656,13 @@ tp_metadata recuperarMetaData(char *ubicacionDelArchivoDeMetadata){
 		int valor=atoi(instruccion[i]);
 		list_add(metadata->bloques,valor);
 		log_info(LOGGER,"Agregando el valor %d a la lista",atoi(instruccion[i]));
+		free(instruccion[i]);
 		}
 	config_destroy(configuracion);
+	free(instruccion);
+	free(bloques);
+	free(aux);
+
 	return metadata;
 }
 
