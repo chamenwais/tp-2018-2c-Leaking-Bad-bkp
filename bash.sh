@@ -3,7 +3,8 @@ cd ../home/utnso
 git clone https://github.com/sisoputnfrba/tp-2018-2c-Leaking-Bad.git
 cd tp-2018-2c-Leaking-Bad/COM/lqvg
 sudo make clean
-sudo make sudo make install
+sudo make 
+sudo make install
 cd ..
 cd ..
 git clone https://github.com/sisoputnfrba/so-commons-library.git
