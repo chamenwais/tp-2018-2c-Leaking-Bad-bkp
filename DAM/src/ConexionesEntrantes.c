@@ -6,6 +6,13 @@
  */
 #include "ConexionesEntrantes.h"
 
+void agregar_socket_a_lista_maestra(int socket_existente,
+		fd_set* lista_fd_maestra) {
+	if (socket_existente != NO_SOCKET) {
+		FD_SET(socket_existente, lista_fd_maestra);
+	}
+}
+
 void crear_hilos_conexiones_entrantes(int socket_fm9, int socket_safa, int socket_filesystem){
 	fd_set lista_fd_maestra;
 	fd_set lista_fd_temporal;
@@ -50,6 +57,8 @@ void crear_hilos_conexiones_entrantes(int socket_fm9, int socket_safa, int socke
 					realizar_handshake_con_cpu(nuevo_socketfd);
 				} else {
 					//Conexion conocida
+					logger_DAM(escribir_loguear, l_info,
+											"Se recibio un mensaje en el socket %d",iterador_conexiones_existentes);
 					t_cabecera cabecera=recibirCabecera(iterador_conexiones_existentes);
 					if (!cabecera_correcta(&cabecera)) {
 						//No se puede leer el mensaje, se va a cerrar el sockfd
@@ -65,6 +74,7 @@ void crear_hilos_conexiones_entrantes(int socket_fm9, int socket_safa, int socke
 							,socket_fm9
 							,socket_safa
 							,socket_filesystem);
+					continue;
 				}
 			}
 		}
@@ -77,34 +87,42 @@ void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 		, int socket_fm9
 		, int socket_safa
 		, int socket_filesystem){
-	pthread_attr_t atributo_detachable;
+	/*pthread_attr_t atributo_detachable;
 	pthread_t hilo_correspondiente_a_pedido;
 	pthread_attr_init(&atributo_detachable);
-	pthread_attr_setdetachstate(&atributo_detachable, PTHREAD_CREATE_DETACHED);
+	pthread_attr_setdetachstate(&atributo_detachable, PTHREAD_CREATE_DETACHED);*/
 	switch(mensaje_entrante){
 		case AbrirPathParaProceso:
-			pthread_create(&hilo_correspondiente_a_pedido,&atributo_detachable,(void *)operacion_abrir_path,
+			logger_DAM(escribir_loguear, l_info,
+						"Se crea hilo para abrir path");
+			operacion_abrir_path(
 					adaptar_sockets_para_hilo(socket_CPU_solicitante,socket_fm9,socket_safa,socket_filesystem));
 			break;
 		case FlushDeArchivoADisco:
-			pthread_create(&hilo_correspondiente_a_pedido,&atributo_detachable,(void *)operacion_flush_archivo,
+			logger_DAM(escribir_loguear, l_info,
+						"Se crea hilo para hacer flush de un archivo");
+			operacion_flush_archivo(
 					adaptar_sockets_para_hilo(socket_CPU_solicitante,socket_fm9,socket_safa,socket_filesystem));
 			break;
 		case CrearLineasEnArchivo:
-			pthread_create(&hilo_correspondiente_a_pedido,&atributo_detachable,(void *)operacion_crear_archivo,
+			logger_DAM(escribir_loguear, l_info,
+						"Se crea hilo para crear un archivo");
+			operacion_crear_archivo(
 					adaptar_sockets_sin_mp_para_hilo(socket_CPU_solicitante,socket_safa,socket_filesystem));
 			break;
 		case EliminarArchivoDeDisco:
-			pthread_create(&hilo_correspondiente_a_pedido,&atributo_detachable,(void *)operacion_eliminar_archivo,
+			logger_DAM(escribir_loguear, l_info,
+						"Se crea hilo para eliminar un archivo");
+			operacion_eliminar_archivo(
 					adaptar_sockets_sin_mp_para_hilo(socket_CPU_solicitante,socket_safa,socket_filesystem));
 			break;
 		default:
 			logger_DAM(escribir_loguear, l_warning,
-						"El CPU no se hizo entender hermano");
+						"El CPU no se hizo entender porque mando el enum %d", mensaje_entrante);
 			break;
 	}
-	pthread_attr_destroy(&atributo_detachable);
-	pthread_detach(hilo_correspondiente_a_pedido);
+	/*pthread_attr_destroy(&atributo_detachable);
+	pthread_detach(hilo_correspondiente_a_pedido);*/
 }
 
 void establecer_nuevo_fd_maximo(int * maximo_actual, int potencial_nuevo_maximo){
@@ -228,10 +246,14 @@ enum MENSAJES tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_
 }
 
 tp_datosObtenidosDeProtocolo pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int socket_mdj) {
+	t_obtenerDatos obtener_datos;
+	obtener_datos.path=ruta;
+	obtener_datos.offset=(long int)offset_Mdj;
+	obtener_datos.size=(long int)transfer_size;
 	pthread_mutex_lock(&MX_FS);
 	enviarCabecera(socket_mdj, ObtenerDatos, sizeof(ObtenerDatos));
-	prot_enviar_DMA_FS_obtenerDatos(ruta, offset_Mdj, transfer_size, socket_mdj);
-	tp_datosObtenidosDeProtocolo datos = prot_recibir_FS_DMA_datosObtenidos(socket_mdj);
+	prot_enviar_DMA_FS_obtenerDatos_serializado(obtener_datos, socket_mdj);
+	tp_datosObtenidosDeProtocolo datos = prot_recibir_FS_DMA_datosObtenidos_serializado(socket_mdj);
 	pthread_mutex_unlock(&MX_FS);
 	return datos;
 }
@@ -342,9 +364,14 @@ tp_datosObtenidosDeProtocolo recibir_datos_fm9(int socket_fm9) {
 
 enum MENSAJES guardar_datos_en_disco(int socket_mdj, char * ruta, int offset_Mdj, char *  datos_obtenidos){
 	t_cabecera cabecera_resultado;
+	t_obtenerDatos guardar_datos;
+	guardar_datos.path=ruta;
+	guardar_datos.offset=offset_Mdj;
+	guardar_datos.size=transfer_size;
+	guardar_datos.buffer=datos_obtenidos;
 	pthread_mutex_lock(&MX_FS);
 	enviarCabecera(socket_mdj,GuardarDatos,sizeof(GuardarDatos));
-	prot_enviar_DMA_FS_guardarDatos(ruta, offset_Mdj, transfer_size, datos_obtenidos, socket_mdj);
+	prot_enviar_DMA_FS_guardarDatos_serializado(guardar_datos, socket_mdj);
 	cabecera_resultado = recibirCabecera(socket_mdj);
 	pthread_mutex_unlock(&MX_FS);
 	if(!cabecera_correcta(&cabecera_resultado)){
@@ -540,9 +567,12 @@ void operacion_crear_archivo(int *sockets){
 }
 
 t_cabecera crear_archivo(int socket_mdj, tp_crearLineasArch mensaje_cpu) {
+	t_crearArchivo crear_archivo;
+	crear_archivo.path=mensaje_cpu->path;
+	crear_archivo.size=mensaje_cpu->cant_lineas;
 	pthread_mutex_lock(&MX_FS);
 	enviarCabecera(socket_mdj, CrearArchivo, sizeof(CrearArchivo));
-	prot_enviar_DMA_FS_CrearArchivo(mensaje_cpu->path, mensaje_cpu->cant_lineas,socket_mdj);
+	prot_enviar_DMA_FS_CrearArchivo_serializado(crear_archivo,socket_mdj);
 	t_cabecera respuesta_creacion = recibirCabecera(socket_mdj);
 	pthread_mutex_unlock(&MX_FS);
 	return respuesta_creacion;

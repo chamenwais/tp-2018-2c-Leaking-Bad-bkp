@@ -28,6 +28,7 @@ char * CONST_NAME_CPU = "CPU";
 pthread_mutex_t MX_MEMORIA;
 pthread_mutex_t MX_FS;
 pthread_mutex_t MX_SAFA;
+pthread_mutex_t MX_CPU;
 
 t_log * logger;
 t_config * configuracion;

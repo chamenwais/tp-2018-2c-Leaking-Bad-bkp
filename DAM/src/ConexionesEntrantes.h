@@ -28,6 +28,8 @@
 void crear_hilos_conexiones_entrantes(int socket_fm9, int socket_safa, int socket_filesystem);
 void realizar_handshake_con_cpu(int socket_id);
 int escuchar_a_los_CPU();
+void agregar_socket_a_lista_maestra(int socket_existente,
+		fd_set* lista_fd_maestra);
 void tratar_error_select(int socketfd_escucha);
 void establecer_nuevo_fd_maximo(int * maximo_actual, int potencial_nuevo_maximo);
 void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
