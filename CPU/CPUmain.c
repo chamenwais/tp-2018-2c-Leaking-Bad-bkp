@@ -421,6 +421,7 @@ void proceder_con_lectura_escriptorio(tp_DTB dtb){
 
 void liberar_dtb(tp_DTB dtb){
 	list_destroy(dtb->tabla_dir_archivos);
+	free(dtb->escriptorio);
 	free(dtb);
 }
 
