@@ -770,7 +770,7 @@ tp_DTB prot_recibir_SAFA_CPU_DTB(int sock){
 	char* buffer = malloc(tam);
 	recibir(sock, buffer, tam);
 	//logger_CPU(escribir_loguear, l_info, "buffer: %s", buffer);
-	buffer[tam]="/0";
+	//buffer[tam]="/0";
 	DTB->escriptorio = buffer;
 	//logger_CPU(escribir_loguear, l_info, "escriptorio: %s", DTB->escriptorio);
 	//recibir lista
@@ -780,16 +780,18 @@ tp_DTB prot_recibir_SAFA_CPU_DTB(int sock){
 	int tamanio_elem_rec;
 	recibir(sock, &cant_elem_lista_rec, sizeof(int));
 	//logger_CPU(escribir_loguear, l_info, "cant elem lista: %i", cant_elem_lista_rec);
+	DTB->tabla_dir_archivos = list_create();
 	if(cant_elem_lista_rec > 0){
 		for (i = 0; i < cant_elem_lista_rec; ++i) {
 			recibir(sock, &tamanio_elem_rec, sizeof(tamanio_elem_rec));
+			elem_rec=malloc(tamanio_elem_rec);
 			recibir(sock, &elem_rec, tamanio_elem_rec);
 			list_add(DTB->tabla_dir_archivos, elem_rec);
 		}
-	}else{
+	}/*else{
 		DTB->tabla_dir_archivos = list_create();
-		//logger_CPU(escribir_loguear, l_info, "Se creo una lista vacia");
-	}
+		logger_CPU(escribir_loguear, l_info, "Se creo una lista vacia");
+	}*/
 	//recibir quantum
 	recibir(sock, &(DTB->quantum), sizeof(int));
 
