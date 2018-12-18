@@ -419,6 +419,11 @@ void proceder_con_lectura_escriptorio(tp_DTB dtb){
 
 }
 
+void liberar_dtb(tp_DTB dtb){
+	list_destroy(dtb->tabla_dir_archivos);
+	free(dtb);
+}
+
 void recibir_dtb_y_delegar(tp_DTB dtb){
 
 	dtb = prot_recibir_SAFA_CPU_DTB(serverSAFA);
@@ -433,11 +438,11 @@ void recibir_dtb_y_delegar(tp_DTB dtb){
 		proceder_con_lectura_escriptorio(dtb);
 	}
 
-	free(dtb);
+	liberar_dtb(dtb);
 }
 
 int main(int argc, char **argv){
-	tp_DTB * dtb = malloc(sizeof(tp_DTB));
+	tp_DTB dtb;// = malloc(sizeof(tp_DTB));
 
 	inicializar_logger();
 	//Obtengo los datos del archivo de configuracion
