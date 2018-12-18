@@ -1,6 +1,4 @@
 #!/bin/bash
-cd ../home/utnso
-git clone https://github.com/sisoputnfrba/tp-2018-2c-Leaking-Bad.git
 cd tp-2018-2c-Leaking-Bad/COM
 sudo make clean
 sudo make 
