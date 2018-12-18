@@ -251,19 +251,26 @@ tp_obtenerDatos prot_recibir_FS_DMA_guardarDatos_serializado(int sock){
 void prot_enviar_CPU_DMA_abrirPath(char* path, int pid, int sock){
 	//5 envia
 	int tam = strlen(path)+1;
-	enviar(sock,&tam,sizeof(tam));
+	enviar(sock,&tam,4);
 	enviar(sock,path,tam);
-	enviar(sock,&pid,sizeof(pid));
+	enviar(sock,&pid,4);
 }
 
 tp_abrirPath prot_recibir_CPU_DMA_abrirPath(int sock){
 	//5 recibe
 	int size;
-	tp_abrirPath recibido = malloc(sizeof(tp_abrirPath));
-	recibir(sock,&size,sizeof(size));
+	int * size_aux=malloc(sizeof(int));
+	tp_abrirPath recibido = malloc(sizeof(t_abrirPath));
+	recibir(sock,size_aux,sizeof(int));
+	size=*size_aux;
+	free(size_aux);
 	recibido->path = malloc(size);
 	recibir(sock,recibido->path,size);
-	recibir(sock,&(recibido->pid),sizeof(recibido->pid));
+	int * pid_aux=malloc(sizeof(int));
+	recibir(sock,pid_aux,sizeof(int));
+	printf("Recibi el pid %d\n",*pid_aux);
+	recibido->pid=*pid_aux;
+	free(pid_aux);
 	return recibido;
 }
 

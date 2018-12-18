@@ -140,7 +140,7 @@ void cerrar_script(tp_DTB dtb){
 void solicitar_a_DAM_busqueda_dummy(tp_DTB dtb){
 	enviarCabecera(serverDIEGO, AbrirPathParaProceso, sizeof(AbrirPathParaProceso));
 	prot_enviar_CPU_DMA_abrirPath(dtb->escriptorio, dtb->id_GDT, serverDIEGO);
-	logger_CPU(escribir_loguear, l_info,"Se le envio a DAM la informacion necesaria");
+	logger_CPU(escribir_loguear, l_info,"Se le envio a DAM la informacion necesaria para abrir el escriptorio");
 }
 
 void desalojar_dtb(tp_DTB dtb){
@@ -150,7 +150,8 @@ void desalojar_dtb(tp_DTB dtb){
 }
 
 void iniciar_operacion_dummy(tp_DTB dtb){
-	logger_CPU(escribir_loguear, l_trace,"Voy a solicitar a DAM que busque en el MDJ el Escriptorio indicado en el DTB para la operacion DUMMY");
+	logger_CPU(escribir_loguear, l_trace,"Voy a solicitar a DAM que busque en el MDJ el Escriptorio %s\nindicado en el DTB %d para la operacion DUMMY"
+			,dtb->escriptorio,dtb->id_GDT);
 	solicitar_a_DAM_busqueda_dummy(dtb);
 
 	t_cabecera respuesta_del_diego = recibirCabecera(serverDIEGO);
@@ -201,10 +202,10 @@ void abrir_nuevo_archivo_para_escriptorio(char * path, tp_DTB dtb){
 	if(chequear_si_archivo_esta_abierto(dtb)){
 		logger_CPU(escribir_loguear, l_warning,"El archivo ya se encuentra abierto.");
 	}else{
-		logger_CPU(escribir_loguear, l_trace,"Voy a solicitar a DAM que busque en el MDJ el Escriptorio indicado en el DTB");
+		logger_CPU(escribir_loguear, l_trace,"Voy a solicitar a DAM que busque en el MDJ el archivo %s indicado en el DTB", path);
 		enviarCabecera(serverDIEGO, AbrirPathParaProceso, sizeof(AbrirPathParaProceso));
 		prot_enviar_CPU_DMA_abrirPath(path, dtb->id_GDT, serverDIEGO);
-		logger_CPU(escribir_loguear, l_info,"Se le envio a DAM la informacion necesaria");
+		logger_CPU(escribir_loguear, l_info,"Se le envio a DAM la informacion necesaria del GDT %d", path, dtb->id_GDT);
 
 		t_cabecera respuesta_del_diego = recibirCabecera(serverDIEGO);
 
