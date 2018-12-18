@@ -1,5 +1,5 @@
 #!/bin/bash
-cd tp-2018-2c-Leaking-Bad/COM
+cd /COM
 sudo make clean
 sudo make 
 sudo make install
