@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /COM
+cd COM
 sudo make clean
 sudo make 
 sudo make install
