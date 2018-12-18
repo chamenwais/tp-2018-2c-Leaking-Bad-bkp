@@ -1,7 +1,7 @@
 #!/bin/bash
 cd ../home/utnso
 git clone https://github.com/sisoputnfrba/tp-2018-2c-Leaking-Bad.git
-cd tp-2018-2c-Leaking-Bad/COM/lqvg
+cd tp-2018-2c-Leaking-Bad/COM
 sudo make clean
 sudo make 
 sudo make install
@@ -14,7 +14,7 @@ sudo make clean
 sudo make
 sudo make install
 cd ..
-cd FS/Debug
+cd tp-2018-2c-Leaking-Bad/FS/Debug
 sudo make clean
 sudo make
 git clone https://github.com/sisoputnfrba/fifa-examples.git
