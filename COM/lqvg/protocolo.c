@@ -792,7 +792,7 @@ tp_DTB prot_recibir_SAFA_CPU_DTB(int sock){
 	}
 	//recibir quantum
 	recibir(sock, &(DTB->quantum), sizeof(int));
-
+	free(buffer);
 	return DTB;
 
 }
