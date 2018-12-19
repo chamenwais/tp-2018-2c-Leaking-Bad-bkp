@@ -87,42 +87,28 @@ void clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
 		, int socket_fm9
 		, int socket_safa
 		, int socket_filesystem){
-	/*pthread_attr_t atributo_detachable;
-	pthread_t hilo_correspondiente_a_pedido;
-	pthread_attr_init(&atributo_detachable);
-	pthread_attr_setdetachstate(&atributo_detachable, PTHREAD_CREATE_DETACHED);*/
 	switch(mensaje_entrante){
 		case AbrirPathParaProceso:
-			logger_DAM(escribir_loguear, l_info,
-						"Se crea hilo para abrir path");
 			operacion_abrir_path(
 					adaptar_sockets_para_hilo(socket_CPU_solicitante,socket_fm9,socket_safa,socket_filesystem));
 			break;
 		case FlushDeArchivoADisco:
-			logger_DAM(escribir_loguear, l_info,
-						"Se crea hilo para hacer flush de un archivo");
 			operacion_flush_archivo(
 					adaptar_sockets_para_hilo(socket_CPU_solicitante,socket_fm9,socket_safa,socket_filesystem));
 			break;
 		case CrearLineasEnArchivo:
-			logger_DAM(escribir_loguear, l_info,
-						"Se crea hilo para crear un archivo");
 			operacion_crear_archivo(
 					adaptar_sockets_sin_mp_para_hilo(socket_CPU_solicitante,socket_safa,socket_filesystem));
 			break;
 		case EliminarArchivoDeDisco:
-			logger_DAM(escribir_loguear, l_info,
-						"Se crea hilo para eliminar un archivo");
 			operacion_eliminar_archivo(
 					adaptar_sockets_sin_mp_para_hilo(socket_CPU_solicitante,socket_safa,socket_filesystem));
 			break;
 		default:
 			logger_DAM(escribir_loguear, l_warning,
-						"El CPU no se hizo entender porque mando el enum %d", mensaje_entrante);
+						"El CPU no se hizo entender porque mando un enum inesperado");
 			break;
 	}
-	/*pthread_attr_destroy(&atributo_detachable);
-	pthread_detach(hilo_correspondiente_a_pedido);*/
 }
 
 void establecer_nuevo_fd_maximo(int * maximo_actual, int potencial_nuevo_maximo){
@@ -259,10 +245,16 @@ tp_datosObtenidosDeProtocolo pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int s
 }
 
 int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, tp_datosObtenidosDeProtocolo parte_archivo) {
+	t_cargarEnMemoria a_cargar;
+	a_cargar.pid=info_cpu->pid;
+	a_cargar.path=info_cpu->path;
+	a_cargar.buffer=parte_archivo->buffer;
+	a_cargar.offset=offset_Fm9;
+	a_cargar.transfer_size=transfer_size;
+	a_cargar.file_size=parte_archivo->tamanio_total_archivo;
 	pthread_mutex_lock(&MX_MEMORIA);
 	enviarCabecera(socket_fm9, CargarParteEnMemoria, sizeof(CargarParteEnMemoria));
-	prot_enviar_DMA_FM9_cargarEnMemoria(info_cpu->pid, info_cpu->path, parte_archivo->buffer
-			, offset_Fm9, transfer_size, parte_archivo->tamanio_total_archivo, socket_fm9);
+	prot_enviar_DMA_FM9_cargarEnMemoria(a_cargar, parte_archivo->size, socket_fm9);
 	int direccion_logica = prot_recibir_FM9_DMA_cargaEnMemoria(socket_fm9);
 	pthread_mutex_unlock(&MX_MEMORIA);
 	free(parte_archivo);
@@ -309,11 +301,13 @@ void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath i
 		tp_datosObtenidosDeProtocolo parte_archivo = pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
 		if(validar_fragmento_archivo(parte_archivo, socket_safa, info_cpu)==false){
 			loguear_no_obtencion_de_fragmento_archivo();
+			informar_carga_en_memoria_erronea(socket_safa, info_cpu);
 			return;
 		}
-		int tamanio_parcial_archivo=parte_archivo->size;
+		offset_Mdj+=parte_archivo->size;
 		int direccion_de_memoria;
-		while (todavia_no_se_recibio_todo_el_archivo(tamanio_parcial_archivo, parte_archivo->tamanio_total_archivo)) {
+		while (todavia_no_se_recibio_todo_el_archivo(offset_Mdj, parte_archivo->tamanio_total_archivo)) {
+			int tamanio_pedazo_archivo=parte_archivo->size;
 			direccion_de_memoria = loguear_cantidad_datos_y_cargar(
 					parte_archivo, direccion_de_memoria, socket_fm9, info_cpu,
 					offset_Fm9);
@@ -322,16 +316,14 @@ void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath i
 				return;
 			}
 			logger_DAM(escribir_loguear, l_trace,"Se cargo el fragmento en memoria");
-			offset_Mdj+=parte_archivo->size;
-			free(parte_archivo->buffer);
-			offset_Fm9+=parte_archivo->size;
+			offset_Fm9+=tamanio_pedazo_archivo;
 			parte_archivo=pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
-			if(validar_fragmento_archivo(parte_archivo, socket_safa, info_cpu)){
+			if(validar_fragmento_archivo(parte_archivo, socket_safa, info_cpu)==false){
 				loguear_no_obtencion_de_fragmento_archivo();
 				informar_carga_en_memoria_erronea(socket_safa, info_cpu);
 				return;
 			}
-			tamanio_parcial_archivo+=parte_archivo->size;
+			offset_Mdj+=parte_archivo->size;
 		}
 		if(parte_archivo->size>0){
 			direccion_de_memoria = loguear_cantidad_datos_y_cargar(
@@ -343,9 +335,6 @@ void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath i
 			}
 		}
 		informar_operacion_abrir_exitosa(socket_safa, info_cpu,	direccion_de_memoria);
-		free(info_cpu->path);
-		//TODO verificar si hace falta este free
-		free(parte_archivo->buffer);
 	}
 }
 
