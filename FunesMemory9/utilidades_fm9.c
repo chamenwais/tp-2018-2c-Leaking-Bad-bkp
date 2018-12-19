@@ -293,8 +293,9 @@ t_archivo_cargandose * cargar_buffer_archivo(tp_cargarEnMemoria parte_archivo) {
 					,parte_archivo->pid);
 		list_add(archivos_cargandose,archivo_de_proceso_cargandose);
 	}
+	memcpy(archivo_de_proceso_cargandose->buffer_archivo+archivo_de_proceso_cargandose->recibido_actualmente,
+			parte_archivo->buffer,tamanio_parte_archivo);
 	archivo_de_proceso_cargandose->recibido_actualmente +=tamanio_parte_archivo;
-	memcpy(archivo_de_proceso_cargandose->buffer_archivo, parte_archivo->buffer,tamanio_parte_archivo);
 	free(parte_archivo->buffer);
 	return archivo_de_proceso_cargandose;
 }
