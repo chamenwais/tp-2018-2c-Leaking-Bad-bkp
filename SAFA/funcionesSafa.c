@@ -77,9 +77,8 @@ int levantarConfiguracionSAFA(char* ubicacionDelArchivoConfiguracion) {
 
 	configSAFA.retardo = config_get_int_value(configuracion,"RETARDO");
 
-
-	free(alg);
 	config_destroy(configuracion);
+	//free(alg);
 
 	return EXIT_SUCCESS;
 }
@@ -215,6 +214,7 @@ int liberarMemoria(){
 	 switch (cabecera.tipoDeMensaje){
 	 	 case BloquearDTB:
 	 		 idGDT = prot_recibir_CPU_SAFA_bloquear_DTB(sockCPU);
+	 		 printf("el id es %d",idGDT);
 	 		 log_info(LOG_SAFA, "CPU me pide bloquear el DTB %i", idGDT);
 	 		 bool coincideID(void* node) {
 	 		 return ((((tp_DTB) node)->id_GDT)==idGDT);

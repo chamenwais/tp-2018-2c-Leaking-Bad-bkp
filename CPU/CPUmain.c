@@ -146,7 +146,13 @@ void solicitar_a_DAM_busqueda_dummy(tp_DTB dtb){
 void desalojar_dtb(tp_DTB dtb){
 	enviarCabecera(serverSAFA, BloquearDTB, sizeof(BloquearDTB));
 	prot_enviar_CPU_SAFA_bloquear_DTB(dtb->id_GDT, serverSAFA);
-	logger_CPU(escribir_loguear, l_info,"Se informo a SAFA que bloquee al DTB y su respectivo ID");
+	logger_CPU(escribir_loguear, l_info,"Se informo a SAFA que bloquee al DTB y su respectivo ID: %d",dtb->id_GDT);
+
+	t_cabecera respuesta_de_safa = recibirCabecera(serverSAFA);
+
+	if(respuesta_de_safa.tipoDeMensaje == LlegaIdBien){
+		continue;
+	}
 }
 
 void iniciar_operacion_dummy(tp_DTB dtb){
