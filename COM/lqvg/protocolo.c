@@ -507,17 +507,17 @@ tp_asignarDatosLinea prot_recibir_CPU_FM9_asignar_datos_linea(int sock){
 }
 
 void prot_enviar_CPU_SAFA_abortar_DTB(int id_GDT, int sock){
-	enviar(sock,id_GDT,sizeof(int));
+	enviar(sock,&id_GDT,sizeof(int));
 }
 
 int prot_recibir_CPU_SAFA_abortar_DTB(int sock){
 	int id_GDT;
-	recibir(sock,id_GDT,sizeof(int));
+	recibir(sock,&id_GDT,sizeof(int));
 	return id_GDT;
 }
 
 void prot_enviar_CPU_SAFA_bloquear_DTB(int id_GDT, int sock){
-	enviar(sock,id_GDT,sizeof(int));
+	enviar(sock,&id_GDT,sizeof(int));
 }
 
 int prot_recibir_CPU_SAFA_bloquear_DTB(int sock){
