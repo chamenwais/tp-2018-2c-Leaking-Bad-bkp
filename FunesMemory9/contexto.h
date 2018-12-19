@@ -65,6 +65,7 @@ extern pthread_t threadConsola;
 
 extern t_list * tablas_de_segmentos;
 extern t_list * bitmap_marcos_libres;
+extern t_list * lista_de_huecos;
 
 struct archivo_cargandose{
 	int pid;

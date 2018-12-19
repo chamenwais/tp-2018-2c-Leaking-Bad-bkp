@@ -23,3 +23,5 @@ char * path_archivo_para_comparar;
 
 t_list * tablas_de_segmentos=NULL;
 t_list * bitmap_marcos_libres=NULL;
+
+t_list * lista_de_huecos=NULL;

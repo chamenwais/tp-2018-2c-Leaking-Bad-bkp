@@ -71,7 +71,7 @@ t_cabecera recibir_mensaje_cpu(t_conexion_cpu conexion_cpu){
 
 bool cabecera_es_invalida_dam(t_cabecera cabecera){
 	if(sizeof(cabecera) != 0 && cabecera.tamanio>0){
-		logger_funesMemory9(escribir_loguear,l_info,"El Diego dijo algo, vamos a tratar de entenderlo\n");
+		logger_funesMemory9(escribir_loguear,l_info,"Se termino de hacer lo que el Diego queria\n");
 		return false;
 	}
 	logger_funesMemory9(escribir_loguear,l_error,"No se le entendio nada al Diego, se cerrara la conexion\n");
@@ -370,13 +370,13 @@ int main(int argc, char **argv) {
 	iniciar_funes_memory_9(argv[1]);
 	inicializar_conexiones_cpu();
 	stdin_no_bloqueante();
+	inicializar_funciones_variables_por_segmento();
+	(crear_estructuras_esquema[MODO_EJECUCION])();
 
 	int server_FM9 = iniciar_servidor(PUERTO_ESCUCHA);
 	int cliente_DAM = comunicarse_con_dam(server_FM9);
 
 	MEMORIA_FISICA = reservar_total_memoria();
-	inicializar_funciones_variables_por_segmento();
-	(crear_estructuras_esquema[MODO_EJECUCION])();
 
 	while(TRUE){
 		//Inicializa los file descriptor

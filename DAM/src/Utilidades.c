@@ -164,7 +164,8 @@ void captura_sigpipe(int signo){
 	if (signo == SIGINT) {
 		terminar_controladamente(EXIT_FAILURE);
 	} else if (signo == SIGPIPE) {
-		logger_DAM(escribir_loguear,l_error,"Hubo otro problema");
+		logger_DAM(escribir_loguear,l_error,"Ehh hubo un problema, analizar logs anteriores. Me mato");
+		terminar_controladamente(EXIT_FAILURE);
 	}
 }
 
