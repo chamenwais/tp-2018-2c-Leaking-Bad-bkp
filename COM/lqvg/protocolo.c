@@ -39,10 +39,12 @@ void prot_enviar_FS_DMA_datosObtenidos_serializado(t_datosObtenidos datosObtenid
 	enviar(sock,&(datosObtenidos.resultado),sizeof(datosObtenidos.resultado));
 	if(datosObtenidos.resultado==DatosObtenidos){
 		int enviado=0;
-		int sizeDeMallocsiezDeMalloc=sizeof(long int)+datosObtenidos.size;
+		int sizeDeMallocsiezDeMalloc=(sizeof(long int))*2+datosObtenidos.size;
 		//printf("\nsize de datos: %d\nsize de malloc: %d\n",datosObtenidos.size, sizeDeMallocsiezDeMalloc);
 		char*datos=malloc(sizeDeMallocsiezDeMalloc);
-		memcpy(datos,&(datosObtenidos.size),sizeof(long int));
+		memcpy(datos+enviado,&(datosObtenidos.tamanio_total_archivo),sizeof(long int));
+		enviado=enviado+sizeof(int long);
+		memcpy(datos+enviado,&(datosObtenidos.size),sizeof(long int));
 		enviado=enviado+sizeof(int long);
 		memcpy(datos+enviado,datosObtenidos.datos,datosObtenidos.size);
 		//for(int i=0;i<datosObtenidos.size;i++)printf("%c",datosObtenidos.datos[i]);
@@ -58,21 +60,20 @@ tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos_serializado(int 
 	char*datos;
 	tp_datosObtenidosDeProtocolo obtenidos=malloc(sizeof(t_datosObtenidosDeProtocolo));
 	recibir(sock,&resultado,sizeof(resultado));
-	//printf("Recibi el resultado de obtener datos\n");
 	if(resultado==DatosObtenidos){
 		int tamanio_total_archivo;
-		//printf("Datos obtenidos\n");
 		//en este caso tengo datos para recibir
+		recibir(sock,&(obtenidos->tamanio_total_archivo),4);
 		recibir(sock,&(obtenidos->size),4);
 		//printf("\nsize: %d\n",obtenidos->size);
 		obtenidos->buffer = malloc(obtenidos->size);
 		recibir(sock,obtenidos->buffer,obtenidos->size);
-		//printf("\nbuffer");
 		//for(int i=0;i<obtenidos->size;i++)printf("%c",obtenidos->buffer[i]);
 		//printf("\n");
 		}
 	return obtenidos;
 }
+
 
 void prot_enviar_DMA_FS_obtenerDatos(char *path, long int offset, long int size, int sock){
 	//2 envia
@@ -125,7 +126,7 @@ tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos_serializado(int sock){
 	char*aux=malloc(tam);
 	recibir(sock,aux,tam);
 	recibido->path=aux;
-	for(int i=0;i<tam;i++)printf("%c",recibido->path[i]);
+	//for(int i=0;i<tam;i++)printf("%c",recibido->path[i]);
 	recibir(sock,&(recibido->offset),sizeof(recibido->offset));
 	recibir(sock,&(recibido->size),sizeof(recibido->size));
 	return recibido;

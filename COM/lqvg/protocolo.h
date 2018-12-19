@@ -38,6 +38,7 @@ typedef struct defDatosObtenidos {
 	enum MENSAJES resultado;
 	char * datos;
 	long int size;
+	long int tamanio_total_archivo;
 } t_datosObtenidos;
 typedef t_datosObtenidos* tp_datosObtenidos;
 

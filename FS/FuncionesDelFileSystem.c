@@ -949,7 +949,7 @@ void *hiloDePedidoDeDMA(void* arg){
 	int cabecera = (int)arg;
 	iniciarTrabajoConElDMA(cabecera);
 	log_info(LOGGER,"Finalizando pedido del DMA");
-	free(arg);
+	//free(arg);
 	pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	return EXIT_SUCCESS;
 }
@@ -1315,11 +1315,14 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 	log_info(LOGGER,"Enviando respuesta de datos obtenidos al DMA");
 	//prot_enviar_FS_DMA_datosObtenidos(datosObtenidos.datos, tamanioTotalDelArchivo,
 	//		datosObtenidos.resultado, fileDescriptorActual);
+	datosObtenidos.tamanio_total_archivo=tamanioTotalDelArchivo;
+	printf("\nasd1\n");
 	log_info(LOGGER,"Voy a enviar los datos obtenidos por el FD: %d",fileDescriptorActual);
+	printf("\nasd2\n");
 	prot_enviar_FS_DMA_datosObtenidos_serializado(datosObtenidos, fileDescriptorActual);
+	printf("\nasd3\n");
 	//free(datosObtenidos.datos);
 	free(parametrosDeObtenerDatos->path);
-	free(parametrosDeObtenerDatos->buffer);
 	free(parametrosDeObtenerDatos);
 	return EXIT_SUCCESS;
 }
@@ -1369,6 +1372,8 @@ t_datosObtenidos obtenerDatos(char *path, long int offset, long int size){
 						log_info(LOGGER,"Voy a leer en el bloque %s",archivoDeBloque);
 					}else{
 						log_error(LOGGER,"No me coincide el numero de bloque qeu quiero leer con la cantidad total de bloques que tiene el archivo");
+						datosObtendios.size=0;
+						datosObtendios.tamanio_total_archivo=0;
 						datosObtendios.resultado=ArchivoNoEncontrado;
 						free(datosObtendios.datos);
 						free(ubicacionDelArchivoDeMetadata);
@@ -1405,6 +1410,8 @@ t_datosObtenidos obtenerDatos(char *path, long int offset, long int size){
 						fclose(archivo);
 					}else{
 						log_error(LOGGER,"No se pudo abrir el archivo %s para leer",archivoDeBloque);
+						datosObtendios.size=0;
+						datosObtendios.tamanio_total_archivo=0;
 						datosObtendios.resultado=ArchivoNoEncontrado;
 						free(datosObtendios.datos);
 						free(ubicacionDelArchivoDeMetadata);
@@ -1432,6 +1439,8 @@ t_datosObtenidos obtenerDatos(char *path, long int offset, long int size){
 		log_error(LOGGER,"El size es menor o igual que 0, es:%d",size);
 		}
 	datosObtendios.resultado=ArchivoNoEncontrado;
+	datosObtendios.size=0;
+	datosObtendios.tamanio_total_archivo=0;
 	free(datosObtendios.datos);
 	free(ubicacionDelArchivoDeMetadata);
 	pthread_mutex_unlock(&mutexSistemaDeArchivos);
