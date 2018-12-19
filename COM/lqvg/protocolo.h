@@ -26,7 +26,7 @@ typedef struct stru_crearArchivo{
 t_crearArchivo;
 typedef t_crearArchivo* tp_crearArchivo;
 
-typedef struct datosObtenidos{
+typedef struct datos_Obtenidos{
 	int tamanio_total_archivo;
 	char* buffer;
 	long int size;
@@ -39,7 +39,8 @@ typedef struct defDatosObtenidos {
 	char * datos;
 	long int size;
 	long int tamanio_total_archivo;
-} t_datosObtenidos;
+} __attribute__((packed))
+t_datosObtenidos;
 typedef t_datosObtenidos* tp_datosObtenidos;
 
 typedef struct stru_abrirPath{
@@ -181,7 +182,6 @@ void prot_enviar_CPU_DMA_crear_lineas_arch(char * path, int cant_lineas, int id_
 tp_crearLineasArch prot_recibir_CPU_DMA_crear_lineas_arch(int sock);
 void prot_enviar_CPU_DAM_eliminar_arch_de_disco(char * path, int id_GDT, int sock);
 tp_eliminarArch prot_recibir_CPU_DAM_eliminar_arch_de_disco(int sock);
-void prot_enviar_FS_DMA_datosObtenidos_serializado(t_datosObtenidos datosObtenidos, int sock);
 int prot_recibir_CPU_SAFA_bloquear_DTB(int sock);
 int prot_recibir_CPU_SAFA_abortar_DTB(int sock);
 void prot_enviar_DMA_SAFA_crearArchivo(int id_GDT, int sock);
@@ -189,7 +189,7 @@ int prot_recibir_DMA_SAFA_crearArchivo(int sock);
 void prot_enviar_DMA_SAFA_eliminarArchivo(int id_GDT, int sock);
 int prot_recibir_DMA_SAFA_eliminarArchivo(int sock);
 void prot_enviar_FS_DMA_datosObtenidos_serializado(t_datosObtenidos datosObtenidos, int sock);
-tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos_serializado(int sock);
+tp_datosObtenidos prot_recibir_FS_DMA_datosObtenidos_serializado(int sock);
 void prot_enviar_DMA_FS_obtenerDatos_serializado(t_obtenerDatos datos, int sock);
 tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos_serializado(int sock);
 void prot_enviar_DMA_FS_guardarDatos_serializado(t_obtenerDatos datos, int sock);

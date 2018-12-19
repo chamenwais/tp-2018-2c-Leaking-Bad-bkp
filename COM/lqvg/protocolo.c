@@ -42,35 +42,42 @@ void prot_enviar_FS_DMA_datosObtenidos_serializado(t_datosObtenidos datosObtenid
 		int sizeDeMallocsiezDeMalloc=(sizeof(long int))*2+datosObtenidos.size;
 		//printf("\nsize de datos: %d\nsize de malloc: %d\n",datosObtenidos.size, sizeDeMallocsiezDeMalloc);
 		char*datos=malloc(sizeDeMallocsiezDeMalloc);
-		memcpy(datos+enviado,&(datosObtenidos.tamanio_total_archivo),sizeof(long int));
-		enviado=enviado+sizeof(int long);
 		memcpy(datos+enviado,&(datosObtenidos.size),sizeof(long int));
 		enviado=enviado+sizeof(int long);
 		memcpy(datos+enviado,datosObtenidos.datos,datosObtenidos.size);
 		//for(int i=0;i<datosObtenidos.size;i++)printf("%c",datosObtenidos.datos[i]);
 		enviado=enviado+datosObtenidos.size;
+		//printf("\ntam total del arch:%d\n",datosObtenidos.tamanio_total_archivo);
+		memcpy(datos+enviado,&(datosObtenidos.tamanio_total_archivo),sizeof(long int));
+		enviado=enviado+sizeof(int long);
 		enviar(sock,datos,enviado);
 		//printf("Enviando:%d=%d+%d\n",enviado,sizeof(long int),datosObtenidos.size);
 	}
 }
 
-tp_datosObtenidosDeProtocolo prot_recibir_FS_DMA_datosObtenidos_serializado(int sock){
+tp_datosObtenidos prot_recibir_FS_DMA_datosObtenidos_serializado(int sock){
 	//s1 recibir
 	int resultado;
 	char*datos;
-	tp_datosObtenidosDeProtocolo obtenidos=malloc(sizeof(t_datosObtenidosDeProtocolo));
+	tp_datosObtenidos obtenidos=malloc(sizeof(t_datosObtenidos));
+	obtenidos->size=0;
+	obtenidos->tamanio_total_archivo=0;
+	obtenidos->resultado=0;
+	obtenidos->datos=NULL;
 	recibir(sock,&resultado,sizeof(resultado));
 	if(resultado==DatosObtenidos){
 		int tamanio_total_archivo;
 		//en este caso tengo datos para recibir
-		recibir(sock,&(obtenidos->tamanio_total_archivo),4);
-		recibir(sock,&(obtenidos->size),4);
+		recibir(sock,&(obtenidos->size),sizeof(long int));
 		//printf("\nsize: %d\n",obtenidos->size);
-		obtenidos->buffer = malloc(obtenidos->size);
-		recibir(sock,obtenidos->buffer,obtenidos->size);
-		//for(int i=0;i<obtenidos->size;i++)printf("%c",obtenidos->buffer[i]);
-		//printf("\n");
+		obtenidos->datos = malloc(obtenidos->size);
+		recibir(sock,obtenidos->datos,obtenidos->size);
+		recibir(sock,&(obtenidos->tamanio_total_archivo),sizeof(long int));
+		//printf("\nBufer:\n");
+		//for(int i=0;i<obtenidos->size;i++)printf("%c",obtenidos->datos[i]);
 		}
+	obtenidos->tamanio_total_archivo=-1;
+	printf("\ntamanioTotal: %d, size:%d\n",obtenidos->tamanio_total_archivo,obtenidos->size);
 	return obtenidos;
 }
 

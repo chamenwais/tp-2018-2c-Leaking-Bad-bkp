@@ -57,7 +57,7 @@ int esperarAQueTermineLaEscuchaConElDMA();
 int esperarAQueTermineLaConsola();
 int finalizarTodoPorError();
 void liberarRecursos();
-int obtenerLongigutDelArchivo(char* path);
+long int obtenerLongigutDelArchivo(char* path);
 int generarMD5(char* pathDelArchivo);
 int mostrarBloque(int numeroDeBloque);
 int funcionDeConsolacat(char* path);

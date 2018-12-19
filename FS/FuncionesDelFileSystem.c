@@ -449,8 +449,8 @@ void liberarRecursos(){
 }
 
 
-int obtenerLongigutDelArchivo(char* path){
-	int longitudDelArchivo=0;
+long int obtenerLongigutDelArchivo(char* path){
+	long int longitudDelArchivo=0;
 	char* ubicacionDelArchivo;
 	ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo,configuracionDelFS.punto_montaje);
@@ -1311,16 +1311,15 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 	t_datosObtenidos datosObtenidos = obtenerDatos(parametrosDeObtenerDatos->path,
 		parametrosDeObtenerDatos->offset,parametrosDeObtenerDatos->size);
 	log_info(LOGGER,"Obteniendo logitud del los datos");
-	int tamanioTotalDelArchivo=obtenerLongigutDelArchivo(parametrosDeObtenerDatos->path);
-	log_info(LOGGER,"Enviando respuesta de datos obtenidos al DMA");
+	long int tamanioTotalDelArchivo=obtenerLongigutDelArchivo(parametrosDeObtenerDatos->path);
 	//prot_enviar_FS_DMA_datosObtenidos(datosObtenidos.datos, tamanioTotalDelArchivo,
 	//		datosObtenidos.resultado, fileDescriptorActual);
 	datosObtenidos.tamanio_total_archivo=tamanioTotalDelArchivo;
-	printf("\nasd1\n");
+	log_info(LOGGER,"Enviando respuesta de datos obtenidos al DMA, longitud total: %d",datosObtenidos.tamanio_total_archivo);
 	log_info(LOGGER,"Voy a enviar los datos obtenidos por el FD: %d",fileDescriptorActual);
-	printf("\nasd2\n");
 	prot_enviar_FS_DMA_datosObtenidos_serializado(datosObtenidos, fileDescriptorActual);
-	printf("\nasd3\n");
+	log_info(LOGGER,"Datos enviados: size:%d | tamaño total: %d | resultado: %d",
+			datosObtenidos.size,datosObtenidos.tamanio_total_archivo,datosObtenidos.resultado);
 	//free(datosObtenidos.datos);
 	free(parametrosDeObtenerDatos->path);
 	free(parametrosDeObtenerDatos);
