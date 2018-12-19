@@ -275,25 +275,24 @@ tp_abrirPath prot_recibir_CPU_DMA_abrirPath(int sock){
 	return recibido;
 }
 
-void prot_enviar_DMA_FM9_cargarEnMemoria(int pid, char* path, char* buffer, int offset, int transfer_size, int file_size, int sock){
+void prot_enviar_DMA_FM9_cargarEnMemoria(t_cargarEnMemoria cargar_en_memoria, int buffer_size, int sock){
 	//6 envia
-	int path_size = strlen(path)+1;
-	int buffer_size = strlen(buffer);//+1; no mando el /0
-	enviar(sock,&pid, sizeof(pid));
+	int path_size = strlen(cargar_en_memoria.path)+1;
+	enviar(sock,&cargar_en_memoria.pid, sizeof(int));
 	enviar(sock,&path_size,sizeof(path_size));
-	enviar(sock,path,path_size);
+	enviar(sock,cargar_en_memoria.path,path_size);
 	enviar(sock,&buffer_size,sizeof(buffer_size));
-	enviar(sock,buffer,buffer_size);
-	enviar(sock,&offset,sizeof(offset));
-	enviar(sock,&transfer_size,sizeof(transfer_size));
-	enviar(sock,&file_size,sizeof(file_size));
+	enviar(sock,cargar_en_memoria.buffer,buffer_size);
+	enviar(sock,&cargar_en_memoria.offset,sizeof(int));
+	enviar(sock,&cargar_en_memoria.transfer_size,sizeof(int));
+	enviar(sock,&cargar_en_memoria.file_size,sizeof(int));
 }
 
 tp_cargarEnMemoria prot_recibir_DMA_FM9_cargarEnMemoria(int sock){
 	//6 recibe
 	int path_size;
 	int buffer_size;
-	tp_cargarEnMemoria recibido = malloc(sizeof(tp_cargarEnMemoria));
+	tp_cargarEnMemoria recibido = malloc(sizeof(t_cargarEnMemoria));
 	recibir(sock,&(recibido->pid),sizeof(recibido->pid));
 	recibir(sock,&path_size,sizeof(path_size));
 	recibido->path = malloc(path_size);
@@ -301,6 +300,7 @@ tp_cargarEnMemoria prot_recibir_DMA_FM9_cargarEnMemoria(int sock){
 	recibir(sock,&buffer_size,sizeof(buffer_size));
 	recibido->buffer = malloc(buffer_size);
 	recibir(sock,recibido->buffer,buffer_size);
+	(recibido->buffer)[buffer_size]='\0';
 	recibir(sock,&(recibido->offset),sizeof(recibido->offset));
 	recibir(sock,&(recibido->transfer_size),sizeof(recibido->transfer_size));
 	recibir(sock,&(recibido->file_size),sizeof(recibido->file_size));

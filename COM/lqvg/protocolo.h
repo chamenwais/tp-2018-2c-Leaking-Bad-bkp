@@ -146,7 +146,7 @@ void prot_enviar_DMA_FS_obtenerDatos(char *path, long int offset, long int size,
 tp_obtenerDatos prot_recibir_DMA_FS_obtenerDatos(int sock);
 void prot_enviar_CPU_DMA_abrirPath(char* path, int pid, int sock);
 tp_abrirPath prot_recibir_CPU_DMA_abrirPath(int sock);
-void prot_enviar_DMA_FM9_cargarEnMemoria(int pid, char* path, char* buffer, int offset, int transfer_size, int file_size, int sock);;
+void prot_enviar_DMA_FM9_cargarEnMemoria(t_cargarEnMemoria cargar_en_memoria, int buffer_size, int sock);;
 tp_cargarEnMemoria prot_recibir_DMA_FM9_cargarEnMemoria(int sock);
 void prot_enviar_FM9_DMA_cargaEnMemoria(int memory_address, int sock);
 int prot_recibir_FM9_DMA_cargaEnMemoria(int sock);
