@@ -522,7 +522,7 @@ void prot_enviar_CPU_SAFA_bloquear_DTB(int id_GDT, int sock){
 
 int prot_recibir_CPU_SAFA_bloquear_DTB(int sock){
 	int id_GDT;
-	recibir(sock,id_GDT,sizeof(int));
+	recibir(sock,&id_GDT,sizeof(int));
 	return id_GDT;
 }
 
@@ -736,10 +736,11 @@ void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char*
 	int tamanio_elem;
 	int cant_elem_lista;
 	cant_elem_lista = list_size(lista);
-	enviar(sock, &cant_elem_lista, sizeof(int));
+	//enviar(sock, &cant_elem_lista, sizeof(int));
 	//log_info(LOG_SAFA, "tam lista: %i", cant_elem_lista);
 	if(cant_elem_lista > 0){
 		for(int i = 0; i < list_size(lista); i++){
+			enviar(sock, &cant_elem_lista, sizeof(int));
 			//calculo el tamaño de un elemento
 			char* elem = list_remove(lista, 0);
 			tamanio_elem = strlen(elem)+1;
@@ -795,10 +796,10 @@ tp_DTB prot_recibir_SAFA_CPU_DTB(int sock){
 			recibir(sock, &elem_rec, tamanio_elem_rec);
 			list_add(DTB->tabla_dir_archivos, elem_rec);
 		}
-	}/*else{
+	}else{
 		DTB->tabla_dir_archivos = list_create();
-		logger_CPU(escribir_loguear, l_info, "Se creo una lista vacia");
-	}*/
+		//logger_CPU(escribir_loguear, l_info, "Se creo una lista vacia");
+	}
 	//recibir quantum
 	recibir(sock, &(DTB->quantum), sizeof(int));
 	//free(buffer);

@@ -214,7 +214,7 @@ int liberarMemoria(){
 	 switch (cabecera.tipoDeMensaje){
 	 	 case BloquearDTB:
 	 		 idGDT = prot_recibir_CPU_SAFA_bloquear_DTB(sockCPU);
-	 		 printf("el id es %d",idGDT);
+	 		 printf("el id a a bloquear es %d",idGDT);
 	 		 log_info(LOG_SAFA, "CPU me pide bloquear el DTB %i", idGDT);
 	 		 bool coincideID(void* node) {
 	 		 return ((((tp_DTB) node)->id_GDT)==idGDT);
