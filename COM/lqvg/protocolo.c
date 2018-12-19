@@ -76,8 +76,7 @@ tp_datosObtenidos prot_recibir_FS_DMA_datosObtenidos_serializado(int sock){
 		//printf("\nBufer:\n");
 		//for(int i=0;i<obtenidos->size;i++)printf("%c",obtenidos->datos[i]);
 		}
-	obtenidos->tamanio_total_archivo=-1;
-	printf("\ntamanioTotal: %d, size:%d\n",obtenidos->tamanio_total_archivo,obtenidos->size);
+	//printf("\ntamanioTotal: %d, size:%d\n",obtenidos->tamanio_total_archivo,obtenidos->size);
 	return obtenidos;
 }
 
