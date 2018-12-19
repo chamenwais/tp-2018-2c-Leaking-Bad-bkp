@@ -173,7 +173,7 @@ void logger_funesMemory9(int tipo_esc, int tipo_log, const char* mensaje, ...){
 }
 
 void finalizar_funesMemory9(){
-	//(destruir_estructuras_esquema[MODO_EJECUCION])();
+	(destruir_estructuras_esquema[MODO_EJECUCION])();
 	log_destroy(logger);
 	free(MEMORIA_FISICA);
 }

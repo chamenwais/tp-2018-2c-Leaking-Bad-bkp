@@ -7,8 +7,6 @@
 
 #include "segmentacion_pura.h"
 
-t_list * lista_de_huecos=NULL;
-
 int el_proceso_tiene_tabla_de_segmentos() {
 	return !list_is_empty(tablas_de_segmentos)
 			&& list_any_satisfy(tablas_de_segmentos,
@@ -52,10 +50,11 @@ bool archivo_igual_al_hueco(
 t_hueco * tomar_hueco() {
 	t_hueco * hueco;
 	if (list_size(lista_de_huecos) == 1) {
-		hueco = list_get(lista_de_huecos, 0);
+		hueco = (t_hueco*)list_get(lista_de_huecos, 0);
 	} else {
-		hueco = tomar_hueco_con_limite_mas_grande();
+		hueco = (t_hueco*)tomar_hueco_con_limite_mas_grande();
 	}
+	logger_funesMemory9(escribir_loguear, l_info,"Se eligio el hueco con base %d y limite %d\n", hueco->base, hueco->limite);
 	return hueco;
 }
 
@@ -212,7 +211,6 @@ void cargar_parte_archivo_en_segmento(int DAM_fd){
 	t_archivo_cargandose * archivo_de_proceso_cargandose = cargar_buffer_archivo(parte_archivo);
 	//TODO agregar validaciones de posibles errores
 	if(todavia_falta_mandar_pedazo_de_archivo(parte_archivo, archivo_de_proceso_cargandose)){
-		logger_funesMemory9(escribir_loguear, l_trace,"Se acumulo una parte del archivo en un buffer\n");
 		prot_enviar_FM9_DMA_cargaEnMemoria(0, DAM_fd);
 		return;
 	}
@@ -251,10 +249,10 @@ void cargar_parte_archivo_en_segmento(int DAM_fd){
 
 void inicializar_lista_de_huecos() {
 	lista_de_huecos = list_create();
-	t_hueco hueco_inicial;
-	hueco_inicial.base=0;
-	hueco_inicial.limite=(int)TAMANIO_MEMORIA / TAMANIO_MAX_LINEA;
-	list_add(lista_de_huecos,&hueco_inicial);
+	t_hueco * hueco_inicial=malloc(sizeof(t_hueco));
+	hueco_inicial->base=0;
+	hueco_inicial->limite=(int)TAMANIO_MEMORIA / TAMANIO_MAX_LINEA;
+	list_add(lista_de_huecos,hueco_inicial);
 }
 
 void crear_estructuras_esquema_segmentacion(){
@@ -266,6 +264,10 @@ void crear_estructuras_esquema_segmentacion(){
 
 void eliminar_lista_de_entradas(void * tabla_segmentos){
 	list_destroy((*(t_tabla_segmentos*)tabla_segmentos).entradas);
+}
+
+void eliminar_hueco_de_lista_de_huecos(void * hueco){
+	free(hueco);
 }
 
 t_tabla_segmentos* buscar_tabla_de_segmentos(int pid) {
@@ -313,7 +315,7 @@ void destruir_estructuras_esquema_segmentacion(){
 		list_destroy_and_destroy_elements(tablas_de_segmentos,&eliminar_lista_de_entradas);
 	}
 	if(lista_de_huecos!=NULL){
-		list_destroy(lista_de_huecos);
+		list_destroy_and_destroy_elements(lista_de_huecos,&eliminar_hueco_de_lista_de_huecos);
 	}
 	if(archivos_cargandose!=NULL){
 		list_destroy(archivos_cargandose);

@@ -25,8 +25,6 @@ struct hueco{
 };
 typedef struct hueco t_hueco;
 
-extern t_list * lista_de_huecos;
-
 void inicializar_lista_de_huecos();
 bool es_un_proceso_conocido(void * tabla_segmentos);
 bool tiene_tabla_de_segmentos(void * tabla_segmentos, int pid);
@@ -62,5 +60,6 @@ void asignar_datos_a_linea_segmentacion_pura(int sock);
 void liberar_archivo_abierto_segmentacion_pura(int sock);
 bool tienen_el_mismo_nombre(void * arch1);
 void agregar_info_tabla_de_huecos(t_hueco * hueco);
+void eliminar_hueco_de_lista_de_huecos(void * hueco);
 
 #endif /* SEGMENTACION_PURA_H_ */

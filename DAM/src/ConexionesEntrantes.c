@@ -231,7 +231,7 @@ enum MENSAJES tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_
 	return tipo_de_mensaje;
 }
 
-tp_datosObtenidosDeProtocolo pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int socket_mdj) {
+tp_datosObtenidos pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int socket_mdj) {
 	t_obtenerDatos obtener_datos;
 	obtener_datos.path=ruta;
 	obtener_datos.offset=(long int)offset_Mdj;
@@ -239,16 +239,16 @@ tp_datosObtenidosDeProtocolo pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int s
 	pthread_mutex_lock(&MX_FS);
 	enviarCabecera(socket_mdj, ObtenerDatos, sizeof(ObtenerDatos));
 	prot_enviar_DMA_FS_obtenerDatos_serializado(obtener_datos, socket_mdj);
-	tp_datosObtenidosDeProtocolo datos = prot_recibir_FS_DMA_datosObtenidos_serializado(socket_mdj);
+	tp_datosObtenidos datos = prot_recibir_FS_DMA_datosObtenidos_serializado(socket_mdj);
 	pthread_mutex_unlock(&MX_FS);
 	return datos;
 }
 
-int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, tp_datosObtenidosDeProtocolo parte_archivo) {
+int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, tp_datosObtenidos parte_archivo) {
 	t_cargarEnMemoria a_cargar;
 	a_cargar.pid=info_cpu->pid;
 	a_cargar.path=info_cpu->path;
-	a_cargar.buffer=parte_archivo->buffer;
+	a_cargar.buffer=parte_archivo->datos;
 	a_cargar.offset=offset_Fm9;
 	a_cargar.transfer_size=transfer_size;
 	a_cargar.file_size=parte_archivo->tamanio_total_archivo;
@@ -261,7 +261,7 @@ int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, t
 	return direccion_logica;
 }
 
-bool validar_fragmento_archivo(tp_datosObtenidosDeProtocolo fragmento_archivo, int socket_safa, tp_abrirPath mensaje_cpu){
+bool validar_fragmento_archivo(tp_datosObtenidos fragmento_archivo, int socket_safa, tp_abrirPath mensaje_cpu){
 	if(fragmento_archivo==NULL){
 		loguear_y_avisar_a_safa_apertura_erronea(socket_safa,CONST_NAME_MDJ,mensaje_cpu);
 		return false;
@@ -282,10 +282,10 @@ bool todavia_no_se_recibio_todo_el_archivo(int tamanio_parcial_archivo, int tama
 	return tamanio_parcial_archivo < tamanio_total_archivo;
 }
 
-int loguear_cantidad_datos_y_cargar(tp_datosObtenidosDeProtocolo parte_archivo,
+int loguear_cantidad_datos_y_cargar(tp_datosObtenidos parte_archivo,
 		int direccion_de_memoria, int socket_fm9, tp_abrirPath info_cpu,
 		int offset_Fm9) {
-	logger_DAM(escribir_loguear, l_trace,
+	logger_DAM(escribir_loguear, l_info,
 			"Se recibio un fragmento de archivo de %d bytes",
 			parte_archivo->size);
 	direccion_de_memoria = cargar_datos_en_Fm9(socket_fm9, info_cpu, offset_Fm9,
@@ -298,12 +298,13 @@ void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath i
 		int offset_Mdj=0;
 		int offset_Fm9=0;
 		logger_DAM(escribir_loguear, l_trace,"El archivo %s es valido, vamos a cargarlo en memoria",info_cpu->path);
-		tp_datosObtenidosDeProtocolo parte_archivo = pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
+		tp_datosObtenidos parte_archivo = pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
 		if(validar_fragmento_archivo(parte_archivo, socket_safa, info_cpu)==false){
 			loguear_no_obtencion_de_fragmento_archivo();
 			informar_carga_en_memoria_erronea(socket_safa, info_cpu);
 			return;
 		}
+		logger_DAM(escribir_loguear, l_info,"El archivo %s tiene %d bytes",info_cpu->path,parte_archivo->tamanio_total_archivo);
 		offset_Mdj+=parte_archivo->size;
 		int direccion_de_memoria;
 		while (todavia_no_se_recibio_todo_el_archivo(offset_Mdj, parte_archivo->tamanio_total_archivo)) {
@@ -315,7 +316,7 @@ void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath i
 				informar_carga_en_memoria_erronea(socket_safa, info_cpu);
 				return;
 			}
-			logger_DAM(escribir_loguear, l_trace,"Se cargo el fragmento en memoria");
+			logger_DAM(escribir_loguear, l_info,"Se cargo el fragmento en memoria");
 			offset_Fm9+=tamanio_pedazo_archivo;
 			parte_archivo=pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
 			if(validar_fragmento_archivo(parte_archivo, socket_safa, info_cpu)==false){
