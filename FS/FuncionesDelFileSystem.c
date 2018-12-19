@@ -500,7 +500,7 @@ int generarMD5(char* nombreDelArchivo){
 	*/
 	char*pathCompletoDelArchivo=string_new();
 	int i;
-	pthread_mutex_lock(&mutexUsoDelCanalDeComunicacionDelDMA);
+	//pthread_mutex_lock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	char** pathPartido = string_split(directorioActual, "/");
 	for(i=0;(pathPartido[i]!=NULL)&&(strcmp(pathPartido[i], "Archivos")!=0);i++);
 	for(i++;(pathPartido[i]!=NULL);i++){
@@ -512,7 +512,7 @@ int generarMD5(char* nombreDelArchivo){
 				nombreDelArchivo,pathCompletoDelArchivo,directorioActual);
 	int longitudDelArchivo=obtenerLongigutDelArchivo(pathCompletoDelArchivo);
 	t_datosObtenidos datosObtenidos = obtenerDatos(pathCompletoDelArchivo,0,longitudDelArchivo);
-	pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
+	//pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	char*content=datosObtenidos.datos;
 	if(datosObtenidos.resultado==DatosObtenidos){
 		printf("Los datos del archivo %s son:\n",pathCompletoDelArchivo);
@@ -563,7 +563,7 @@ int funcionDeConsolacat(char* nombreDelArchivo){
 	 * y desde ahi poner "cat hola.txt", para leer la ubicacion
 	 * asd/hola.txt
 	 */
-	pthread_mutex_lock(&mutexUsoDelCanalDeComunicacionDelDMA);
+	//pthread_mutex_lock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	char*path=string_new();
 	int i;
 	char** pathPartido = string_split(directorioActual, "/");
@@ -578,7 +578,7 @@ int funcionDeConsolacat(char* nombreDelArchivo){
 	printf("Mostrando el contenido del archivo %s por pantalla\n",path);
 	int longitudDelArchivo=obtenerLongigutDelArchivo(path);
 	t_datosObtenidos datosObtenidos = obtenerDatos(path,0,longitudDelArchivo);
-	pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
+	//pthread_mutex_unlock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	if(datosObtenidos.resultado==DatosObtenidos){
 		printf("Los datos del archivo %s son:\n",path);
 		for(int i=0;i<longitudDelArchivo;i++) printf("%c",datosObtenidos.datos[i]);
