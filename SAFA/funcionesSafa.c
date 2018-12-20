@@ -162,13 +162,24 @@ int liberarMemoria(){
 		case AbrirPathNoFinalizado:
 			log_info(LOG_SAFA,"Recibi cabecera: AbrirPathNoFinalizado");
 			datos_recibidos = prot_recibir_DMA_SAFA_datosEnMemoria(fd_DMA);
-			//ver que es lo que me manda DAM
-
+				log_info(LOG_SAFA, "El archivo no existe, el DTB %i pasa a EXIT", datos_recibidos->pid);
+				bool coincideIDExit(void* node) {
+					 return ((((tp_DTB) node)->id_GDT)==datos_recibidos->pid);
+					 }
+				tp_DTB DTB_exit = list_remove_by_condition(bloqueados, coincideIDExit);
+				list_add(terminados, DTB_exit);
 			break;
 		case AbrirPathFinalizadoOk:
 			log_info(LOG_SAFA,"Recibi cabecera: AbrirPathFinalizadoOk");
 			datos_recibidos = prot_recibir_DMA_SAFA_datosEnMemoria(fd_DMA);
-			//ver que es lo que me manda DAM
+			bool coincideIDListo(void* node) {
+				 return ((((tp_DTB) node)->id_GDT)==datos_recibidos->pid);
+				 }
+			tp_DTB DTB_Listo = list_remove_by_condition(bloqueados, coincideIDListo);
+			list_add(DTB_Listo->tabla_dir_archivos, datos_recibidos->path);
+			log_info(LOG_SAFA, "Se agrego el path %s a la tabla de dir de archivos", datos_recibidos->path);
+			list_add(listos, DTB_Listo);
+			log_info(LOG_SAFA, "El DTB %i ahora pasa a LISTOS", datos_recibidos->pid);
 			break;
 	}
 	}
