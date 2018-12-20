@@ -386,5 +386,5 @@ t_list* obtener_marcos_libres() {
 
 void copiar_archivo_en_marcos_libres(char * archivo, int lineas, t_list * marcos_libres){
 	//TODO terminar
-
+	int cantidad_lineas_de_marco=TAMANIO_PAGINA/TAMANIO_MAX_LINEA;
 }

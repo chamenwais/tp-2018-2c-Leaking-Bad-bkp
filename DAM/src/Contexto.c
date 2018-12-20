@@ -45,3 +45,7 @@ char * ip_mdj;
 int puerto_mdj;
 
 int transfer_size;
+
+int FM9_fd;
+int SAFA_fd;
+int FS_fd;
