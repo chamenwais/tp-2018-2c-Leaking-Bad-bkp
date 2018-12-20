@@ -17,10 +17,10 @@ int agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo,
 	//Crea tabla de segmentos para el nuevo proceso y lo agrega a la lista
 	t_list* nuevas_entradas_segmentos = list_create();
 	int indice_entrada_tabla_segmentos=agregar_entrada_tabla_segmentos(parte_archivo, nuevas_entradas_segmentos, nueva_base, nuevo_limite);
-	t_tabla_segmentos nueva_tabla_segmentos;
-	nueva_tabla_segmentos.pid = parte_archivo->pid;
-	nueva_tabla_segmentos.entradas = nuevas_entradas_segmentos;
-	list_add(tablas_de_segmentos, &nueva_tabla_segmentos);
+	t_tabla_segmentos* nueva_tabla_segmentos=malloc(sizeof(t_tabla_segmentos));
+	nueva_tabla_segmentos->pid = parte_archivo->pid;
+	nueva_tabla_segmentos->entradas = nuevas_entradas_segmentos;
+	list_add(tablas_de_segmentos, nueva_tabla_segmentos);
 	return indice_entrada_tabla_segmentos;
 }
 
@@ -271,8 +271,8 @@ void eliminar_hueco_de_lista_de_huecos(void * hueco){
 }
 
 t_tabla_segmentos* buscar_tabla_de_segmentos(int pid) {
-	return (t_tabla_segmentos*) list_filter_comparing(tablas_de_segmentos,
-			&tiene_tabla_de_segmentos, pid);
+	return (t_tabla_segmentos*) list_get(list_filter_comparing(tablas_de_segmentos,
+			&tiene_tabla_de_segmentos, pid),0);
 }
 
 void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id){
@@ -299,9 +299,10 @@ void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id){
 
 				memcpy(puntero_al_archivo,MEMORIA_FISICA + (entrada_segmento->base*TAMANIO_MAX_LINEA),tamanio_archivo);
 				puntero_al_archivo[tamanio_archivo]='\0';
+				remover_caracter(puntero_al_archivo,'$');
 
-				logger_funesMemory9(escribir_loguear, l_info, "La información contenida en la memoria fisica para la entrada correspondiente es:"
-						" %s\n",&puntero_al_archivo);
+				printf("La información contenida en la memoria fisica para la entrada correspondiente es: %s\n",puntero_al_archivo);
+				free(puntero_al_archivo);
 			}
 
 		}else{
@@ -335,12 +336,12 @@ bool tiene_tabla_de_segmentos(void * tabla_segmentos, int pid){
 
 int agregar_entrada_tabla_segmentos(tp_cargarEnMemoria nombre_archivo, t_list* entradas_segmentos, int nueva_base, int nuevo_limite) {
 	if(entradas_segmentos!=NULL){
-		t_entrada_tabla_segmentos nueva_entrada_segmento;
+		t_entrada_tabla_segmentos* nueva_entrada_segmento=malloc(sizeof(t_entrada_tabla_segmentos));
 		//actualiza con la base y segmento que resulta de agregar en la memoria fisica
-		nueva_entrada_segmento.base = nueva_base;
-		nueva_entrada_segmento.limite = nuevo_limite;
-		nueva_entrada_segmento.archivo = nombre_archivo->path;
-		list_add(entradas_segmentos, &nueva_entrada_segmento);
+		nueva_entrada_segmento->base = nueva_base;
+		nueva_entrada_segmento->limite = nuevo_limite;
+		nueva_entrada_segmento->archivo = nombre_archivo->path;
+		list_add(entradas_segmentos, nueva_entrada_segmento);
 	}
 	//Devolvemos el índice de la nueva entrada de la tabla de segmentos que es el tamanio menos uno por comenzar desde cero
 	return list_size(entradas_segmentos)-1;
