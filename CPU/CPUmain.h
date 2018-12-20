@@ -42,8 +42,9 @@ void crear_nuevo_archivo_en_mdj(char * path, int cant_lineas, tp_DTB dtb);
 void eliminar_archivo_de_mdj(char * path, tp_DTB dtb);
 void realizar_la_operacion_que_corresponda_segun(t_operacion resultado_del_parseado, tp_DTB dtb);
 void proceder_con_lectura_escriptorio(tp_DTB dtb);
-void recibir_dtb_y_delegar(tp_DTB dtb);
+void recibir_dtb_y_delegar();
 void liberar_dtb(tp_DTB dtb);
+void validar_dtb(int id_dtb);
 
 #endif /* CPUmain_H_ */
 

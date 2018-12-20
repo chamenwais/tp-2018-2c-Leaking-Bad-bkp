@@ -42,6 +42,7 @@ bool el_marco_esta_libre(void* marco);
 int contar_marcos_libres();
 bool archivo_ocupa_mas_marcos_que_disponibles(int lineas);
 t_list* obtener_marcos_libres();
-void copiar_archivo_en_marcos_libres(char * archivo, int lineas, t_list * marcos_libres);
+void copiar_archivo_en_marcos_libres(char * archivo, int lineas, t_list * marcos_libres, char * path, int dtb);
+bool marco_de_menor_a_mayor(void* marco1, void* marco2);
 
 #endif /* UTILIDADES_FM9_H_ */

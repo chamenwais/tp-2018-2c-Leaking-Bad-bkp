@@ -17,11 +17,11 @@ void cargar_parte_archivo_en_segmento_paginado(int DAM_fd){
 	tp_cargarEnMemoria parte_archivo=prot_recibir_DMA_FM9_cargarEnMemoria(DAM_fd);
 	t_archivo_cargandose * archivo_de_proceso_cargandose = cargar_buffer_archivo(parte_archivo);
 	if(todavia_falta_mandar_pedazo_de_archivo(parte_archivo, archivo_de_proceso_cargandose)){
-		logger_funesMemory9(escribir_loguear, l_trace,"Se acumulo una parte del archivo en un buffer\n");
+		logger_funesMemory9(escribir_loguear, l_info,"Se acumulo una parte del archivo en un buffer\n");
 		prot_enviar_FM9_DMA_cargaEnMemoria(0, DAM_fd);
 		return;
 	}
-	logger_funesMemory9(escribir_loguear, l_trace,
+	logger_funesMemory9(escribir_loguear, l_info,
 			"Ya se obtuvo el archivo y se intentara agregar el segmento paginado en la memoria principal\n");
 	if(!hay_marcos_libres()){
 		informar_espacio_insuficiente(DAM_fd);
@@ -38,7 +38,8 @@ void cargar_parte_archivo_en_segmento_paginado(int DAM_fd){
 		return;
 	}
 	t_list * marcos_libres = obtener_marcos_libres();
-	copiar_archivo_en_marcos_libres(archivo_separado_en_lineas, cantidad_de_lineas, marcos_libres);
+	copiar_archivo_en_marcos_libres(archivo_separado_en_lineas, cantidad_de_lineas,
+			marcos_libres, parte_archivo->path, parte_archivo->pid);
 }
 
 void destruir_estructuras_esquema_segmentacion_paginada(){

@@ -51,7 +51,7 @@ bool validar_fragmento_archivo(tp_datosObtenidos fragmento_archivo, int socket_s
 void informar_carga_en_memoria_erronea(int socket_safa, tp_abrirPath mensaje_cpu);
 int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, tp_datosObtenidos parte_archivo);
 void loguear_no_obtencion_de_fragmento_archivo();
-tp_datosObtenidos pedir_datos_a_Mdj(char * ruta, int offset_Mdj, int socket_mdj);
+tp_datosObtenidos pedir_datos_a_Mdj(char * ruta, int offset_Mdj, int socket_mdj, int bytes_a_pedir);
 enum MENSAJES tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath path_y_pid, int socket_safa);
 void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath path_y_pid, int socket_mdj, int socket_fm9, int socket_safa);
 bool todavia_no_se_recibio_todo_el_archivo(int tamanio_parcial_archivo, int tamanio_total_archivo);
@@ -88,5 +88,6 @@ t_cabecera eliminar_archivo(int socket_mdj, tp_eliminarArch mensaje_cpu);
 void loguear_y_avisar_a_safa_eliminacion_erronea(int sockfd_safa, int pid);
 void informar_operacion_eliminar_erronea(int socket_safa, int pid);
 void informar_operacion_eliminar_exitosa(int socket_safa, int pid);
+int calcular_bytes_a_pedir(int tamanio_total, int offset_Mdj);
 
 #endif /* CONEXIONESENTRANTES_H_ */
