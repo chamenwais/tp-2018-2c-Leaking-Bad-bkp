@@ -114,6 +114,7 @@ void finalizar_cpu(){
 	close(serverDIEGO);
 	close(serverMEM);
 	log_destroy(logger);
+	exit(EXIT_FAILURE);
 }
 
 void logger_CPU(int tipo_esc, int tipo_log, const char* mensaje, ...){

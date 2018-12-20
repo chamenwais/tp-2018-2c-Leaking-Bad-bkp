@@ -425,11 +425,20 @@ void liberar_dtb(tp_DTB dtb){
 	free(dtb);
 }
 
-void recibir_dtb_y_delegar(tp_DTB dtb){
+void validar_dtb(int id_dtb){
+	if(abs(id_dtb)>99999){
+		finalizar_cpu();
+	}
+}
+
+void recibir_dtb_y_delegar(){
+	tp_DTB dtb;
 
 	while(true){
 
 		dtb = prot_recibir_SAFA_CPU_DTB(serverSAFA);
+
+		validar_dtb(dtb->id_GDT);
 
 		logger_CPU(escribir_loguear, l_info,"DTB recibido de SAFA");
 
@@ -446,7 +455,6 @@ void recibir_dtb_y_delegar(tp_DTB dtb){
 }
 
 int main(int argc, char **argv){
-	tp_DTB dtb;// = malloc(sizeof(tp_DTB));
 
 	inicializar_logger();
 	//Obtengo los datos del archivo de configuracion
@@ -461,7 +469,7 @@ int main(int argc, char **argv){
 	logger_CPU(escribir_loguear, l_trace,"Realizando handshakes...");
 	realizar_handshakes();
 
-	recibir_dtb_y_delegar(dtb);
+	recibir_dtb_y_delegar();
 
 	finalizar_cpu();
 

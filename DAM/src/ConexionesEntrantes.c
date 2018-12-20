@@ -231,11 +231,11 @@ enum MENSAJES tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_
 	return tipo_de_mensaje;
 }
 
-tp_datosObtenidos pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int socket_mdj) {
+tp_datosObtenidos pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int socket_mdj, int bytes_a_pedir) {
 	t_obtenerDatos obtener_datos;
 	obtener_datos.path=ruta;
 	obtener_datos.offset=(long int)offset_Mdj;
-	obtener_datos.size=(long int)transfer_size;
+	obtener_datos.size=(long int)bytes_a_pedir;
 	pthread_mutex_lock(&MX_FS);
 	enviarCabecera(socket_mdj, ObtenerDatos, sizeof(ObtenerDatos));
 	prot_enviar_DMA_FS_obtenerDatos_serializado(obtener_datos, socket_mdj);
@@ -294,18 +294,29 @@ int loguear_cantidad_datos_y_cargar(tp_datosObtenidos parte_archivo,
 	return direccion_de_memoria;
 }
 
+int calcular_bytes_a_pedir(int tamanio_total, int offset_Mdj) {
+	int bytes_a_pedir;
+	if ((tamanio_total - offset_Mdj) < transfer_size) {
+		bytes_a_pedir = tamanio_total - offset_Mdj;
+	} else {
+		bytes_a_pedir = transfer_size;
+	}
+	return bytes_a_pedir;
+}
+
 void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath info_cpu, int socket_mdj, int socket_fm9, int socket_safa){
 	if(ElArchivoExiste==(respuesta_validez_archivo.tipoDeMensaje)){
 		int offset_Mdj=0;
 		int offset_Fm9=0;
 		logger_DAM(escribir_loguear, l_trace,"El archivo %s es valido, vamos a cargarlo en memoria",info_cpu->path);
-		tp_datosObtenidos parte_archivo = pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
+		tp_datosObtenidos parte_archivo = pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj,transfer_size);
 		if(validar_fragmento_archivo(parte_archivo, socket_safa, info_cpu)==false){
 			loguear_no_obtencion_de_fragmento_archivo();
 			informar_carga_en_memoria_erronea(socket_safa, info_cpu);
 			return;
 		}
-		logger_DAM(escribir_loguear, l_info,"El archivo %s tiene %d bytes",info_cpu->path,parte_archivo->tamanio_total_archivo);
+		int tamanio_total=parte_archivo->tamanio_total_archivo;
+		logger_DAM(escribir_loguear, l_info,"El archivo %s tiene %d bytes",info_cpu->path,tamanio_total);
 		offset_Mdj+=parte_archivo->size;
 		int direccion_de_memoria;
 		while (todavia_no_se_recibio_todo_el_archivo(offset_Mdj, parte_archivo->tamanio_total_archivo)) {
@@ -319,7 +330,9 @@ void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath i
 			}
 			logger_DAM(escribir_loguear, l_info,"Se cargo el fragmento en memoria");
 			offset_Fm9+=tamanio_pedazo_archivo;
-			parte_archivo=pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj);
+			int bytes_a_pedir = calcular_bytes_a_pedir(tamanio_total,
+					offset_Mdj);
+			parte_archivo=pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj,bytes_a_pedir);
 			if(validar_fragmento_archivo(parte_archivo, socket_safa, info_cpu)==false){
 				loguear_no_obtencion_de_fragmento_archivo();
 				informar_carga_en_memoria_erronea(socket_safa, info_cpu);
