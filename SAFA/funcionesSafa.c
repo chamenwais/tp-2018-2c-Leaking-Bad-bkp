@@ -158,6 +158,9 @@ int liberarMemoria(){
 	log_info(LOG_SAFA,"Espero cabecera del DMA");
 	t_cabecera cabecera = recibirCabecera(fd_DMA);
 	tp_datosEnMemoria datos_recibidos;
+	tp_DTB DTB_exit;
+	tp_pathPid pathPid;
+	tp_DTB DTB_Listo;
 	switch(cabecera.tipoDeMensaje){
 		case AbrirPathNoFinalizado:
 			log_info(LOG_SAFA,"Recibi cabecera: AbrirPathNoFinalizado");
@@ -166,7 +169,8 @@ int liberarMemoria(){
 				bool coincideIDExit(void* node) {
 					 return ((((tp_DTB) node)->id_GDT)==datos_recibidos->pid);
 					 }
-				tp_DTB DTB_exit = list_remove_by_condition(bloqueados, coincideIDExit);
+				DTB_exit = list_remove_by_condition(bloqueados, coincideIDExit);
+				free(datos_recibidos);
 				list_add(terminados, DTB_exit);
 			break;
 		case AbrirPathFinalizadoOk:
@@ -175,12 +179,79 @@ int liberarMemoria(){
 			bool coincideIDListo(void* node) {
 				 return ((((tp_DTB) node)->id_GDT)==datos_recibidos->pid);
 				 }
-			tp_DTB DTB_Listo = list_remove_by_condition(bloqueados, coincideIDListo);
+			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDListo);
 			list_add(DTB_Listo->tabla_dir_archivos, datos_recibidos->path);
 			log_info(LOG_SAFA, "Se agrego el path %s a la tabla de dir de archivos", datos_recibidos->path);
 			list_add(listos, DTB_Listo);
+			free(datos_recibidos);
 			log_info(LOG_SAFA, "El DTB %i ahora pasa a LISTOS", datos_recibidos->pid);
 			break;
+		case FlushDeArchivoADiscoNoFinalizado: //asumo que si falla va a exit
+			log_info(LOG_SAFA, "Recibi cabecera: FlushDeArchivoADiscoNoFinalizado");
+			pathPid = prot_recibir_DMA_SAFA_finFlush(fd_DMA);
+			log_info(LOG_SAFA, "El Flush fallo, el DTB %i pasa a EXIT", pathPid->pid);
+					bool coincideIDExit2(void* node) {
+						return ((((tp_DTB) node)->id_GDT)==pathPid->pid);
+					}
+			free(pathPid);
+			DTB_exit = list_remove_by_condition(bloqueados, coincideIDExit2);
+			list_add(terminados, DTB_exit);
+		break;
+		case FlushDeArchivoADiscoFinalizadoOk: //asumo que si no falla el dtb se desbloquea
+			log_info(LOG_SAFA, "Recibi cabecera: FlushDeArchivoADiscoFinalizadoOk");
+			pathPid = prot_recibir_DMA_SAFA_finFlush(fd_DMA);
+			log_info(LOG_SAFA, "El Flush fue un exito, el DTB %i pasa a LISTOS", pathPid->pid);
+					bool coincideIDReady(void* node) {
+						return ((((tp_DTB) node)->id_GDT)==pathPid->pid);
+					}
+			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady);
+			free(pathPid);
+			list_add(listos, DTB_exit);
+		break;
+		case CrearLineasEnArchivoNoFinalizado:
+			log_info(LOG_SAFA, "Recibi cabecera: CrearLineasEnArchivoNoFinalizado");
+			int id = prot_recibir_DMA_SAFA_crearArchivo(fd_DMA);
+			log_info(LOG_SAFA, "El archivo no pudo ser creado, se aborta el DTB %i", id);
+			bool coincideIDExit3(void* node) {
+					return ((((tp_DTB) node)->id_GDT)==id);
+			     }
+			DTB_exit = list_remove_by_condition(bloqueados, coincideIDExit3);
+			free(id);
+			list_add(terminados, DTB_exit);
+		break;
+		case CrearLineasEnArchivoFinalizadoOk:
+			log_info(LOG_SAFA, "Recibi cabecera: CrearLineasEnArchivoFinalizadoOk");
+			int i = prot_recibir_DMA_SAFA_crearArchivo(fd_DMA);
+			log_info(LOG_SAFA, "El archivo pudo crearse en el DTB %i", i);
+			bool coincideIDReady2(void* node) {
+					return ((((tp_DTB) node)->id_GDT)==i);
+			    	}
+			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady2);
+			free(i);
+			list_add(listos, DTB_exit);
+		break;
+		case EliminarArchivoDeDiscoNoFinalizado:
+			log_info(LOG_SAFA, "Recibi cabecera: EliminarArchivoDeDiscoNoFinalizado");
+			int idtb = prot_recibir_DMA_SAFA_eliminarArchivo(fd_DMA);
+			log_info(LOG_SAFA, "El archivo no pudo ser elminado, se aborta el DTB %i", idtb);
+			bool coincideIDExit4(void* node) {
+					return ((((tp_DTB) node)->id_GDT)==idtb);
+			     }
+			DTB_exit = list_remove_by_condition(bloqueados, coincideIDExit4);
+			free(idtb);
+			list_add(terminados, DTB_exit);
+		break;
+		case EliminarArchivoDeDiscoFinalizadoOk:
+			log_info(LOG_SAFA, "Recibi cabecera: EliminarArchivoDeDiscoFinalizadoOk");
+			int iddtb = prot_recibir_DMA_SAFA_eliminarArchivo(fd_DMA);
+			log_info(LOG_SAFA, "El archivo fue eliminado, el DTB %i pasa a LISTOS", iddtb);
+			bool coincideIDReady3(void* node) {
+					return ((((tp_DTB) node)->id_GDT)==iddtb);
+			    	}
+			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady3);
+			free(iddtb);
+			list_add(listos, DTB_exit);
+		break;
 	}
 	}
 	resultadoComElDiego=EXIT_SUCCESS;
