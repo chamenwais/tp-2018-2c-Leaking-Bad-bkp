@@ -156,15 +156,30 @@ void recibir_handshake_de(int socket_id, enum PROCESO enumProceso, char * proces
 }
 
 void cerrar_socket_y_terminar(int socket_id){
-	close(socket_id);
+	cerrar_socket(socket_id);
 	terminar_controladamente(EXIT_FAILURE);
+}
+
+void cerrar_socket(int socket){
+	if(socket>2){
+		close(socket);
+	}
+}
+
+void cerrar_sockets_globales(){
+	cerrar_socket(FM9_fd);
+	cerrar_socket(SAFA_fd);
+	cerrar_socket(FS_fd);
 }
 
 void captura_sigpipe(int signo){
 	if (signo == SIGINT) {
+		logger_DAM(escribir_loguear,l_error,"Vos tambien las tenes adentro ehh");
+		cerrar_sockets_globales();
 		terminar_controladamente(EXIT_FAILURE);
 	} else if (signo == SIGPIPE) {
 		logger_DAM(escribir_loguear,l_error,"Ehh hubo un problema, analizar logs anteriores. Me mato");
+		cerrar_sockets_globales();
 		terminar_controladamente(EXIT_FAILURE);
 	}
 }

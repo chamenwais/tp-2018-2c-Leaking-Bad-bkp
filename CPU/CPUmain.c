@@ -427,19 +427,22 @@ void liberar_dtb(tp_DTB dtb){
 
 void recibir_dtb_y_delegar(tp_DTB dtb){
 
-	dtb = prot_recibir_SAFA_CPU_DTB(serverSAFA);
+	while(true){
 
-	logger_CPU(escribir_loguear, l_info,"DTB recibido de SAFA");
+		dtb = prot_recibir_SAFA_CPU_DTB(serverSAFA);
 
-	if(dtb->iniGDT == 0){
-		logger_CPU(escribir_loguear, l_trace,"Se procedera a realizar la operacion DUMMY");
-		iniciar_operacion_dummy(dtb);
-	}else{
-		logger_CPU(escribir_loguear, l_trace,"Se procedera con la ejecucion de sentencias");
-		proceder_con_lectura_escriptorio(dtb);
+		logger_CPU(escribir_loguear, l_info,"DTB recibido de SAFA");
+
+		if(dtb->iniGDT == 0){
+			logger_CPU(escribir_loguear, l_trace,"Se procedera a realizar la operacion DUMMY");
+			iniciar_operacion_dummy(dtb);
+		}else{
+			logger_CPU(escribir_loguear, l_trace,"Se procedera con la ejecucion de sentencias");
+			proceder_con_lectura_escriptorio(dtb);
+		}
+
+		liberar_dtb(dtb);
 	}
-
-	liberar_dtb(dtb);
 }
 
 int main(int argc, char **argv){

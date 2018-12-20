@@ -46,6 +46,8 @@ void validar_apertura_archivo_configuracion();
 void configurar_signals(void);
 void captura_sigpipe(int signo);
 void loguear_cabecera_recibida(char * proceso);
+void cerrar_sockets_globales();
+void cerrar_socket(int socket);
 
 //Conexiones
 void cerrar_socket_y_terminar(int socket_id);

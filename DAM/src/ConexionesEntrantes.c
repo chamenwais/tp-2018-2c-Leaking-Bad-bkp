@@ -61,11 +61,10 @@ void crear_hilos_conexiones_entrantes(int socket_fm9, int socket_safa, int socke
 											"Se recibio un mensaje en el socket %d",iterador_conexiones_existentes);
 					t_cabecera cabecera=recibirCabecera(iterador_conexiones_existentes);
 					if (!cabecera_correcta(&cabecera)) {
+						FD_CLR(iterador_conexiones_existentes, &lista_fd_maestra);
 						//No se puede leer el mensaje, se va a cerrar el sockfd
 						loguear_y_cerrar_comunicacion_erronea_con_CPU(
 								iterador_conexiones_existentes);
-						FD_CLR(iterador_conexiones_existentes, &lista_fd_maestra);
-						continue;
 					}
 					loguear_cabecera_recibida(CONST_NAME_CPU);
 					clasificar_y_crear_hilo_correspondiente_a_pedido_CPU(
@@ -145,6 +144,7 @@ void loguear_y_cerrar_comunicacion_erronea_con_CPU(
 			"No se pudo obtener info del CPU. Se cierra el sockfd %d",
 			sockfd_CPU_a_cerrar);
 	close(sockfd_CPU_a_cerrar);
+	terminar_controladamente(EXIT_SUCCESS);
 }
 
 int cabecera_correcta(t_cabecera* cabecera){
@@ -257,6 +257,7 @@ int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, t
 	prot_enviar_DMA_FM9_cargarEnMemoria(a_cargar, parte_archivo->size, socket_fm9);
 	int direccion_logica = prot_recibir_FM9_DMA_cargaEnMemoria(socket_fm9);
 	pthread_mutex_unlock(&MX_MEMORIA);
+	free(parte_archivo->datos);
 	free(parte_archivo);
 	return direccion_logica;
 }

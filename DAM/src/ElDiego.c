@@ -17,6 +17,10 @@ int main(int argc, char ** argv) {
 	int socket_memoria=comunicarse_con_memoria();
 	//Va a comunicarse con S-AFA
 	int socket_safa=comunicarse_con_safa();
+	//Variables globales de sockets por si hay que cerrar las conexiones
+	FM9_fd=socket_memoria;
+	SAFA_fd=socket_safa;
+	FS_fd=socket_file_system;
 	// Inicializo semaforos
 	inicializar_semaforos_de_procesos();
 	//Va a quedarse escuchando a los CPU

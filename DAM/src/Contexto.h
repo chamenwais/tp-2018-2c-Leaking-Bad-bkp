@@ -40,5 +40,8 @@ extern pthread_mutex_t MX_MEMORIA;
 extern pthread_mutex_t MX_FS;
 extern pthread_mutex_t MX_SAFA;
 extern pthread_mutex_t MX_CPU;
+extern int FM9_fd;
+extern int SAFA_fd;
+extern int FS_fd;
 
 #endif /* CONTEXTO_H_ */
