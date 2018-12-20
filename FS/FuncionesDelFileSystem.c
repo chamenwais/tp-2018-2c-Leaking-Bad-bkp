@@ -1335,8 +1335,11 @@ t_datosObtenidos obtenerDatos(char *path, long int offset, long int size){
 			path, offset, size);
 	t_datosObtenidos datosObtendios;
 	long int bytesLeidos=0;
+	int posicion=0;
 	datosObtendios.datos=malloc(sizeof(char)*size);
 	datosObtendios.size=size;
+	datosObtendios.resultado=0;
+	datosObtendios.tamanio_total_archivo=0;
 	char *ubicacionDelArchivoDeMetadata=string_new();
 	string_append(&ubicacionDelArchivoDeMetadata,configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivoDeMetadata, "/Archivos/");
@@ -1385,27 +1388,53 @@ t_datosObtenidos obtenerDatos(char *path, long int offset, long int size){
 					FILE * archivo = fopen(archivoDeBloque,"rb+");
 					//fwrite recibe: puntero a los datos, el tamaño de los registros, numero de registros, archivo
 					if(archivo!=NULL){
-						if((i!=numeroDeBloqueDeFinDeLectura)&&(i!=0)){
-							bytesALeer=configuracionDeMetadata.tamanioBloques;
+						if((i!=numeroDeBloqueDeFinDeLectura)&&(i!=0)){//no es primero ni ultimo
+							log_info(LOGGER,"No es primero ni ultimo");
+							/*if(configuracionDeMetadata.tamanioBloques<size){
+								bytesALeer=configuracionDeMetadata.tamanioBloques;
+								//bytesLeidos=leerEnPrimerArchivoDesde;
+
+								//bytesLeidos=offset;
+							}else{
+								bytesALeer=size;
+								}*/
+							int maximoQuePuedoLeer=configuracionDeMetadata.tamanioBloques-leerEnPrimerArchivoDesde;
+															if(maximoQuePuedoLeer<=size){
+																bytesALeer=maximoQuePuedoLeer;
+															}else{
+																bytesALeer=size;
+																}
+							//bytesALeer=configuracionDeMetadata.tamanioBloques;
 						}else{
 							if(i==0){
 								//Primer bloque
+								log_info(LOGGER,"Primer bloque");
 								log_info(LOGGER,"Leer en primer arch desde %d",leerEnPrimerArchivoDesde);
-								bytesALeer=configuracionDeMetadata.tamanioBloques-leerEnPrimerArchivoDesde;
+								int maximoQuePuedoLeer=configuracionDeMetadata.tamanioBloques-leerEnPrimerArchivoDesde;
+								if(maximoQuePuedoLeer<=size){
+									bytesALeer=maximoQuePuedoLeer;
+								}else{
+									bytesALeer=size;
+									}
 								fseek(archivo, leerEnPrimerArchivoDesde, SEEK_SET);
-								if(numeroDeBloqueDeFinDeLectura==numeroDeBloqueDeInicioDeLectura){
+								/*if(numeroDeBloqueDeFinDeLectura==numeroDeBloqueDeInicioDeLectura){
+									bytesALeer=size-bytesLeidos;
+									}*/
+							}else{//Ultimo bloque
+								if(numeroDeBloqueDeFinDeLectura==i){
+									log_info(LOGGER,"Ultimo bloque");
 									bytesALeer=size-bytesLeidos;
 									}
-							}else{
-								//Ultimo bloque
-								bytesALeer=size-bytesLeidos;
 								}
 							}
-						log_info(LOGGER,"Leyendo del archivo %s, %d bytes, desde %d, size %d",
-								archivoDeBloque,bytesALeer,bytesLeidos,size);
+						posicion=(bytesLeidos+offset)%configuracionDeMetadata.tamanioBloques;
+						log_info(LOGGER,"Leyendo del archivo %s, %d bytes, desde %d, size %d, posicion %d",
+								archivoDeBloque,bytesALeer,bytesLeidos,size,posicion);
+						fseek(archivo,posicion,SEEK_SET);
 						fread(&datosObtendios.datos[bytesLeidos],sizeof(char),bytesALeer,archivo);
 						bytesLeidos=bytesALeer+bytesLeidos;
 						bloqueActual++;
+						log_info(LOGGER,"Datos leidos");
 						fclose(archivo);
 					}else{
 						log_error(LOGGER,"No se pudo abrir el archivo %s para leer",archivoDeBloque);
