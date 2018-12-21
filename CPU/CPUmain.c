@@ -375,7 +375,7 @@ void realizar_la_operacion_que_corresponda_segun(t_operacion resultado_del_parse
 
 void proceder_con_lectura_escriptorio(tp_DTB dtb){
 	int unidad_de_tiempo = dtb->quantum;
-	for(int i=0;i++;i<unidad_de_tiempo){
+	for(int i=0;i<unidad_de_tiempo;i++){
 		solicitar_a_FM9_la_sentencia(dtb);
 		tp_lineaParaCPU paquete_linea = recibir_de_FM9_linea_a_parsear(dtb);
 		actualizar_program_counter(dtb);

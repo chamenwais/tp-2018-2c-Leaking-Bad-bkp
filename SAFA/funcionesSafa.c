@@ -117,11 +117,11 @@ int inicializarSemaforosSAFA(){
 		exit(1);
 	}
 
-	pthread_mutex_init(&mutex_NUEVOS, 0);
-	pthread_mutex_init(&mutex_LISTOS, 0);
-	pthread_mutex_init(&mutex_BLOQUEADOS, 0);
-	pthread_mutex_init(&mutex_EJECUTANDO, 0);
-	pthread_mutex_init(&mutex_TERMINADOS, 0);
+	pthread_mutex_init(&mutex_NUEVOS, NULL);
+	pthread_mutex_init(&mutex_LISTOS, NULL);
+	pthread_mutex_init(&mutex_BLOQUEADOS, NULL);
+	pthread_mutex_init(&mutex_EJECUTANDO, NULL);
+	pthread_mutex_init(&mutex_TERMINADOS, NULL);
 	return EXIT_SUCCESS;
  }
 
@@ -617,9 +617,9 @@ int planificar_PLP(){
 	log_info(LOG_SAFA,"PLP en accion");
 	log_info(LOG_SAFA, "hay %i nuevos y hayDummy es %i", list_size(nuevos), hayDummy);
 	if(list_size(nuevos)>0 && hayDummy == 0){
-		pthread_mutex_lock(nuevos);
+		pthread_mutex_lock(&mutex_NUEVOS);
 		idDTB=list_remove(nuevos, 0);
-		pthread_mutex_unlock(nuevos);
+		pthread_mutex_unlock(&mutex_NUEVOS);
 		idDTB->iniGDT = 0; //lo desbloqueo como Dummy
 		++hayDummy;
 		list_add(listos, idDTB);
