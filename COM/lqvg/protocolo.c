@@ -720,33 +720,33 @@ tp_eliminarArch prot_recibir_CPU_DAM_eliminar_arch_de_disco(int sock){
 void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char* escriptorio, t_list* lista, int quantum, int sock){
 	//mando id_GDT
 	enviar(sock, &id_GDT, sizeof(id_GDT));
-	//log_info(LOG_SAFA, "id_GDT: %i", id_GDT);
+	printf( "id_GDT: %i\n", id_GDT);
 	//mando program counter
 	enviar(sock, &program_counter, sizeof(program_counter));
-	//log_info(LOG_SAFA, "prog counter: %i", program_counter);
+	printf( "prog counter: %i\n", program_counter);
 	//mando iniGDT
 	enviar(sock, &iniGDT, sizeof(iniGDT));
-	//log_info(LOG_SAFA, "iniGDT: %i", iniGDT);
+	printf( "iniGDT: %i\n", iniGDT);
 	//mando escriptorio
 	int tam = strlen(escriptorio)+1;
 	enviar(sock, &tam, sizeof(tam));
 	enviar(sock, escriptorio, tam);
-	//log_info(LOG_SAFA, "escriptorio: %s", escriptorio);
+	printf("escriptorio: %s\n", escriptorio);
 	//mando la lista
 	int tamanio_elem;
 	int cant_elem_lista;
 	cant_elem_lista = list_size(lista);
 	//enviar(sock, &cant_elem_lista, sizeof(int));
-	//log_info(LOG_SAFA, "tam lista: %i", cant_elem_lista);
+	printf( "tam lista: %i\n", cant_elem_lista);
 	if(cant_elem_lista > 0){
+		enviar(sock, &cant_elem_lista, sizeof(int));
 		for(int i = 0; i < list_size(lista); i++){
-			enviar(sock, &cant_elem_lista, sizeof(int));
 			//calculo el tamaño de un elemento
 			char* elem = list_remove(lista, 0);
 			tamanio_elem = strlen(elem)+1;
 			enviar(sock, &tamanio_elem, sizeof(tamanio_elem));
 			enviar(sock, elem, tamanio_elem);
-	//		log_info(LOG_SAFA, "elem: %s", elem);
+			printf("elem: %s\n", elem);
 			free(elem);
 	}
 	}else{
@@ -756,7 +756,7 @@ void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char*
 	}
 	//mando el quantum
 	enviar(sock, &quantum, sizeof(quantum));
-	//log_info(LOG_SAFA, "quantum: %i", quantum);
+	printf("quantum: %i\n", quantum);
 }
 
 tp_DTB prot_recibir_SAFA_CPU_DTB(int sock){
@@ -764,41 +764,40 @@ tp_DTB prot_recibir_SAFA_CPU_DTB(int sock){
 	tp_DTB DTB = malloc(sizeof(t_DTB));
 	//recibo id_GDT
 	recibir(sock, &(DTB->id_GDT), sizeof(int));
-	//logger_CPU(escribir_loguear, l_info, "idGDT: %i", DTB->id_GDT);
+	printf("idGDT: %i\n", DTB->id_GDT);
 	//recibo program_counter
 	recibir(sock, &(DTB->program_counter), sizeof(int));
-	//logger_CPU(escribir_loguear, l_info, "prog counter: %i", DTB->program_counter);
+	printf("prog counter: %i\n", DTB->program_counter);
 	//recibo iniGDT
 	recibir(sock, &(DTB->iniGDT), sizeof(int));
-	//logger_CPU(escribir_loguear, l_info, "iniGDT: %i", DTB->iniGDT);
+	printf("iniGDT: %i\n", DTB->iniGDT);
 	//recibo escriptorio
 	int tam;
 	recibir(sock, &tam, sizeof(tam));
-	//logger_CPU(escribir_loguear, l_info, "tamEscr: %i", tam);
+	printf("tamEscr: %i\n", tam);
 	char* buffer = malloc(tam);
 	recibir(sock, buffer, tam);
-	//logger_CPU(escribir_loguear, l_info, "buffer: %s", buffer);
+	printf("buffer: %s\n", buffer);
 	//buffer[tam]="/0";
 	DTB->escriptorio = buffer;
-	//logger_CPU(escribir_loguear, l_info, "escriptorio: %s", DTB->escriptorio);
+	printf("escriptorio: %s\n", DTB->escriptorio);
 	//recibir lista
 	int cant_elem_lista_rec;
 	int i;
 	char* elem_rec;
 	int tamanio_elem_rec;
 	recibir(sock, &cant_elem_lista_rec, sizeof(int));
-	//logger_CPU(escribir_loguear, l_info, "cant elem lista: %i", cant_elem_lista_rec);
+	printf("cant elem lista: %i\n", cant_elem_lista_rec);
 	DTB->tabla_dir_archivos = list_create();
 	if(cant_elem_lista_rec > 0){
 		for (i = 0; i < cant_elem_lista_rec; ++i) {
 			recibir(sock, &tamanio_elem_rec, sizeof(tamanio_elem_rec));
+			printf("tamanio_elem_rec: %i\n", tamanio_elem_rec);
 			elem_rec=malloc(tamanio_elem_rec);
-			recibir(sock, &elem_rec, tamanio_elem_rec);
+			recibir(sock, elem_rec, tamanio_elem_rec);
+			printf("elem_rec: %s\n", elem_rec);
 			list_add(DTB->tabla_dir_archivos, elem_rec);
 		}
-	}else{
-		DTB->tabla_dir_archivos = list_create();
-		//logger_CPU(escribir_loguear, l_info, "Se creo una lista vacia");
 	}
 	//recibir quantum
 	recibir(sock, &(DTB->quantum), sizeof(int));

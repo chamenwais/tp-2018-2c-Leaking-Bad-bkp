@@ -294,9 +294,16 @@ void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id){
 
 				memcpy(puntero_al_archivo,MEMORIA_FISICA + (entrada_segmento->base*TAMANIO_MAX_LINEA),tamanio_archivo);
 				puntero_al_archivo[tamanio_archivo]='\0';
-				remover_caracter(puntero_al_archivo,'$');
 
-				printf("La información contenida en la memoria fisica para la entrada correspondiente es: %s\n",puntero_al_archivo);
+				char ** lineas=string_split(puntero_al_archivo, "\n");
+				logger_funesMemory9(escribir_loguear, l_info,
+						"La información contenida en la memoria fisica para la entrada correspondiente es: \n");
+				for(int cant_lineas=0;lineas[cant_lineas]!=NULL;cant_lineas++){
+					char * linea=lineas[cant_lineas];
+					remover_caracter(linea,'$');
+					printf("%s",linea);
+				}
+
 				free(puntero_al_archivo);
 			}
 
