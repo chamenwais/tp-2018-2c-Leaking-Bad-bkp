@@ -176,6 +176,7 @@ void finalizar_funesMemory9(){
 	(destruir_estructuras_esquema[MODO_EJECUCION])();
 	log_destroy(logger);
 	free(MEMORIA_FISICA);
+	exit(EXIT_FAILURE);
 }
 
 void captura_sigpipe(int signo){
@@ -185,7 +186,6 @@ void captura_sigpipe(int signo){
     	logger_funesMemory9(escribir_loguear, l_warning,"Finalizando proceso... Gracias vuelva prontos.");
     	GLOBAL_SEGUIR = 0;
     	finalizar_funesMemory9();
-    	exit(EXIT_FAILURE);
     }
     else if(signo == SIGPIPE)
     {
