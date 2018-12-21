@@ -617,9 +617,12 @@ void *funcionHiloConsola(void *arg){
 			}else{
 		printf("Comando desconocido\n");
 		}}}}}}
+		if(strlen(linea)>0){
+			free(instruccion);
+		}
 		free(linea);
-		for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
-		free(instruccion);
+		//for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
+		//free(instruccion);
 	}//Cierre del while(1)
 	pthread_exit(ret);
 }
@@ -902,4 +905,41 @@ void agregarGdtAColaRecurso(tp_tipoRecurso recurso){
 	list_add(tabla_recursos, recu);
 	pthread_mutex_unlock(&mutex_TABLAREC);
 }
+
+/*void captura_sigpipe(int signo){
+
+    if(signo == SIGINT)
+    {
+    	log_info(LOG_SAFA,"Finalizando proceso... Gracias vuelva prontos.");
+    	//GLOBAL_SEGUIR = 0;
+    	liberarMemoria();
+    	finalizarTodo();
+    }
+    else if(signo == SIGPIPE)
+    {
+    	log_error(LOG_SAFA,"Tecla no reconocida");
+    }
+
+}
+
+void configurar_signals(void){
+	struct sigaction signal_struct;
+	signal_struct.sa_handler = captura_sigpipe;
+	signal_struct.sa_flags   = 0;
+
+	sigemptyset(&signal_struct.sa_mask);
+
+	sigaddset(&signal_struct.sa_mask, SIGPIPE);
+    if (sigaction(SIGPIPE, &signal_struct, NULL) < 0)
+    {
+    	log_error(LOG_SAFA," SIGACTION error ");
+    }
+
+    sigaddset(&signal_struct.sa_mask, SIGINT);
+    if (sigaction(SIGINT, &signal_struct, NULL) < 0)
+    {
+    	log_error(LOG_SAFA," SIGACTION error ");
+    }
+
+}*/
 

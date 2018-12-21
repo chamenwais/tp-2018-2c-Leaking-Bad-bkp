@@ -13,6 +13,7 @@ int main(int argc, char** argv){
 
 	//Inicio el Log y variables//
 	inicializarLog();
+	//configurar_signals();
 	inicializarSemaforosSAFA();
 	pthread_mutex_lock(&mutexDePausaDePlanificacion); //la planif del PLP arranca pausada
 	pthread_mutex_lock(&mutexDePausaPCP);//la planif del PCP arranca pausada

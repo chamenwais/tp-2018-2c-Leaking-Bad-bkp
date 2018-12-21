@@ -13,6 +13,7 @@
 #include <readline/history.h>
 #include <curses.h>
 #include <term.h>
+#include <signal.h>
 
 
 int inicializarLog();
@@ -49,5 +50,7 @@ void pasarSafaOperativo();
 bool recursoEstaEnTabla(char* rec);
 bool recursoEstaAsignado(char* rec);
 void agregarGdtAColaRecurso(tp_tipoRecurso recurso);
+//void captura_sigpipe(int signo);
+//void configurar_signals(void);
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */
