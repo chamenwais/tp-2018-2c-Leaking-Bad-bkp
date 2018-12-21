@@ -345,61 +345,11 @@ void informar_carga_segmento_exitosa(int indice_entrada_archivo_en_tabla_segment
 			indice_entrada_archivo_en_tabla_segmentos, DAM_fd);
 }
 
-void inicializar_bitmap_de_marcos_libres() {
-	bitmap_marcos_libres = list_create();
-	int cantidad_de_marcos=(int)TAMANIO_MEMORIA / TAMANIO_PAGINA;
-	t_disponibilidad_marco marco_libre;
-	marco_libre.disponibilidad=0;
-	for(int marco=0;marco<cantidad_de_marcos;marco++){
-		marco_libre.indice=marco;
-		list_add(bitmap_marcos_libres,&marco_libre);
+int el_proceso_tiene_tabla_de_segmentos(int pid) {
+	bool el_pid_tiene_tabla_de_segmentos(void * tabla_segmentos){
+		return (*(t_tabla_segmentos*)tabla_segmentos).pid==pid;
 	}
-}
-
-bool el_marco_esta_libre(void* marco){
-	return (*(t_disponibilidad_marco*)marco).disponibilidad==0;
-}
-
-bool hay_marcos_libres(){
-	return list_any_satisfy(bitmap_marcos_libres, &el_marco_esta_libre);
-}
-
-int contar_marcos_libres(){
-	return list_count_satisfying(bitmap_marcos_libres, &el_marco_esta_libre);
-}
-
-bool archivo_ocupa_mas_marcos_que_disponibles(int lineas){
-	int marcos_disponibles=contar_marcos_libres();
-	int lineas_disponibles=(marcos_disponibles*TAMANIO_PAGINA)/TAMANIO_MAX_LINEA;
-	return lineas_disponibles<lineas;
-}
-
-t_list* obtener_marcos_libres() {
-	return list_filter(bitmap_marcos_libres, &el_marco_esta_libre);
-}
-
-bool marco_de_menor_a_mayor(void* marco1, void* marco2){
-	return ((*(t_disponibilidad_marco*)marco1).indice<(*(t_disponibilidad_marco*)marco2).indice);
-}
-
-void copiar_archivo_en_marcos_libres(char * archivo, int lineas, t_list * marcos_libres, char * path, int dtb){
-	//TODO terminar
-	int cantidad_lineas_de_marco=TAMANIO_PAGINA/TAMANIO_MAX_LINEA;
-	list_sort(marcos_libres, &marco_de_menor_a_mayor);
-	int cont_marco_libre=0;
-	int size=0;
-	int offset=0;
-	while(lineas>cantidad_lineas_de_marco){
-		cont_marco_libre++;
-		size=cantidad_lineas_de_marco*TAMANIO_PAGINA;
-		t_disponibilidad_marco* marco_libre=list_get(marcos_libres,cont_marco_libre);
-		int indice_marco_libre=marco_libre->indice;
-		int primer_byte_de_mp_del_marco=indice_marco_libre*TAMANIO_PAGINA;
-		memcpy(MEMORIA_FISICA+primer_byte_de_mp_del_marco,archivo+offset,size);
-		lineas-=cantidad_lineas_de_marco;
-		offset+=cont_marco_libre*TAMANIO_PAGINA;
-		marco_libre->disponibilidad=1;
-		//TODO actualizar info del marco ocupado en la lista de paginas del segmento
-	}
-	list_destroy(marcos_libres);
+	return !list_is_empty(tablas_de_segmentos)
+			&& list_any_satisfy(tablas_de_segmentos,
+					&el_pid_tiene_tabla_de_segmentos);
 }
