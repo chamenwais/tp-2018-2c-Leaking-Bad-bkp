@@ -100,7 +100,7 @@ void darle_una_linea_al_cpu_segmentacion_pura(int sock){
 			int cant_bytes_hasta_linea = (paquete_asignar_linea->pc)*TAMANIO_MAX_LINEA;
 			char * linea = malloc(TAMANIO_MAX_LINEA+1);
 			memcpy(linea,direccion_base_archivo+cant_bytes_hasta_linea,TAMANIO_MAX_LINEA);
-			//TODO aca faltan mallocs
+			//TODO aca faltan mallocs ??
 			char* linea_auxiliar = string_duplicate(linea);
 			string_trim(&linea_auxiliar);
 			char** split = string_n_split(linea_auxiliar, 2, "$");
@@ -116,52 +116,53 @@ void darle_una_linea_al_cpu_segmentacion_pura(int sock){
 }
 
 void asignar_datos_a_linea_segmentacion_pura(int sock){
-/*	tp_asignarDatosLinea paquete_asignar_datos_linea;
-		paquete_asignar_datos_linea = prot_recibir_CPU_FM9_asignar_datos_linea(sock);
 
-		//se repite todo hasta obtener la linea
-		//no hacer el malloc
-		//ver cuanto queda entre el barra n y el tam max de linea, si alcanza para meter lo que piden
+	//R E VI SA AA A RRR
+	tp_asignarDatosLinea paquete_asignar_datos_linea;
+	paquete_asignar_datos_linea = prot_recibir_CPU_FM9_asignar_datos_linea(sock);
 
-		if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,paquete_asignar_datos_linea->id_GDT)){
-			t_entrada_tabla_segmentos * entrada_segmento;
-			t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(paquete_asignar_datos_linea->id_GDT);
-			path_archivo_para_comparar = paquete_asignar_datos_linea->path;
-			entrada_segmento = list_find(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
+	if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos,paquete_asignar_datos_linea->id_GDT)){
+		t_entrada_tabla_segmentos * entrada_segmento;
+		t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(paquete_asignar_datos_linea->id_GDT);
+		path_archivo_para_comparar = paquete_asignar_datos_linea->path;
+		entrada_segmento = list_find(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
 
-			if(paquete_asignar_datos_linea->pc > entrada_segmento->limite){
-				logger_funesMemory9(escribir_loguear, l_error,"20002");
-				enviarCabecera(sock, FalloDeSegmentoMemoria, sizeof(FalloDeSegmentoMemoria));
+		if(paquete_asignar_datos_linea->pc > entrada_segmento->limite){
+			logger_funesMemory9(escribir_loguear, l_error,"20002");
+			enviarCabecera(sock, FalloDeSegmentoMemoria, sizeof(FalloDeSegmentoMemoria));
+		}else{
+			int primer_byte_archivo = (entrada_segmento->base)*TAMANIO_MAX_LINEA;
+			char * direccion_base_archivo = MEMORIA_FISICA + primer_byte_archivo;
+			int cant_bytes_hasta_linea = paquete_asignar_datos_linea->pc *TAMANIO_MAX_LINEA;
+			char * linea = malloc(TAMANIO_MAX_LINEA+1);
+			memcpy(linea,direccion_base_archivo+cant_bytes_hasta_linea,TAMANIO_MAX_LINEA);
+			linea[TAMANIO_MAX_LINEA]='\0';
+
+			int cuanto_ocupa_lo_que_voy_a_meter = strlen(paquete_asignar_datos_linea->datos);
+			char* linea_auxiliar = string_duplicate(linea);
+			string_trim(&linea_auxiliar);
+			char** split = string_n_split(linea_auxiliar, 2, "\n");
+			char * info_linea = split[0];
+			char * lo_que_resta = split[1];
+			int size_lo_que_resta = strlen(lo_que_resta);
+			lo_que_resta[size_lo_que_resta]="\n";
+
+			char * datos_nuevos=paquete_asignar_datos_linea->datos;
+
+			int desde_barra_n_hasta_final_linea = TAMANIO_MAX_LINEA - (strlen(lo_que_resta)+1);
+
+			if(desde_barra_n_hasta_final_linea > cuanto_ocupa_lo_que_voy_a_meter){
+				int cuantos_signos_pesos = desde_barra_n_hasta_final_linea - cuanto_ocupa_lo_que_voy_a_meter;
+				char * sobrante = string_repeat('$', cuantos_signos_pesos);
+				string_append(&datos_nuevos, sobrante);
+				memcpy(direccion_base_archivo + cant_bytes_hasta_linea + (strlen(lo_que_resta)+1), datos_nuevos, desde_barra_n_hasta_final_linea);
+				logger_funesMemory9(escribir_loguear, l_info,"Se le han asignado los datos nuevos a la linea especificada");
 			}else{
-				int primer_byte_archivo = (entrada_segmento->base)*TAMANIO_MAX_LINEA;
-				char * direccion_base_archivo = MEMORIA_FISICA + primer_byte_archivo;
-
-				int cant_bytes_hasta_linea = paquete_asignar_datos_linea->pc *TAMANIO_MAX_LINEA;
-				char * linea = malloc(TAMANIO_MAX_LINEA+1);
-				memcpy(linea,direccion_base_archivo+cant_bytes_hasta_linea,TAMANIO_MAX_LINEA);
-				linea[TAMANIO_MAX_LINEA]='\0';
-
-				int cuanto_ocupa_lo_que_voy_a_meter = strlen(paquete_asignar_datos_linea->datos);
-				char* linea_auxiliar = string_duplicate(linea);
-				string_trim(&linea_auxiliar);
-				char** split = string_n_split(linea_auxiliar, 2, "\n");
-				char * info_linea = split[0];
-				char * lo_que_resta = split[1];
-				int size_lo_que_resta = strlen(lo_que_resta);
-				lo_que_resta[size_lo_que_resta]="\n";
-
-				int desde_barra_n_hasta_final_linea = TAMANIO_MAX_LINEA - (strlen(lo_que_resta)+1);
-				//todo eso ver si es mayor o igual que lo tengo que meter
-				//si esta todo bien, asigno los datos, sino seg fault 20003
-				//int cuantos_signos_pesos = desde_barra_n_hasta_final_linea - cuanto_ocupa_lo_que_voy_a_meter;
-				// char * sobrante = string_repeat($, cuantos_signos_pesos);
-				// string_append(&datos, sobrante);
-				//memcpy(direccion_base_archivo+cant_bytes_hasta_linea+    strlen de lo que resta +1,
-				//          datos, desde_barra_n_hasta_final_linea);
-				//
+				logger_funesMemory9(escribir_loguear, l_error,"20003");
+				enviarCabecera(sock, EspacionInsuficiente, sizeof(EspacionInsuficiente));
 			}
 		}
-*/
+	}
 }
 
 void agregar_info_tabla_de_huecos(t_hueco * hueco){
@@ -293,9 +294,16 @@ void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id){
 
 				memcpy(puntero_al_archivo,MEMORIA_FISICA + (entrada_segmento->base*TAMANIO_MAX_LINEA),tamanio_archivo);
 				puntero_al_archivo[tamanio_archivo]='\0';
-				remover_caracter(puntero_al_archivo,'$');
 
-				printf("La información contenida en la memoria fisica para la entrada correspondiente es: %s\n",puntero_al_archivo);
+				char ** lineas=string_split(puntero_al_archivo, "\n");
+				logger_funesMemory9(escribir_loguear, l_info,
+						"La información contenida en la memoria fisica para la entrada correspondiente es: \n");
+				for(int cant_lineas=0;lineas[cant_lineas]!=NULL;cant_lineas++){
+					char * linea=lineas[cant_lineas];
+					remover_caracter(linea,'$');
+					printf("%s",linea);
+				}
+
 				free(puntero_al_archivo);
 			}
 

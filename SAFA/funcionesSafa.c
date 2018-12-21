@@ -161,8 +161,8 @@ int liberarMemoria(){
 		//Trabajar con el Diegote eeeehhhhhh
 	DAM_conectado = true;
 	while(DAM_conectado){
-	//log_info(LOG_SAFA,"Espero cabecera del DMA");
 	t_cabecera cabecera = recibirCabecera(fd_DMA);
+	log_info(LOG_SAFA,"Recibi cabecera del DMA");
 	tp_datosEnMemoria datos_recibidos;
 	tp_DTB DTB_exit;
 	tp_pathPid pathPid;
@@ -295,8 +295,8 @@ int liberarMemoria(){
 	 pasarSafaOperativo();
 	 }
 	 while(safa_conectado){
-	 log_info(LOG_SAFA,"Espero cabecera de la CPU");
 	 t_cabecera cabecera = recibirCabecera(sockCPU);
+	 log_info(LOG_SAFA,"Recibi cabecera de la CPU");
 	 tp_DTB id_DTB; //tengo que hacer malloc? TODO
 	 tp_tipoRecurso recurso;
 	 int idGDT;
