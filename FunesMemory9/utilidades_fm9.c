@@ -126,7 +126,7 @@ void logger_funesMemory9(int tipo_esc, int tipo_log, const char* mensaje, ...){
 	static char *log_colors[8] = {"\x1b[0m","","","\x1b[36m", "\x1b[32m", "", "\x1b[33m", "\x1b[31m" };
 	char *console_buffer=NULL;
 
-	char *msj_salida = malloc(sizeof(char) * 256);
+	char *msj_salida = malloc(sizeof(char) * 512);
 
 	//Captura los argumentos en una lista
 	va_list args;
