@@ -10,63 +10,44 @@
 struct addrinfo* crear_addrinfo(char * ip, char * puerto){
 	struct addrinfo hints;
 	struct addrinfo *serverInfo;
-
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;		// Permite que la maquina se encargue de verificar si usamos IPv4 o IPv6
 	hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
-
 	getaddrinfo(ip, puerto, &hints, &serverInfo);
-
 	return serverInfo;
 }
 
 int conectar_SAFA(char * ip, char * puerto){
-
 	struct addrinfo *serverInfoSAFA = crear_addrinfo(IP_SAFA, PUERTO_SAFA);
-
 	int serverSAFA = socket(serverInfoSAFA->ai_family, serverInfoSAFA->ai_socktype, serverInfoSAFA->ai_protocol);
-
 	if (serverSAFA < 0){
 		logger_CPU(escribir_loguear, l_error,"Error al intertar conectarse al SAFA");
 		exit(EXIT_FAILURE);
 	}
-
 	int activado = 1;
 	setsockopt(serverSAFA, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
-
 	int resultado_conexion_SAFA = connect(serverSAFA, serverInfoSAFA->ai_addr, serverInfoSAFA->ai_addrlen);
-
 	if (resultado_conexion_SAFA < 0){
 		freeaddrinfo(serverInfoSAFA);
 		close(serverSAFA);
 		logger_CPU(escribir_loguear, l_error,"Error al intentar conectar al SAFA");
 		exit(EXIT_FAILURE);
 	}
-
 	freeaddrinfo(serverInfoSAFA);
-
 	logger_CPU(escribir_loguear, l_info,"Conectado al servidor SAFA");
-
 	return serverSAFA;
-
 }
 
 int conectar_DIEGO(char * ip, char * puerto){
-
 	struct addrinfo *serverInfoDIEGO = crear_addrinfo(IP_DIEGO, PUERTO_DIEGO);
-
 	int serverDIEGO = socket(serverInfoDIEGO->ai_family, serverInfoDIEGO->ai_socktype, serverInfoDIEGO->ai_protocol);
-
 	if (serverDIEGO < 0){
 		logger_CPU(escribir_loguear, l_error,"Error al intertar conectarse al DIEGO");
 		exit(EXIT_FAILURE);
 	}
-
 	int activado = 1;
 	setsockopt(serverDIEGO, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
-
 	int resultado_conexion_DIEGO = connect(serverDIEGO, serverInfoDIEGO->ai_addr, serverInfoDIEGO->ai_addrlen);
-
 	if (resultado_conexion_DIEGO < 0){
 		freeaddrinfo(serverInfoDIEGO);
 		close(serverDIEGO);
@@ -75,53 +56,38 @@ int conectar_DIEGO(char * ip, char * puerto){
 	}
 
 	freeaddrinfo(serverInfoDIEGO);
-
 	logger_CPU(escribir_loguear, l_info,"Conectado al servidor DIEGO");
-
 	return serverDIEGO;
-
 }
 
 int conectar_MEM(char * ip, char * puerto){
-
 	struct addrinfo *serverInfoMEM = crear_addrinfo(IP_MEM, PUERTO_MEM);
-
 	int serverMEM = socket(serverInfoMEM->ai_family, serverInfoMEM->ai_socktype, serverInfoMEM->ai_protocol);
-
 	if (serverMEM < 0){
 		logger_CPU(escribir_loguear, l_error,"Error al intertar conectarse al FM9");
 		exit(EXIT_FAILURE);
 	}
-
 	int activado = 1;
 	setsockopt(serverMEM, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
-
 	int resultado_conexion_MEM = connect(serverMEM, serverInfoMEM->ai_addr, serverInfoMEM->ai_addrlen);
-
 	if (resultado_conexion_MEM < 0){
 		freeaddrinfo(serverInfoMEM);
 		close(serverMEM);
 		logger_CPU(escribir_loguear, l_error,"Error al intentar conectar al FM9");
 		exit(EXIT_FAILURE);
 	}
-
 	freeaddrinfo(serverInfoMEM);
-
 	logger_CPU(escribir_loguear, l_info,"Conectado al servidor FM9");
-
 	return serverMEM;
-
 }
 
 void realizar_handshakes(){
-
 	if(enviarHandshake(CPU, PLANIFICADOR, serverSAFA)){
 		logger_CPU(escribir_loguear, l_info,"Handshake exitoso con SAFA");
 	}else{
 		logger_CPU(escribir_loguear, l_error,"No pudo realizarse el handshake con SAFA");
 		exit(EXIT_FAILURE);
 	}
-
 	if(enviarHandshake(CPU, DMA, serverDIEGO)){
 		logger_CPU(escribir_loguear, l_info,"Handshake exitoso con DAM");
 	}else{
@@ -241,6 +207,11 @@ void asignar_datos_a_linea(char * datos, char * linea, char * path, tp_DTB dtb){
 		}else{
 			if(respuesta_de_fm9.tipoDeMensaje == FalloDeSegmentoMemoria){
 				logger_CPU(escribir_loguear, l_error,"Fallo de segmento/memoria en FM9");
+				informar_a_safa_que_aborte_DTB(dtb);
+			}
+
+			if(respuesta_de_fm9.tipoDeMensaje == EspacionInsuficiente){
+				logger_CPU(escribir_loguear, l_error,"Espacio insuficiente en FM9");
 				informar_a_safa_que_aborte_DTB(dtb);
 			}
 		}
@@ -404,9 +375,7 @@ void realizar_la_operacion_que_corresponda_segun(t_operacion resultado_del_parse
 
 void proceder_con_lectura_escriptorio(tp_DTB dtb){
 	int unidad_de_tiempo = dtb->quantum;
-
 	for(int i=0;i++;i<unidad_de_tiempo){
-
 		solicitar_a_FM9_la_sentencia(dtb);
 		tp_lineaParaCPU paquete_linea = recibir_de_FM9_linea_a_parsear(dtb);
 		actualizar_program_counter(dtb);
@@ -414,9 +383,7 @@ void proceder_con_lectura_escriptorio(tp_DTB dtb){
 		realizar_la_operacion_que_corresponda_segun(resultado_del_parseado, dtb);
 		//free(resultado_del_parseado);
 		sleep((int)RETARDO);
-
 	}
-
 }
 
 void liberar_dtb(tp_DTB dtb){
@@ -426,7 +393,7 @@ void liberar_dtb(tp_DTB dtb){
 }
 
 void validar_dtb(int id_dtb){
-	if(abs(id_dtb)>99999){
+	if(abs(id_dtb)>99999||id_dtb==0){
 		finalizar_cpu();
 	}
 }
