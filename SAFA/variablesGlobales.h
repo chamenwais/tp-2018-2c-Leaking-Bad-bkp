@@ -78,6 +78,11 @@ extern pthread_mutex_t mutex_LISTOS;
 extern pthread_mutex_t mutex_BLOQUEADOS;
 extern pthread_mutex_t mutex_EJECUTANDO;
 extern pthread_mutex_t mutex_TERMINADOS;
+extern pthread_mutex_t mutex_AUXVRR;
+extern pthread_mutex_t mutex_CPULIBRES;
+extern pthread_mutex_t mutex_CPUEJEC;
+extern pthread_mutex_t mutex_EQGRANDE;
+extern pthread_mutex_t mutex_TABLAREC;
 extern bool DAM_conectado;
 
 

@@ -38,6 +38,10 @@ pthread_mutex_t mutex_LISTOS;
 pthread_mutex_t mutex_BLOQUEADOS;
 pthread_mutex_t mutex_EJECUTANDO;
 pthread_mutex_t mutex_TERMINADOS;
-
+pthread_mutex_t mutex_AUXVRR;
+pthread_mutex_t mutex_CPULIBRES;
+pthread_mutex_t mutex_CPUEJEC;
+pthread_mutex_t mutex_EQGRANDE;
+pthread_mutex_t mutex_TABLAREC;
 bool DAM_conectado;
 
