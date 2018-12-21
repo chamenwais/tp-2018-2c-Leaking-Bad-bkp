@@ -289,7 +289,7 @@ void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id){
 				logger_funesMemory9(escribir_loguear, l_info, "La base del segmento es %d.\n",entrada_segmento->base);
 
 				int tamanio_archivo = (entrada_segmento->limite)*TAMANIO_MAX_LINEA;
-				char * puntero_al_archivo = malloc(sizeof(tamanio_archivo)+1);
+				char * puntero_al_archivo = malloc(tamanio_archivo+1);
 
 				memcpy(puntero_al_archivo,MEMORIA_FISICA + (entrada_segmento->base*TAMANIO_MAX_LINEA),tamanio_archivo);
 				puntero_al_archivo[tamanio_archivo]='\0';
@@ -300,7 +300,7 @@ void buscar_informacion_administrativa_esquema_segmentacion_y_mem_real(int id){
 				for(int cant_lineas=0;lineas[cant_lineas]!=NULL;cant_lineas++){
 					char * linea=lineas[cant_lineas];
 					remover_caracter(linea,'$');
-					printf("%s",linea);
+					logger_funesMemory9(escribir_loguear, l_info,"%s\n",linea);
 				}
 
 				free(puntero_al_archivo);
