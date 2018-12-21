@@ -144,7 +144,7 @@ tp_lineaParaCPU * recibir_de_FM9_linea_a_parsear(tp_DTB dtb){
 	}else{
 		logger_CPU(escribir_loguear, l_error, "Hubo un problema con FM9");
 		informar_a_safa_que_aborte_DTB(dtb);
-		finalizar_cpu();
+		//finalizar_cpu();
 	}
 
 	return linea_pedida;

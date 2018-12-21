@@ -79,7 +79,7 @@ void copiar_archivo_a_memoria_fisica(size_t tamanio_archivo_en_memoria,
 }
 
 bool tienen_el_mismo_nombre(void * arch1){
-	return string_equals_ignore_case(path_archivo_para_comparar, (char*)arch1);
+	return string_equals_ignore_case(path_archivo_para_comparar, (*(t_entrada_tabla_segmentos*)arch1).archivo);
 }
 
 void darle_una_linea_al_cpu_segmentacion_pura(int sock){
@@ -90,24 +90,32 @@ void darle_una_linea_al_cpu_segmentacion_pura(int sock){
 		t_entrada_tabla_segmentos * entrada_segmento;
 		t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos(paquete_asignar_linea->id_GTD);
 		path_archivo_para_comparar = paquete_asignar_linea->linea;
+		//TODO ver si no debe existir y manejar mejor el caso en que no existe el segmento
 		entrada_segmento = list_find(tabla_segmentos->entradas, &tienen_el_mismo_nombre);
 
-		if(paquete_asignar_linea->pc > entrada_segmento->limite){
+		if(entrada_segmento==NULL){
+			enviarCabecera(sock, HuboProblemaConLaLineaParaCpu, sizeof(HuboProblemaConLaLineaParaCpu));
+		} else if(paquete_asignar_linea->pc > entrada_segmento->limite){
 			enviarCabecera(sock, HuboProblemaConLaLineaParaCpu, sizeof(HuboProblemaConLaLineaParaCpu));
 		}else{
 			int primer_byte_archivo = (entrada_segmento->base)*TAMANIO_MAX_LINEA;
 			char * direccion_base_archivo = MEMORIA_FISICA + primer_byte_archivo;
-			int cant_bytes_hasta_linea = (paquete_asignar_linea->pc)*TAMANIO_MAX_LINEA;
+			int cant_bytes_hasta_linea = (paquete_asignar_linea->pc-1)*TAMANIO_MAX_LINEA;
 			char * linea = malloc(TAMANIO_MAX_LINEA+1);
 			memcpy(linea,direccion_base_archivo+cant_bytes_hasta_linea,TAMANIO_MAX_LINEA);
 			//TODO aca faltan mallocs ??
 			char* linea_auxiliar = string_duplicate(linea);
 			string_trim(&linea_auxiliar);
-			char** split = string_n_split(linea_auxiliar, 2, "$");
+			remover_caracter(linea_auxiliar,'$');
+			char** split = string_n_split(linea_auxiliar, 2, "\n");
 			char * linea_para_cpu = split[0];
 			int largo = strlen(linea_para_cpu);
 			linea_para_cpu[largo]='\0';
+			enviarCabecera(sock, NoHuboProblemaConLaLineaParaCpu, sizeof(NoHuboProblemaConLaLineaParaCpu));
 			prot_enviar_CPU_FM9_linea_pedida(linea_para_cpu, sock);
+			free(linea_auxiliar);
+			free(linea_para_cpu);
+			free(paquete_asignar_linea->linea);
 		}
 	}else{
 		enviarCabecera(sock, HuboProblemaConLaLineaParaCpu, sizeof(HuboProblemaConLaLineaParaCpu));
