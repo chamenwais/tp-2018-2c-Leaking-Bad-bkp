@@ -151,7 +151,7 @@ int liberarMemoria(){
 	return EXIT_SUCCESS;
 }
 
- void *funcionHiloComDMA(void *arg){//TODO:
+ void *funcionHiloComDMA(void *arg){//
 		//Trabajar con el Diegote eeeehhhhhh
 	DAM_conectado = true;
 	while(DAM_conectado){
@@ -173,7 +173,7 @@ int liberarMemoria(){
 				free(datos_recibidos);
 				list_add(terminados, DTB_exit);
 			break;
-		case AbrirPathFinalizadoOk:
+		case AbrirPathFinalizadoOk: //TODO ver aca cuando abre arch si es de equipo grande
 			log_info(LOG_SAFA,"Recibi cabecera: AbrirPathFinalizadoOk");
 			datos_recibidos = prot_recibir_DMA_SAFA_datosEnMemoria(fd_DMA);
 			bool coincideIDListo(void* node) {
@@ -185,6 +185,7 @@ int liberarMemoria(){
 			list_add(listos, DTB_Listo);
 			free(datos_recibidos);
 			log_info(LOG_SAFA, "El DTB %i ahora pasa a LISTOS", datos_recibidos->pid);
+			pthread_mutex_unlock(&mutexDePausaPCP);
 			break;
 		case FlushDeArchivoADiscoNoFinalizado: //asumo que si falla va a exit
 			log_info(LOG_SAFA, "Recibi cabecera: FlushDeArchivoADiscoNoFinalizado");
@@ -306,9 +307,10 @@ int liberarMemoria(){
 	 			 log_info(LOG_SAFA, "el DTB Dummy se bloquea, pasa flag a 1");
 	 			 id_DTB->iniGDT = 1;
 	 			 --hayDummy;
-	 			pthread_mutex_unlock(&mutexDePausaDePlanificacion);//ahora puedo aceptar otro dummy
+	 			//pthread_mutex_unlock(&mutexDePausaDePlanificacion);//ahora puedo aceptar otro dummy
 	 		 }
 	 		 list_add(bloqueados, id_DTB);
+	 		 list_add(cpu_libres, sockCPU);
 	 		 log_info(LOG_SAFA, "Se bloqueo el DTB %i", id_DTB->id_GDT);
 	 	 break;
 	 	 case AbortarDTB:
@@ -319,6 +321,7 @@ int liberarMemoria(){
 	 		 }
 	 		 id_DTB=list_remove_by_condition(ejecutando, coincideID_Abortar);
 	 		 list_add(terminados, id_DTB);
+	 		 list_add(cpu_libres, sockCPU);
 	 		 log_info(LOG_SAFA, "Se aborto el DTB %i", id_DTB->id_GDT);
 	 	 break;
 	 	 case RetenerRecurso:
@@ -335,6 +338,7 @@ int liberarMemoria(){
 	 				 list_add(bloqueados, id_DTB);
 	 				 log_info(LOG_SAFA, "Se bloqueo el DTB %i", id_DTB->id_GDT);
 	 				 agregarGdtAColaRecurso(recurso);
+	 				 list_add(cpu_libres, sockCPU);
 	 				 log_info(LOG_SAFA, "Se agrego el GDT a la cola de espera");
 	 			 }else{
 	 				 log_info(LOG_SAFA, "El recurso %s esta libre", recurso->recurso);
@@ -381,8 +385,8 @@ int liberarMemoria(){
 	 					}
 	 			 bloqDTB = list_remove_by_condition(bloqueados, coincideId);
 	 			 list_add(listos, bloqDTB);
+	 			 //TODO deberia arrancar PCP?
 	 			 log_info(LOG_SAFA, "El GDT %i ahora esta en READY", bloqDTB->id_GDT);
-	 			 //TODO deberia enviar respuesta alguna a CPU?
 	 		 }else{
 	 			log_info(LOG_SAFA, "El Recurso %s no existe, paso a crearlo", recurso->recurso);
 	 				tp_recurso recurso_creado = calloc(1, sizeof(t_recurso));
@@ -603,17 +607,19 @@ int planificar_PLP(){
 	tp_DTB idDTB;
 	//lockearListas();
 	log_info(LOG_SAFA,"PLP en accion");
+	log_info(LOG_SAFA, "hay %i nuevos y hayDummy es %i", list_size(nuevos), hayDummy);
 	if(list_size(nuevos)>0 && hayDummy == 0){
 		idDTB=list_remove(nuevos, 0);
 		idDTB->iniGDT = 0; //lo desbloqueo como Dummy
 		++hayDummy;
 		list_add(listos, idDTB);
-		pthread_mutex_unlock(&mutexDePausaPCP);
+		//pthread_mutex_unlock(&mutexDePausaPCP);
 		log_info(LOG_SAFA,"DTB listo para planificar %d",idDTB->id_GDT);
 		}else{
 			log_error(LOG_SAFA, "AWANTIIIAAAA, EMOCIONADO: Ya existe un DTB Dummy");
 		}
 	//deslockearListas();
+	pthread_mutex_unlock(&mutexDePausaPCP);
 	return EXIT_SUCCESS;
 }
 
@@ -738,7 +744,7 @@ int calcularDTBAPlanificarConVRR(){
 
 int calcularDTBAPlanificarConBOAF(){ /*Priorización de aquellos DTB que tengan abiertos archivos de "equipos grandes".
 	La prioridad comienza una vez que lo abren y no antes.
-	Queda a criterio de cada grupo definir qué equipos se consideran "grandes"*/
+	Queda a criterio de cada grupo definir qué equipos se consideran "grandes" TODO ver cuando abre archivo si es de equipo grande*/
 	int id;
 	if(list_size(dtbConEqGrandeAbierto)>0){
 		id = obtenerPrimerId(dtbConEqGrandeAbierto);
