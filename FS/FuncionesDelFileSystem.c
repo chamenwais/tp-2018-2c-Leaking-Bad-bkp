@@ -193,7 +193,7 @@ void *funcionHiloConsola(void *arg){
 		linea = readline(ubicacionDelPunteroDeLaConsola);
 		if(strlen(linea)>0){
 			add_history(linea);
-
+		instruccion=NULL;
 		instruccion = parser_instruccion(linea);
 		if(instruccion[0] == NULL) continue;
 		if(strcmp(instruccion[0],"exit")==0){//Mata al hilo de la consola
@@ -301,8 +301,10 @@ void *funcionHiloConsola(void *arg){
 		}else{
 		printf("Comando desconocido\n");
 		}}}}}}}}}}}}}}}}}
+		if(strlen(linea)>0){
+			free(instruccion);
+			}
 		free(linea);
-		free(instruccion);
 		//for(int p=0;instruccion[p]!=NULL;p++) free(instruccion[p]);
 		//free(instruccion);
 		free(ubicacionDelPunteroDeLaConsola);
