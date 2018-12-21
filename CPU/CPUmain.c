@@ -310,6 +310,9 @@ void liberar_archivo_abierto(char * path, tp_DTB dtb){
 void crear_nuevo_archivo_en_mdj(char * path, int cant_lineas, tp_DTB dtb){
 	logger_CPU(escribir_loguear, l_trace,"Se procedera a crear un nuevo archivo en MDJ");
 	enviarCabecera(serverDIEGO,CrearLineasEnArchivo, sizeof(CrearLineasEnArchivo));
+	logger_CPU(escribir_loguear, l_info,"Se manda a crear el archivo %s",path);
+	logger_CPU(escribir_loguear, l_info,"Con %d lineas",cant_lineas);
+	logger_CPU(escribir_loguear, l_info,"Para el GDT %d",dtb->id_GDT);
 	prot_enviar_CPU_DMA_crear_lineas_arch(path, cant_lineas, dtb->id_GDT, serverDIEGO);
 	logger_CPU(escribir_loguear, l_info,"Se le envio al DAM la informacion necesaria");
 
@@ -378,6 +381,7 @@ void proceder_con_lectura_escriptorio(tp_DTB dtb){
 	for(int i=0;i<unidad_de_tiempo;i++){
 		solicitar_a_FM9_la_sentencia(dtb);
 		tp_lineaParaCPU paquete_linea = recibir_de_FM9_linea_a_parsear(dtb);
+		logger_CPU(escribir_loguear, l_info,"FM9 me mando la linea %s\n", paquete_linea->linea);
 		actualizar_program_counter(dtb);
 		t_operacion resultado_del_parseado = parsear(paquete_linea->linea);
 		realizar_la_operacion_que_corresponda_segun(resultado_del_parseado, dtb);

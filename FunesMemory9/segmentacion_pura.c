@@ -113,6 +113,7 @@ void darle_una_linea_al_cpu_segmentacion_pura(int sock){
 			linea_para_cpu[largo]='\0';
 			enviarCabecera(sock, NoHuboProblemaConLaLineaParaCpu, sizeof(NoHuboProblemaConLaLineaParaCpu));
 			prot_enviar_CPU_FM9_linea_pedida(linea_para_cpu, sock);
+			logger_funesMemory9(escribir_loguear, l_info,"Se le dio la linea %s al CPU\n",linea_para_cpu);
 			free(linea_auxiliar);
 			free(linea_para_cpu);
 			free(paquete_asignar_linea->linea);

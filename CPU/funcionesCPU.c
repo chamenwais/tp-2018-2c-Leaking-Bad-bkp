@@ -10,9 +10,9 @@
 t_operacion parsear(char * linea){
 
 	t_operacion resultado_de_parsear;
-
 	char* linea_auxiliar = string_duplicate(linea);
 	string_trim(&linea_auxiliar);
+
 	char** split = string_n_split(linea_auxiliar, 4, " ");
 
 	char* tipo_de_operacion = split[0];
@@ -57,7 +57,7 @@ t_operacion parsear(char * linea){
 	} else if(string_equals_ignore_case(tipo_de_operacion, "crear")){
 		resultado_de_parsear.tipo_de_operacion = CREAR;
 		resultado_de_parsear.parametros.crear.path = split[1];
-		resultado_de_parsear.parametros.crear.cantidad_de_lineas = split[2];
+		resultado_de_parsear.parametros.crear.cantidad_de_lineas = atoi(split[2]);
 	} else if(string_equals_ignore_case(tipo_de_operacion, "borrar")){
 		resultado_de_parsear.tipo_de_operacion = BORRAR;
 		resultado_de_parsear.parametros.borrar.path = split[1];
