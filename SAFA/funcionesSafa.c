@@ -116,6 +116,12 @@ int inicializarSemaforosSAFA(){
 		log_error(LOG_SAFA,"No se pudo inicializar el semaforo de planificacion");
 		exit(1);
 	}
+
+	pthread_mutex_init(&mutex_NUEVOS, 0);
+	pthread_mutex_init(&mutex_LISTOS, 0);
+	pthread_mutex_init(&mutex_BLOQUEADOS, 0);
+	pthread_mutex_init(&mutex_EJECUTANDO, 0);
+	pthread_mutex_init(&mutex_TERMINADOS, 0);
 	return EXIT_SUCCESS;
  }
 
@@ -155,7 +161,7 @@ int liberarMemoria(){
 		//Trabajar con el Diegote eeeehhhhhh
 	DAM_conectado = true;
 	while(DAM_conectado){
-	log_info(LOG_SAFA,"Espero cabecera del DMA");
+	//log_info(LOG_SAFA,"Espero cabecera del DMA");
 	t_cabecera cabecera = recibirCabecera(fd_DMA);
 	tp_datosEnMemoria datos_recibidos;
 	tp_DTB DTB_exit;
@@ -508,7 +514,9 @@ void *funcionHiloConsola(void *arg){
 			}else if(instruccion[1]!=NULL){
 					printf("Creando DTB para escriptorio: %s/n", instruccion[1]);
 					tp_DTB nuevo_DTB = crear_DTB(instruccion[1]);//se crea con 1. el PLP lo pasa a 0 cuando es dummy
+					pthread_mutex_lock(&mutex_NUEVOS);
 					list_add(nuevos, nuevo_DTB);//agregar DTB a cola de NEW
+					pthread_mutex_unlock(&mutex_NUEVOS);
 					pthread_mutex_unlock(&mutexDePausaDePlanificacion);//habilito PLP
 					log_info(LOG_SAFA, "Se agrega el nuevo DTB a la lista de Nuevos");
 					}else{
@@ -609,7 +617,9 @@ int planificar_PLP(){
 	log_info(LOG_SAFA,"PLP en accion");
 	log_info(LOG_SAFA, "hay %i nuevos y hayDummy es %i", list_size(nuevos), hayDummy);
 	if(list_size(nuevos)>0 && hayDummy == 0){
+		pthread_mutex_lock(nuevos);
 		idDTB=list_remove(nuevos, 0);
+		pthread_mutex_unlock(nuevos);
 		idDTB->iniGDT = 0; //lo desbloqueo como Dummy
 		++hayDummy;
 		list_add(listos, idDTB);

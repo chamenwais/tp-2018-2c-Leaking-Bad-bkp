@@ -73,6 +73,11 @@ extern t_list* tabla_recursos;
 extern t_list* lista_espera_recursos;
 extern pthread_mutex_t mutexDePausaDePlanificacion;
 extern pthread_mutex_t mutexDePausaPCP;
+extern pthread_mutex_t mutex_NUEVOS;
+extern pthread_mutex_t mutex_LISTOS;
+extern pthread_mutex_t mutex_BLOQUEADOS;
+extern pthread_mutex_t mutex_EJECUTANDO;
+extern pthread_mutex_t mutex_TERMINADOS;
 extern bool DAM_conectado;
 
 

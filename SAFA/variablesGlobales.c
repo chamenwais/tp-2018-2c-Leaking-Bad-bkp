@@ -33,5 +33,11 @@ t_list* tabla_recursos;
 t_list* lista_espera_recursos;
 pthread_mutex_t mutexDePausaDePlanificacion;
 pthread_mutex_t mutexDePausaPCP;
+pthread_mutex_t mutex_NUEVOS;
+pthread_mutex_t mutex_LISTOS;
+pthread_mutex_t mutex_BLOQUEADOS;
+pthread_mutex_t mutex_EJECUTANDO;
+pthread_mutex_t mutex_TERMINADOS;
+
 bool DAM_conectado;
 
