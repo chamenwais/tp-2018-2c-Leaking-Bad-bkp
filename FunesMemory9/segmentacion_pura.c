@@ -7,12 +7,6 @@
 
 #include "segmentacion_pura.h"
 
-int el_proceso_tiene_tabla_de_segmentos() {
-	return !list_is_empty(tablas_de_segmentos)
-			&& list_any_satisfy(tablas_de_segmentos,
-					&es_un_proceso_conocido);
-}
-
 int agregar_nueva_tabla_segmentos_para_proceso(tp_cargarEnMemoria parte_archivo, int nueva_base, int nuevo_limite) {
 	//Crea tabla de segmentos para el nuevo proceso y lo agrega a la lista
 	t_list* nuevas_entradas_segmentos = list_create();
@@ -69,7 +63,7 @@ void actualizar_info_tabla_de_huecos(int tamanio_archivo_en_memoria, t_hueco* hu
 
 int actualizar_tabla_segmentos(tp_cargarEnMemoria parte_archivo, int nueva_base, int nuevo_limite) {
 	int indice_entrada_archivo_en_tabla_segmentos=-1;
-	if (el_proceso_tiene_tabla_de_segmentos()) {
+	if (el_proceso_tiene_tabla_de_segmentos(parte_archivo->pid)) {
 		indice_entrada_archivo_en_tabla_segmentos=crear_nueva_entrada_tabla_de_segmentos(parte_archivo, nueva_base, nuevo_limite);
 	} else {
 		indice_entrada_archivo_en_tabla_segmentos=agregar_nueva_tabla_segmentos_para_proceso(parte_archivo, nueva_base, nuevo_limite);
@@ -349,7 +343,10 @@ int agregar_entrada_tabla_segmentos(tp_cargarEnMemoria nombre_archivo, t_list* e
 
 int crear_nueva_entrada_tabla_de_segmentos(tp_cargarEnMemoria parte_archivo, int nueva_base, int nuevo_limite) {
 	//Crea nueva entrada en la tabla de segmentos
-	t_tabla_segmentos* p_tabla_segmentos = list_find(tablas_de_segmentos, &es_un_proceso_conocido);
+	bool el_pid_tiene_tabla_de_segmentos(void * tabla_segmentos){
+		return (*(t_tabla_segmentos*)tabla_segmentos).pid==parte_archivo->pid;
+	}
+	t_tabla_segmentos* p_tabla_segmentos = list_find(tablas_de_segmentos, &el_pid_tiene_tabla_de_segmentos);
 	if(p_tabla_segmentos!=NULL){
 		 return agregar_entrada_tabla_segmentos(parte_archivo, (*p_tabla_segmentos).entradas, nueva_base, nuevo_limite);
 	}
