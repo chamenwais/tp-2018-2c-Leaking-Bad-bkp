@@ -185,6 +185,7 @@ int liberarMemoria(){
 			list_add(listos, DTB_Listo);
 			free(datos_recibidos);
 			log_info(LOG_SAFA, "El DTB %i ahora pasa a LISTOS", datos_recibidos->pid);
+			pthread_mutex_unlock(&mutexDePausaPCP);
 			break;
 		case FlushDeArchivoADiscoNoFinalizado: //asumo que si falla va a exit
 			log_info(LOG_SAFA, "Recibi cabecera: FlushDeArchivoADiscoNoFinalizado");
@@ -309,6 +310,7 @@ int liberarMemoria(){
 	 			//pthread_mutex_unlock(&mutexDePausaDePlanificacion);//ahora puedo aceptar otro dummy
 	 		 }
 	 		 list_add(bloqueados, id_DTB);
+	 		 list_add(cpu_libres, sockCPU);
 	 		 log_info(LOG_SAFA, "Se bloqueo el DTB %i", id_DTB->id_GDT);
 	 	 break;
 	 	 case AbortarDTB:
@@ -319,6 +321,7 @@ int liberarMemoria(){
 	 		 }
 	 		 id_DTB=list_remove_by_condition(ejecutando, coincideID_Abortar);
 	 		 list_add(terminados, id_DTB);
+	 		 list_add(cpu_libres, sockCPU);
 	 		 log_info(LOG_SAFA, "Se aborto el DTB %i", id_DTB->id_GDT);
 	 	 break;
 	 	 case RetenerRecurso:
@@ -335,6 +338,7 @@ int liberarMemoria(){
 	 				 list_add(bloqueados, id_DTB);
 	 				 log_info(LOG_SAFA, "Se bloqueo el DTB %i", id_DTB->id_GDT);
 	 				 agregarGdtAColaRecurso(recurso);
+	 				 list_add(cpu_libres, sockCPU);
 	 				 log_info(LOG_SAFA, "Se agrego el GDT a la cola de espera");
 	 			 }else{
 	 				 log_info(LOG_SAFA, "El recurso %s esta libre", recurso->recurso);
@@ -381,8 +385,8 @@ int liberarMemoria(){
 	 					}
 	 			 bloqDTB = list_remove_by_condition(bloqueados, coincideId);
 	 			 list_add(listos, bloqDTB);
+	 			 //TODO deberia arrancar PCP?
 	 			 log_info(LOG_SAFA, "El GDT %i ahora esta en READY", bloqDTB->id_GDT);
-	 			 //TODO deberia enviar respuesta alguna a CPU?
 	 		 }else{
 	 			log_info(LOG_SAFA, "El Recurso %s no existe, paso a crearlo", recurso->recurso);
 	 				tp_recurso recurso_creado = calloc(1, sizeof(t_recurso));
