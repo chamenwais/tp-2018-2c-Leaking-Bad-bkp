@@ -77,6 +77,10 @@ int inicializarSemaforos(){
 		log_error(LOGGER,"No se pudo inicializar el semaforo del sistema de archivos");
 		return EXIT_FAILURE;
 		}
+	if(pthread_mutex_init(&mutexNoTocarArchivos, NULL) != 0) {
+		log_error(LOGGER,"No se pudo inicializar el semaforo parano cagar los archivos");
+		return EXIT_FAILURE;
+	}
 	return EXIT_SUCCESS;
 }
 
@@ -438,6 +442,7 @@ void liberarRecursos(){
 	log_info(LOGGER,"Cerrando log");
 	log_destroy(LOGGER);
 	pthread_mutex_unlock(&mutexIniciarConsola);
+	pthread_mutex_destroy(&mutexNoTocarArchivos);
 	pthread_mutex_destroy(&mutexIniciarConsola);
 	pthread_mutex_destroy(&mutexFinalizarPrograma);
 	pthread_mutex_destroy(&mutexPath);
@@ -500,6 +505,7 @@ int generarMD5(char* nombreDelArchivo){
 	*/
 	char*pathCompletoDelArchivo=string_new();
 	int i;
+	pthread_mutex_lock(&mutexNoTocarArchivos);
 	//pthread_mutex_lock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	char** pathPartido = string_split(directorioActual, "/");
 	for(i=0;(pathPartido[i]!=NULL)&&(strcmp(pathPartido[i], "Archivos")!=0);i++);
@@ -520,6 +526,7 @@ int generarMD5(char* nombreDelArchivo){
 		printf("\n");
 	}else{
 		printf("No se pudieron recuperar los datos del archivo:%s\n",pathCompletoDelArchivo);
+		pthread_mutex_unlock(&mutexNoTocarArchivos);
 		return EXIT_FAILURE;
 		}
 	//unsigned char digest[16];
@@ -536,6 +543,7 @@ int generarMD5(char* nombreDelArchivo){
 	free(digest);
 	free(pathCompletoDelArchivo);
 	//free(datosObtenidos.datos); no hace falta ya q content apunta a lo mismo
+	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return EXIT_SUCCESS;
 }
 
@@ -563,6 +571,7 @@ int funcionDeConsolacat(char* nombreDelArchivo){
 	 * y desde ahi poner "cat hola.txt", para leer la ubicacion
 	 * asd/hola.txt
 	 */
+	pthread_mutex_lock(&mutexNoTocarArchivos);
 	//pthread_mutex_lock(&mutexUsoDelCanalDeComunicacionDelDMA);
 	char*path=string_new();
 	int i;
@@ -588,6 +597,7 @@ int funcionDeConsolacat(char* nombreDelArchivo){
 		printf("No se pudieron recuperar los datos del archivo:%s\n",path);
 		}
 	free(path);
+	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return EXIT_SUCCESS;
 }
 
@@ -1067,11 +1077,13 @@ int validarArchivoDeConsola(char *path){
 }
 
 int validarArchivoDeDMA(int FDDMA){
+	pthread_mutex_lock(&mutexNoTocarArchivos);
 	char*path=prot_recibir_DMA_FS_path(FDDMA);
 	log_info(LOGGER,"Recibiendo el path: \"%s\", para validar el archivo",path);
 	enviarCabecera(FDDMA, validarArchivo(path), 1);
 	log_info(LOGGER,"Enviando respuesta de validar archivo al DMA");
 	free(path);
+	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return EXIT_SUCCESS;
 }
 
@@ -1115,6 +1127,7 @@ int crearArchivoDeConsola(char *path, int cantidadDeBytes){
 int crearArchivoDeDMA(int FDDMA){
 	/* Recibe del DMA los valores: path
 	 */
+	pthread_mutex_lock(&mutexNoTocarArchivos);
 	tp_crearArchivo dataParaCrearElArchivo=prot_recibir_DMA_FS_CrearArchivo_serializado(FDDMA);
 	log_info(LOGGER,"Recibiendo el path: \"%s\", para crear el archivo, con size %d",
 			dataParaCrearElArchivo->path,dataParaCrearElArchivo->size);
@@ -1129,6 +1142,7 @@ int crearArchivoDeDMA(int FDDMA){
 	free(ubicacionDelArchivo);
 	free(dataParaCrearElArchivo->path);
 	free(dataParaCrearElArchivo);
+	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return resultadoDeCrearElArchivo;
 }
 
@@ -1242,11 +1256,13 @@ int borrarArchivoDeConsola(char *path){
 }
 
 int borrarArchivoDeDMA(int fileDescriptorActual){
+	pthread_mutex_lock(&mutexNoTocarArchivos);
 	char*path=prot_recibir_DMA_FS_path(fileDescriptorActual);
 	int resultadoDelBorrado=borrarArchivo(path);
 	enviarCabecera(fileDescriptorActual, resultadoDelBorrado, 1);
 	log_info(LOGGER,"Resultado de borrar al archivo enviado al DMA (%d)",resultadoDelBorrado);
 	free(path);
+	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return EXIT_SUCCESS;
 }
 
@@ -1303,6 +1319,7 @@ int obtenerDatosDeConsola(char *path, long int offset, long int Size){
 	}
 
 int obtenerDatosDeDMA(int fileDescriptorActual){
+	pthread_mutex_lock(&mutexNoTocarArchivos);
 	log_info(LOGGER,"Voy a recibir los datos a guardar por el FD: %d",fileDescriptorActual);
 	tp_obtenerDatos parametrosDeObtenerDatos = prot_recibir_DMA_FS_obtenerDatos_serializado(fileDescriptorActual);
 	log_info(LOGGER,"Path:%s | Offset:%d | Size:%d",
@@ -1323,6 +1340,7 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 	//free(datosObtenidos.datos);
 	free(parametrosDeObtenerDatos->path);
 	free(parametrosDeObtenerDatos);
+	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return EXIT_SUCCESS;
 }
 
@@ -1393,17 +1411,16 @@ t_datosObtenidos obtenerDatos(char *path, long int offset, long int size){
 							/*if(configuracionDeMetadata.tamanioBloques<size){
 								bytesALeer=configuracionDeMetadata.tamanioBloques;
 								//bytesLeidos=leerEnPrimerArchivoDesde;
-
 								//bytesLeidos=offset;
 							}else{
 								bytesALeer=size;
 								}*/
 							int maximoQuePuedoLeer=configuracionDeMetadata.tamanioBloques-leerEnPrimerArchivoDesde;
-															if(maximoQuePuedoLeer<=size){
-																bytesALeer=maximoQuePuedoLeer;
-															}else{
-																bytesALeer=size;
-																}
+							if(maximoQuePuedoLeer<=size){
+								bytesALeer=maximoQuePuedoLeer;
+							}else{
+								bytesALeer=size;
+								}
 							//bytesALeer=configuracionDeMetadata.tamanioBloques;
 						}else{
 							if(i==0){
@@ -1485,6 +1502,7 @@ int guardarDatosDeConsola(char *path, long int offset, long int size, char *Buff
 }
 
 int guardarDatosDeDMA(int fileDescriptorActual){
+	pthread_mutex_lock(&mutexNoTocarArchivos);
 	log_info(LOGGER,"Voy a recibir los datos a guardar por el FD: %d",fileDescriptorActual);
 	tp_obtenerDatos datos = prot_recibir_FS_DMA_guardarDatos_serializado(fileDescriptorActual);
 	log_info(LOGGER,"Recibi los datos");
@@ -1500,6 +1518,7 @@ int guardarDatosDeDMA(int fileDescriptorActual){
 	free(datos->buffer);
 	free(datos->path);
 	free(datos);
+	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return EXIT_SUCCESS;
 }
 

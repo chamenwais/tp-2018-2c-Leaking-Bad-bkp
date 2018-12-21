@@ -16,7 +16,7 @@ int resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
 int tamanioBitmap;
 bool finalizarPrograma;
 pthread_mutex_t mutexFinalizarPrograma, mutexIniciarConsola, mutexSistemaDeArchivos, mutexPath,
-	mutexUsoDelCanalDeComunicacionDelDMA;
+	mutexNoTocarArchivos, mutexUsoDelCanalDeComunicacionDelDMA;
 int FDDMA;
 char* directorioActual;
 char * bufferArchivo;

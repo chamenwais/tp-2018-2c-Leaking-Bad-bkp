@@ -31,7 +31,7 @@ extern int resultadoDeLaFinalizacionDeLaComunicacionConElDMA;
 extern int tamanioBitmap;
 extern bool finalizarPrograma;
 extern pthread_mutex_t mutexFinalizarPrograma, mutexIniciarConsola, mutexSistemaDeArchivos, mutexPath,
-	mutexUsoDelCanalDeComunicacionDelDMA;
+	mutexNoTocarArchivos, mutexUsoDelCanalDeComunicacionDelDMA;
 extern int FDDMA;
 extern char* directorioActual;
 extern char * bufferArchivo;
