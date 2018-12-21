@@ -122,6 +122,11 @@ int inicializarSemaforosSAFA(){
 	pthread_mutex_init(&mutex_BLOQUEADOS, 0);
 	pthread_mutex_init(&mutex_EJECUTANDO, 0);
 	pthread_mutex_init(&mutex_TERMINADOS, 0);
+	pthread_mutex_init(&mutex_AUXVRR, 0);
+	pthread_mutex_init(&mutex_CPULIBRES, 0);
+	pthread_mutex_init(&mutex_CPUEJEC, 0);
+	pthread_mutex_init(&mutex_EQGRANDE, 0);
+	pthread_mutex_init(&mutex_TABLAREC, 0);
 	return EXIT_SUCCESS;
  }
 
@@ -175,9 +180,13 @@ int liberarMemoria(){
 				bool coincideIDExit(void* node) {
 					 return ((((tp_DTB) node)->id_GDT)==datos_recibidos->pid);
 					 }
+				pthread_mutex_lock(&mutex_BLOQUEADOS);
 				DTB_exit = list_remove_by_condition(bloqueados, coincideIDExit);
+				pthread_mutex_unlock(&mutex_BLOQUEADOS);
 				free(datos_recibidos);
+				pthread_mutex_lock(&mutex_TERMINADOS);
 				list_add(terminados, DTB_exit);
+				pthread_mutex_unlock(&mutex_TERMINADOS);
 			break;
 		case AbrirPathFinalizadoOk: //TODO ver aca cuando abre arch si es de equipo grande
 			log_info(LOG_SAFA,"Recibi cabecera: AbrirPathFinalizadoOk");
@@ -185,10 +194,14 @@ int liberarMemoria(){
 			bool coincideIDListo(void* node) {
 				 return ((((tp_DTB) node)->id_GDT)==datos_recibidos->pid);
 				 }
+			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDListo);
+			pthread_mutex_unlock(&mutex_BLOQUEADOS);
 			list_add(DTB_Listo->tabla_dir_archivos, datos_recibidos->path);
 			log_info(LOG_SAFA, "Se agrego el path %s a la tabla de dir de archivos", datos_recibidos->path);
+			pthread_mutex_lock(&mutex_LISTOS);
 			list_add(listos, DTB_Listo);
+			pthread_mutex_unlock(&mutex_LISTOS);
 			free(datos_recibidos);
 			log_info(LOG_SAFA, "El DTB %i ahora pasa a LISTOS", datos_recibidos->pid);
 			pthread_mutex_unlock(&mutexDePausaPCP);
@@ -201,8 +214,12 @@ int liberarMemoria(){
 						return ((((tp_DTB) node)->id_GDT)==pathPid->pid);
 					}
 			free(pathPid);
+			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_exit = list_remove_by_condition(bloqueados, coincideIDExit2);
+			pthread_mutex_unlock(&mutex_BLOQUEADOS);
+			pthread_mutex_lock(&mutex_TERMINADOS);
 			list_add(terminados, DTB_exit);
+			pthread_mutex_unlock(&mutex_TERMINADOS);
 		break;
 		case FlushDeArchivoADiscoFinalizadoOk: //asumo que si no falla el dtb se desbloquea
 			log_info(LOG_SAFA, "Recibi cabecera: FlushDeArchivoADiscoFinalizadoOk");
@@ -211,9 +228,13 @@ int liberarMemoria(){
 					bool coincideIDReady(void* node) {
 						return ((((tp_DTB) node)->id_GDT)==pathPid->pid);
 					}
+			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady);
+			pthread_mutex_unlock(&mutex_BLOQUEADOS);
 			free(pathPid);
-			list_add(listos, DTB_exit);
+			pthread_mutex_lock(&mutex_LISTOS);
+			list_add(listos, DTB_Listo);
+			pthread_mutex_unlock(&mutex_LISTOS);
 		break;
 		case CrearLineasEnArchivoNoFinalizado:
 			log_info(LOG_SAFA, "Recibi cabecera: CrearLineasEnArchivoNoFinalizado");
@@ -222,9 +243,13 @@ int liberarMemoria(){
 			bool coincideIDExit3(void* node) {
 					return ((((tp_DTB) node)->id_GDT)==id);
 			     }
+			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_exit = list_remove_by_condition(bloqueados, coincideIDExit3);
+			pthread_mutex_unlock(&mutex_BLOQUEADOS);
 			free(id);
+			pthread_mutex_lock(&mutex_TERMINADOS);
 			list_add(terminados, DTB_exit);
+			pthread_mutex_unlock(&mutex_TERMINADOS);
 		break;
 		case CrearLineasEnArchivoFinalizadoOk:
 			log_info(LOG_SAFA, "Recibi cabecera: CrearLineasEnArchivoFinalizadoOk");
@@ -233,9 +258,13 @@ int liberarMemoria(){
 			bool coincideIDReady2(void* node) {
 					return ((((tp_DTB) node)->id_GDT)==i);
 			    	}
+			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady2);
+			pthread_mutex_unlock(&mutex_BLOQUEADOS);
 			free(i);
+			pthread_mutex_lock(&mutex_LISTOS);
 			list_add(listos, DTB_exit);
+			pthread_mutex_unlock(&mutex_LISTOS);
 		break;
 		case EliminarArchivoDeDiscoNoFinalizado:
 			log_info(LOG_SAFA, "Recibi cabecera: EliminarArchivoDeDiscoNoFinalizado");
@@ -244,9 +273,13 @@ int liberarMemoria(){
 			bool coincideIDExit4(void* node) {
 					return ((((tp_DTB) node)->id_GDT)==idtb);
 			     }
+			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_exit = list_remove_by_condition(bloqueados, coincideIDExit4);
+			pthread_mutex_unlock(&mutex_BLOQUEADOS);
 			free(idtb);
+			pthread_mutex_lock(&mutex_TERMINADOS);
 			list_add(terminados, DTB_exit);
+			pthread_mutex_unlock(&mutex_TERMINADOS);
 		break;
 		case EliminarArchivoDeDiscoFinalizadoOk:
 			log_info(LOG_SAFA, "Recibi cabecera: EliminarArchivoDeDiscoFinalizadoOk");
@@ -255,9 +288,13 @@ int liberarMemoria(){
 			bool coincideIDReady3(void* node) {
 					return ((((tp_DTB) node)->id_GDT)==iddtb);
 			    	}
+			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady3);
+			pthread_mutex_unlock(&mutex_BLOQUEADOS);
 			free(iddtb);
-			list_add(listos, DTB_exit);
+			pthread_mutex_lock(&mutex_LISTOS);
+			list_add(listos, DTB_Listo);
+			pthread_mutex_unlock(&mutex_LISTOS);
 		break;
 	}
 	}
@@ -289,7 +326,9 @@ int liberarMemoria(){
 		return EXIT_SUCCESS;
 } */
  void *funcionHiloComCPU(void *sockCPU){
+	 pthread_mutex_lock(&mutex_CPULIBRES);
 	 list_add(cpu_libres, sockCPU);
+	 pthread_mutex_unlock(&mutex_CPULIBRES);
 	 //si es la primera cpu que se conecta se pasa a operativo
 	 if((list_size(cpu_libres)==1)&&(list_size(cpu_ejecutando)==0)){
 	 pasarSafaOperativo();
@@ -308,15 +347,21 @@ int liberarMemoria(){
 	 		 bool coincideID(void* node) {
 	 		 return ((((tp_DTB) node)->id_GDT)==idGDT);
 	 		 }
+	 		 pthread_mutex_lock(&mutex_EJECUTANDO);
 	 		 id_DTB=list_remove_by_condition(ejecutando, coincideID);
+	 		 pthread_mutex_unlock(&mutex_EJECUTANDO);
 	 		 if(id_DTB->iniGDT == 0){//se cambia el flag del dummy al bloquearlo
 	 			 log_info(LOG_SAFA, "el DTB Dummy se bloquea, pasa flag a 1");
 	 			 id_DTB->iniGDT = 1;
 	 			 --hayDummy;
 	 			//pthread_mutex_unlock(&mutexDePausaDePlanificacion);//ahora puedo aceptar otro dummy
 	 		 }
+	 		 pthread_mutex_lock(&mutex_BLOQUEADOS);
 	 		 list_add(bloqueados, id_DTB);
+	 		 pthread_mutex_unlock(&mutex_BLOQUEADOS);
+	 		 pthread_mutex_lock(&mutex_CPULIBRES);
 	 		 list_add(cpu_libres, sockCPU);
+	 		 pthread_mutex_unlock(&mutex_CPULIBRES);
 	 		 log_info(LOG_SAFA, "Se bloqueo el DTB %i", id_DTB->id_GDT);
 	 	 break;
 	 	 case AbortarDTB:
@@ -325,9 +370,15 @@ int liberarMemoria(){
 	 		 bool coincideID_Abortar(void* node){
 	 		 return((((tp_DTB) node)->id_GDT)==idGDT);
 	 		 }
+	 		 pthread_mutex_lock(&mutex_EJECUTANDO);
 	 		 id_DTB=list_remove_by_condition(ejecutando, coincideID_Abortar);
+	 		 pthread_mutex_unlock(&mutex_EJECUTANDO);
+	 		 pthread_mutex_lock(&mutex_TERMINADOS);
 	 		 list_add(terminados, id_DTB);
+	 		 pthread_mutex_unlock(&mutex_TERMINADOS);
+	 		 pthread_mutex_lock(&mutex_CPULIBRES);
 	 		 list_add(cpu_libres, sockCPU);
+	 		 pthread_mutex_unlock(&mutex_CPULIBRES);
 	 		 log_info(LOG_SAFA, "Se aborto el DTB %i", id_DTB->id_GDT);
 	 	 break;
 	 	 case RetenerRecurso:
@@ -340,11 +391,17 @@ int liberarMemoria(){
 	 				 bool coincideIDBlq(void* node) {
 	 					 return ((((tp_DTB) node)->id_GDT)==recurso->id_GDT);
 	 				 }
+	 				 pthread_mutex_lock(&mutex_EJECUTANDO);
 	 				 id_DTB=list_remove_by_condition(ejecutando, coincideIDBlq);
+	 				 pthread_mutex_unlock(&mutex_EJECUTANDO);
+	 				 pthread_mutex_lock(&mutex_BLOQUEADOS);
 	 				 list_add(bloqueados, id_DTB);
+	 				 pthread_mutex_unlock(&mutex_BLOQUEADOS);
 	 				 log_info(LOG_SAFA, "Se bloqueo el DTB %i", id_DTB->id_GDT);
 	 				 agregarGdtAColaRecurso(recurso);
+	 				 pthread_mutex_lock(&mutex_CPULIBRES);
 	 				 list_add(cpu_libres, sockCPU);
+	 				 pthread_mutex_unlock(&mutex_CPULIBRES);
 	 				 log_info(LOG_SAFA, "Se agrego el GDT a la cola de espera");
 	 			 }else{
 	 				 log_info(LOG_SAFA, "El recurso %s esta libre", recurso->recurso);
@@ -353,9 +410,11 @@ int liberarMemoria(){
 	 				 bool coincideIDRec(void* node) {
 	   					 return strcmp((((tp_tipoRecurso) node)->recurso),recurso->recurso);
 	  				 }
+	 				 pthread_mutex_lock(&mutex_TABLAREC);
 	 				 tp_recurso rec = list_remove(tabla_recursos, coincideIDRec);
 	 				 rec->valor = rec->valor - 1;
 	 				 list_add(tabla_recursos, rec);
+	 				 pthread_mutex_unlock(&mutex_TABLAREC);
 	 			 }
 	 		 }else{
 	 			 log_info(LOG_SAFA, "El Recurso %s no existe, paso a crearlo", recurso->recurso);
@@ -363,7 +422,9 @@ int liberarMemoria(){
 	 			 strcpy(recurso_creado->nombre, recurso->recurso);
 	 			 recurso_creado->valor = 1;
 	 			 recurso_creado->gdts_en_espera = list_create();
+	 			 pthread_mutex_lock(&mutex_TABLAREC);
 	 			 list_add(tabla_recursos, recurso_creado);
+	 			 pthread_mutex_unlock(&mutex_TABLAREC);
 	 			 log_info(LOG_SAFA, "Se agrego el recurso %s a la tabla", recurso_creado->nombre);
 	 			 enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoAfirmativa, sizeof(RespuestaASolicitudDeRecursoAfirmativa));
 	 			 log_info(LOG_SAFA, "Recurso %s asignado a la CPU", recurso_creado->nombre);
@@ -377,20 +438,26 @@ int liberarMemoria(){
 	 			bool coincideNombre3(void* node){
 	 				return strcmp((((tp_recurso) node)->nombre), recurso->recurso);
 	 			}
+	 			 pthread_mutex_lock(&mutex_TABLAREC);
 	 			 recurso_tabla = list_remove_by_condition(tabla_recursos, coincideNombre3);
 	 			 recurso_tabla->valor = recurso_tabla->valor + 1;
 	 			 //obtengo el primer gdt que esta bloqueado
 	 			 int idGDT;
 	 			 idGDT = list_remove(recurso_tabla->gdts_en_espera, 0);
 	 			 list_add(tabla_recursos, recurso_tabla);
+	 			 pthread_mutex_unlock(&mutex_TABLAREC);
 	 			 log_info(LOG_SAFA, "Recurso %s liberado", recurso_tabla->nombre);
 	 			 //Desbloqueo el GDT
 	 			 tp_DTB bloqDTB;
 	 				bool coincideId(void* node) {
 	 					return ((((tp_DTB) node)->id_GDT)==idGDT);
 	 					}
+	 			 pthread_mutex_lock(&mutex_BLOQUEADOS);
 	 			 bloqDTB = list_remove_by_condition(bloqueados, coincideId);
+	 			 pthread_mutex_unlock(&mutex_BLOQUEADOS);
+	 			 pthread_mutex_lock(&mutex_LISTOS);
 	 			 list_add(listos, bloqDTB);
+	 			 pthread_mutex_unlock(&mutex_LISTOS);
 	 			 //TODO deberia arrancar PCP?
 	 			 log_info(LOG_SAFA, "El GDT %i ahora esta en READY", bloqDTB->id_GDT);
 	 		 }else{
@@ -399,7 +466,9 @@ int liberarMemoria(){
 	 				strcpy(recurso_creado->nombre, recurso->recurso);
 	 				recurso_creado->valor = 1;
 	 				recurso_creado->gdts_en_espera = list_create();
+	 				pthread_mutex_lock(&mutex_TABLAREC);
 	 				list_add(tabla_recursos, recurso_creado);
+	 				pthread_mutex_unlock(&mutex_TABLAREC);
 	 				log_info(LOG_SAFA, "Se agrego el recurso %s a la tabla", recurso_creado->nombre);
 	 				//enviarCabecera(sockCPU, RespuestaASolicitudDeRecursoAfirmativa, sizeof(RespuestaASolicitudDeRecursoAfirmativa));
 	 				log_info(LOG_SAFA, "Recurso %s asignado a la CPU", recurso_creado->nombre);
@@ -622,7 +691,9 @@ int planificar_PLP(){
 		pthread_mutex_unlock(nuevos);
 		idDTB->iniGDT = 0; //lo desbloqueo como Dummy
 		++hayDummy;
+		pthread_mutex_lock(&mutex_LISTOS);
 		list_add(listos, idDTB);
+		pthread_mutex_unlock(&mutex_LISTOS);
 		//pthread_mutex_unlock(&mutexDePausaPCP);
 		log_info(LOG_SAFA,"DTB listo para planificar %d",idDTB->id_GDT);
 		}else{
@@ -679,13 +750,21 @@ int planificar(){
 		log_info(LOG_SAFA,"Proximo DTB a planificar %d",idDTB);
 		DTB = buscarDTBPorId(idDTB);
 		//ahora ya tengo el DTB entero que necesito enviar a CPU //
+		pthread_mutex_lock(&mutex_CPULIBRES);
 		int proxCPUaUsar = list_remove(cpu_libres, 0);
+		pthread_mutex_unlock(&mutex_CPULIBRES);
+		pthread_mutex_lock(&mutex_CPUEJEC);
 		list_add(cpu_ejecutando, proxCPUaUsar);
+		pthread_mutex_unlock(&mutex_CPUEJEC);
 		//log_info(LOG_SAFA, "id_GDT: %i program_counter %i iniGDT %i escriptorio %s quantum %i cpu %i", DTB->id_GDT, DTB->program_counter, DTB->iniGDT, DTB->escriptorio, DTB->quantum, proxCPUaUsar);
 		prot_enviar_SAFA_CPU_DTB(DTB->id_GDT, DTB->program_counter, DTB->iniGDT, DTB->escriptorio, DTB->tabla_dir_archivos, DTB->quantum, proxCPUaUsar);
 		log_info(LOG_SAFA, "Se envio el DTB %i a la CPU %i", DTB->id_GDT, proxCPUaUsar);
+		pthread_mutex_lock(&mutex_LISTOS);
 		list_remove(listos, 0);
+		pthread_mutex_unlock(&mutex_LISTOS);
+		pthread_mutex_lock(&mutex_EJECUTANDO);
 		list_add(ejecutando, DTB);
+		pthread_mutex_unlock(&mutex_EJECUTANDO);
 
 	}
 	//deslockearListas();
@@ -816,9 +895,11 @@ void agregarGdtAColaRecurso(tp_tipoRecurso recurso){
 	bool coincideNombreCola(void* node){
 		return strcmp((((tp_recurso) node)->nombre), recurso->recurso);
 		}
+	pthread_mutex_lock(&mutex_TABLAREC);
 	recu = list_remove_by_condition(tabla_recursos, coincideNombreCola);
 	list_add(recu->gdts_en_espera, recurso->id_GDT);
 	recu->valor = recu->valor - 1;
 	list_add(tabla_recursos, recu);
+	pthread_mutex_unlock(&mutex_TABLAREC);
 }
 
