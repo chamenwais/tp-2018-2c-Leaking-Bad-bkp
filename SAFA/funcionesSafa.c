@@ -183,7 +183,7 @@ int liberarMemoria(){
 				pthread_mutex_lock(&mutex_BLOQUEADOS);
 				DTB_exit = list_remove_by_condition(bloqueados, coincideIDExit);
 				pthread_mutex_unlock(&mutex_BLOQUEADOS);
-				free(datos_recibidos);
+				//free(datos_recibidos);
 				pthread_mutex_lock(&mutex_TERMINADOS);
 				list_add(terminados, DTB_exit);
 				pthread_mutex_unlock(&mutex_TERMINADOS);
@@ -199,11 +199,18 @@ int liberarMemoria(){
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
 			list_add(DTB_Listo->tabla_dir_archivos, datos_recibidos->path);
 			log_info(LOG_SAFA, "Se agrego el path %s a la tabla de dir de archivos", datos_recibidos->path);
-			pthread_mutex_lock(&mutex_LISTOS);
-			list_add(listos, DTB_Listo);
-			pthread_mutex_unlock(&mutex_LISTOS);
-			free(datos_recibidos);
-			log_info(LOG_SAFA, "El DTB %i ahora pasa a LISTOS", datos_recibidos->pid);
+			if(algoritmo_planificacion == ROUND_ROBIN){
+				pthread_mutex_lock(&mutex_LISTOS);
+				list_add(listos, DTB_Listo);
+				pthread_mutex_unlock(&mutex_LISTOS);
+				log_info(LOG_SAFA, "El DTB %i ahora pasa a LISTOS", datos_recibidos->pid);
+			}else if(algoritmo_planificacion == VIRTUAL_RR){
+				pthread_mutex_lock(&mutex_AUXVRR);
+				list_add(auxVirtualRR, DTB_Listo);
+				pthread_mutex_unlock(&mutex_AUXVRR);
+				log_info(LOG_SAFA, "El DTB %i ahora pasa a lista Auxiliar de VRR", datos_recibidos->pid);
+			}
+			//free(datos_recibidos);
 			pthread_mutex_unlock(&mutexDePausaPCP);
 			break;
 		case FlushDeArchivoADiscoNoFinalizado: //asumo que si falla va a exit
@@ -213,7 +220,7 @@ int liberarMemoria(){
 					bool coincideIDExit2(void* node) {
 						return ((((tp_DTB) node)->id_GDT)==pathPid->pid);
 					}
-			free(pathPid);
+			//free(pathPid);
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_exit = list_remove_by_condition(bloqueados, coincideIDExit2);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
@@ -231,10 +238,18 @@ int liberarMemoria(){
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
-			free(pathPid);
-			pthread_mutex_lock(&mutex_LISTOS);
-			list_add(listos, DTB_Listo);
-			pthread_mutex_unlock(&mutex_LISTOS);
+			if(algoritmo_planificacion == ROUND_ROBIN){
+				pthread_mutex_lock(&mutex_LISTOS);
+				list_add(listos, DTB_Listo);
+				pthread_mutex_unlock(&mutex_LISTOS);
+				log_info(LOG_SAFA, "El DTB &i pasa a la lista de LISTOS", DTB_Listo->id_GDT);
+			}else if(algoritmo_planificacion == VIRTUAL_RR){
+				pthread_mutex_lock(&mutex_AUXVRR);
+				list_add(auxVirtualRR, DTB_Listo);
+				pthread_mutex_unlock(&mutex_AUXVRR);
+				log_info(LOG_SAFA, "El DTB &i pasa a la lista de auxVRR", DTB_Listo->id_GDT);
+			}
+			//free(pathPid);
 		break;
 		case CrearLineasEnArchivoNoFinalizado:
 			log_info(LOG_SAFA, "Recibi cabecera: CrearLineasEnArchivoNoFinalizado");
@@ -246,7 +261,7 @@ int liberarMemoria(){
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_exit = list_remove_by_condition(bloqueados, coincideIDExit3);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
-			free(id);
+			//free(id);
 			pthread_mutex_lock(&mutex_TERMINADOS);
 			list_add(terminados, DTB_exit);
 			pthread_mutex_unlock(&mutex_TERMINADOS);
@@ -261,10 +276,18 @@ int liberarMemoria(){
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady2);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
-			free(i);
-			pthread_mutex_lock(&mutex_LISTOS);
-			list_add(listos, DTB_exit);
-			pthread_mutex_unlock(&mutex_LISTOS);
+			if(algoritmo_planificacion == ROUND_ROBIN){
+				pthread_mutex_lock(&mutex_LISTOS);
+				list_add(listos, DTB_Listo);
+				pthread_mutex_unlock(&mutex_LISTOS);
+				log_info(LOG_SAFA, "El DTB &i pasa a la lista de LISTOS", DTB_Listo->id_GDT);
+			}else if(algoritmo_planificacion == VIRTUAL_RR){
+				pthread_mutex_lock(&mutex_AUXVRR);
+				list_add(auxVirtualRR, DTB_Listo);
+				pthread_mutex_unlock(&mutex_AUXVRR);
+				log_info(LOG_SAFA, "El DTB &i pasa a la lista de AUXVRR", DTB_Listo->id_GDT);
+			}
+			//free(i);
 		break;
 		case EliminarArchivoDeDiscoNoFinalizado:
 			log_info(LOG_SAFA, "Recibi cabecera: EliminarArchivoDeDiscoNoFinalizado");
@@ -276,7 +299,7 @@ int liberarMemoria(){
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_exit = list_remove_by_condition(bloqueados, coincideIDExit4);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
-			free(idtb);
+			//free(idtb);
 			pthread_mutex_lock(&mutex_TERMINADOS);
 			list_add(terminados, DTB_exit);
 			pthread_mutex_unlock(&mutex_TERMINADOS);
@@ -291,10 +314,18 @@ int liberarMemoria(){
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady3);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
-			free(iddtb);
-			pthread_mutex_lock(&mutex_LISTOS);
-			list_add(listos, DTB_Listo);
-			pthread_mutex_unlock(&mutex_LISTOS);
+			if(algoritmo_planificacion == ROUND_ROBIN){
+				pthread_mutex_lock(&mutex_LISTOS);
+				list_add(listos, DTB_Listo);
+				pthread_mutex_unlock(&mutex_LISTOS);
+				log_info(LOG_SAFA, "El DTB %i ahora está en la cola de LISTOS", DTB_Listo->id_GDT);
+			}else if(algoritmo_planificacion == VIRTUAL_RR){
+				pthread_mutex_lock(&mutex_AUXVRR);
+				list_add(auxVirtualRR, DTB_Listo);
+				pthread_mutex_unlock(&mutex_AUXVRR);
+				log_info(LOG_SAFA, "El DTB %i ahora está en la cola de AUXVRR", DTB_Listo->id_GDT);
+			}
+			//free(iddtb);
 		break;
 	}
 	}
@@ -455,9 +486,17 @@ int liberarMemoria(){
 	 			 pthread_mutex_lock(&mutex_BLOQUEADOS);
 	 			 bloqDTB = list_remove_by_condition(bloqueados, coincideId);
 	 			 pthread_mutex_unlock(&mutex_BLOQUEADOS);
-	 			 pthread_mutex_lock(&mutex_LISTOS);
-	 			 list_add(listos, bloqDTB);
-	 			 pthread_mutex_unlock(&mutex_LISTOS);
+	 			 if(algoritmo_planificacion == ROUND_ROBIN){
+	 				 pthread_mutex_lock(&mutex_LISTOS);
+	 				 list_add(listos, bloqDTB);
+	 				 pthread_mutex_unlock(&mutex_LISTOS);
+	 				 log_info(LOG_SAFA, "DTB %i pasa a LISTOS", bloqDTB->id_GDT);
+	 			 }else if(algoritmo_planificacion == VIRTUAL_RR){
+	 				 pthread_mutex_lock(&mutex_AUXVRR);
+	 				 list_add(auxVirtualRR, bloqDTB);
+	 				 pthread_mutex_unlock(&mutex_AUXVRR);
+	 				 log_info(LOG_SAFA, "DTB %i pasa a AUXVRR", bloqDTB->id_GDT);
+	 			 }
 	 			 //TODO deberia arrancar PCP?
 	 			 log_info(LOG_SAFA, "El GDT %i ahora esta en READY", bloqDTB->id_GDT);
 	 		 }else{
