@@ -158,6 +158,19 @@ int liberarMemoria(){
 	list_destroy_and_destroy_elements(dtbConEqGrandeAbierto, free);
 	list_destroy_and_destroy_elements(tabla_recursos, free);
 
+	pthread_mutex_destroy(&mutexDePausaDePlanificacion);
+	pthread_mutex_destroy(&mutexDePausaPCP);
+	pthread_mutex_destroy(&mutex_AUXVRR);
+	pthread_mutex_destroy(&mutex_BLOQUEADOS);
+	pthread_mutex_destroy(&mutex_CPUEJEC);
+	pthread_mutex_destroy(&mutex_CPULIBRES);
+	pthread_mutex_destroy(&mutex_EJECUTANDO);
+	pthread_mutex_destroy(&mutex_EQGRANDE);
+	pthread_mutex_destroy(&mutex_LISTOS);
+	pthread_mutex_destroy(&mutex_NUEVOS);
+	pthread_mutex_destroy(&mutex_TABLAREC);
+	pthread_mutex_destroy(&mutex_TERMINADOS);
+
 	log_info(LOG_SAFA, "Habemus memoria liberada");
 	return EXIT_SUCCESS;
 }
@@ -198,8 +211,16 @@ int liberarMemoria(){
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDListo);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
 			list_add(DTB_Listo->tabla_dir_archivos, datos_recibidos->path);
+			if(algoritmo_planificacion == BOAF){
+				if(tieneEquipoGrande(DTB_Listo) && noEstaEnLista(dtbConEqGrandeAbierto, DTB_Listo)){
+					pthread_mutex_lock(&mutex_EQGRANDE);
+					list_add(dtbConEqGrandeAbierto, DTB_Listo);
+					pthread_mutex_unlock(&mutex_EQGRANDE);
+					log_info(LOG_SAFA, "Se agrego el DTB %i a lista de Equipos Grandes");
+				}
+			}
 			log_info(LOG_SAFA, "Se agrego el path %s a la tabla de dir de archivos", datos_recibidos->path);
-			if(algoritmo_planificacion == ROUND_ROBIN){
+			if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
 				pthread_mutex_lock(&mutex_LISTOS);
 				list_add(listos, DTB_Listo);
 				pthread_mutex_unlock(&mutex_LISTOS);
@@ -238,7 +259,7 @@ int liberarMemoria(){
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
-			if(algoritmo_planificacion == ROUND_ROBIN){
+			if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
 				pthread_mutex_lock(&mutex_LISTOS);
 				list_add(listos, DTB_Listo);
 				pthread_mutex_unlock(&mutex_LISTOS);
@@ -276,7 +297,7 @@ int liberarMemoria(){
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady2);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
-			if(algoritmo_planificacion == ROUND_ROBIN){
+			if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
 				pthread_mutex_lock(&mutex_LISTOS);
 				list_add(listos, DTB_Listo);
 				pthread_mutex_unlock(&mutex_LISTOS);
@@ -314,7 +335,7 @@ int liberarMemoria(){
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady3);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
-			if(algoritmo_planificacion == ROUND_ROBIN){
+			if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
 				pthread_mutex_lock(&mutex_LISTOS);
 				list_add(listos, DTB_Listo);
 				pthread_mutex_unlock(&mutex_LISTOS);
@@ -486,7 +507,7 @@ int liberarMemoria(){
 	 			 pthread_mutex_lock(&mutex_BLOQUEADOS);
 	 			 bloqDTB = list_remove_by_condition(bloqueados, coincideId);
 	 			 pthread_mutex_unlock(&mutex_BLOQUEADOS);
-	 			 if(algoritmo_planificacion == ROUND_ROBIN){
+	 			 if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
 	 				 pthread_mutex_lock(&mutex_LISTOS);
 	 				 list_add(listos, bloqDTB);
 	 				 pthread_mutex_unlock(&mutex_LISTOS);
@@ -637,13 +658,136 @@ void *funcionHiloConsola(void *arg){
 			 *En caso de tener un parámetro, deberá informar todos los datos almacenados en el DT Block
 			 *En (tanto mínimos como agregados por el grupo).
 			 */
-			//statusConsola();
+			 int idDtb;
+			 if(instruccion[1]==NULL){
+				 printf("Mostrando el estado de las colas de planificacion\n\n");
+
+				 printf("Cola NUEVOS - ");
+				 mostrarLista(nuevos);
+
+				 printf("Cola LISTOS - ");
+				 mostrarLista(listos);
+
+				 printf("Cola AUXILIAR VRR");
+				 mostrarLista(auxVirtualRR);
+
+				 printf("Cola EJECUTANDO");
+				 mostrarLista(ejecutando);
+
+				 printf("Cola BLOQUEADOS - ");
+				 mostrarLista(bloqueados);
+
+				 printf("Cola TERMINADOS - ");
+				 mostrarLista(terminados);
+			 }else{
+
+			    	idDtb = atoi(instruccion[1]); //transformo el string a numero, retorna zero si no es valido, es importante que los id empiezen en 1 TODO
+
+			    	int colaDelDTB = 1;
+
+			    	tp_DTB buscado = buscar_DTB_Por_ID(idDtb, &colaDelDTB); //NUEVO = 1 . LISTO = 2 . EJECUTANDO = 3 . BLOQUEADO = 4 . FINALIZADO = 5 . AUXVRR = 6
+
+			    	if(buscado != NULL){	//lo encontre entonces lo muestro
+
+			    		char* imprimirCola;
+
+			    		switch(colaDelDTB){
+
+			    			case 1: imprimirCola = "NUEVO";
+			    					break;
+
+			    			case 2: imprimirCola = "LISTO";
+			    					break;
+
+			    			case 3: imprimirCola = "EJECUTANDO";
+			    					break;
+
+			    			case 4: imprimirCola = "BLOQUEADO";
+			    					break;
+
+			    			case 5: imprimirCola = "FINALIZADO";
+			    					break;
+
+			    			case 6: imprimirCola = "AUXVRR";
+			    					break;
+
+			    			default: imprimirCola = "ERROR AL IMPRIMIR COLA";
+			    		}
+
+			    		printf("\n	Estado %s\n", imprimirCola);
+
+			    		mostrarDTB(buscado);
+			    		free(imprimirCola);
+			    	}
+			    	else{
+
+			    		if(idDtb == 0){
+
+			    			printf("El id ingresado debe ser un numero entero mayor a cero\n");
+			    		}
+			    		else{
+
+			    			printf("Imposible chequear el status\nEl DTB con ID %d no se encuentra en el sistema\n",idDtb);
+			    		}
+			    	}
+			    }
+
 			}else{
 		if(strcmp(instruccion[0],"finalizar")==0){
 			/* Obligará a un DTB a pasar a la cola de EXIT para poder destrabar la ejecución y
 			 * dar lugar a otro G.DT a operar sobre dicho equipo. Si el G.DT se encuentra en la cola
 			 * EXEC se deberá esperar a terminar la operación actual, para luego moverlo a la cola EXIT*/
+			if(instruccion[1]==NULL){
+				printf("Por favor ingrese un numero de DTB");
+			}else{
+			int idDTB;
+			idDTB = atoi(instruccion[1]);//transformo el string a numero
 
+			    	   	int colaDelDTB = -1;
+			    	    tp_DTB DTBaFinalizar = buscar_DTB_Por_ID(idDTB, &colaDelDTB);
+			    	    char* imprimirCola;
+			    	    if(DTBaFinalizar != NULL){	//lo encontre entonces lo muestro
+
+			     			   switch(colaDelDTB){
+
+			   	        		case 1: imprimirCola = "NUEVOS";
+			   	        				finalizarDTB(nuevos,idDTB);
+			   	    					break;
+
+			   	   	    		case 2: imprimirCola = "LISTOS";
+			   	   	    				finalizarDTB(listos,idDTB);
+			   	   	    				break;
+
+			   	   	    		case 3: imprimirCola = "EJECUTANDO";
+			   	   	    				pase_DTB_de_EJECUTANDO_a_FINALIZADO(ejecutando, idDTB);
+			   	   	    				break;
+
+			   	   	    		case 4: imprimirCola = "BLOQUEADOS";
+			    	       				finalizarDTB(bloqueados,idDTB);
+			       	    				break;
+
+			   	   	    		case 6: imprimirCola = "AUXVRR";
+			   	   	    				finalizarDTB(auxVirtualRR, idDTB);
+			   	    					break;
+
+			   	    			default:imprimirCola = "ERROR AL IMPRIMIR COLA";
+			     			}
+			     			    		if(colaDelDTB == 5){
+			     			    			printf("El DTB de id: %d ya fue finalizado\n",idDTB);
+			     			    		}
+			     			    		else{
+			     			    			printf("Finalizando DTB de id: %d de la cola %s\n",idDTB, imprimirCola);
+			     			    		}
+			    	        	}
+			    	        	else{
+			    	        		if(idDTB == 0){
+			    	        		    printf("El id ingresado debe ser un numero entero mayor a cero\n");
+			    	        		}
+			    	        		else{
+			    	        			printf("Imposible finalizar\nEl DTB con ID %d no se encuentra en el sistema\n",idDTB);
+			    	        		}
+			    	        	}
+			}
 			}else{
 		if(strcmp(instruccion[0],"metricas")==0){
 			/* Detalla las siguientes métricas:
@@ -686,6 +830,167 @@ tp_DTB crear_DTB(char* path){
 	return new_DTB;
 }
 
+int mostrarLista(t_list *lista){
+
+	int cantidadElementos = list_size(lista);
+
+	if(cantidadElementos == 0){
+		printf("Cola vacia\n");
+		printf("/n");
+		return 0; 													// 0 Lista vacia
+	}
+	else{
+		printf("Cantidad de DTBs = %d\n", cantidadElementos);
+	}
+
+	int contadorLista = 1;
+	void mostrarIdDTB(void *elemento){					 				// Declaro la funcion "closure"
+		tp_DTB DTBdeBloqueado = elemento;
+		printf("     %d) ID %d\n",contadorLista, DTBdeBloqueado->id_GDT);
+		contadorLista++;
+	}
+	list_iterate(lista, (void*)mostrarIdDTB);
+	printf("/n");
+	return cantidadElementos;  				      	   					 //Cantidad de elementos de la cola si se imprimio bien
+}
+
+tp_DTB buscar_DTB_Por_ID(int idDTB, int* colaDondeEsta){
+	tp_DTB el_DTB;
+	bool coincideIDBuscar(void* node) {
+			return ((((tp_DTB) node)->id_GDT)==idDTB);
+			}
+		el_DTB = buscar_DTB_Por_ID_en_Lista(ejecutando, idDTB);
+		if(el_DTB != NULL){
+
+			if(colaDondeEsta != NULL){
+
+				*colaDondeEsta = 3;
+			}
+
+			return el_DTB;
+		}
+
+		el_DTB = buscar_DTB_Por_ID_en_Lista(nuevos, idDTB);
+
+		if(el_DTB != NULL){
+
+			if(colaDondeEsta != NULL){
+
+				*colaDondeEsta = 1;
+			}
+
+			return el_DTB;
+		}
+
+		el_DTB = buscar_DTB_Por_ID_en_Lista(listos, idDTB);
+
+		if(el_DTB != NULL){
+
+			if(colaDondeEsta != NULL){
+
+				*colaDondeEsta = 2;
+			}
+
+			return el_DTB;
+		}
+
+		el_DTB = buscar_DTB_Por_ID_en_Lista(bloqueados, idDTB);
+
+		if(el_DTB != NULL){
+
+			if(colaDondeEsta != NULL){
+
+				*colaDondeEsta = 4;
+			}
+
+			return el_DTB;
+		}
+
+		el_DTB = buscar_DTB_Por_ID_en_Lista(terminados, idDTB);
+
+		if(el_DTB != NULL){
+
+			if(colaDondeEsta != NULL){
+
+				*colaDondeEsta = 5;
+			}
+
+			return el_DTB;
+		}
+
+		el_DTB = buscar_DTB_Por_ID_en_Lista(auxVirtualRR, idDTB);
+
+			if(el_DTB != NULL){
+
+				if(colaDondeEsta != NULL){
+
+					*colaDondeEsta = 6;
+				}
+
+				return el_DTB;
+			}
+
+	return NULL;
+}
+
+tp_DTB buscar_DTB_Por_ID_en_Lista(t_list *lista, int idDTB){
+
+	for (int indice = 0; indice < list_size(lista); indice++){
+
+			tp_DTB miDTB= list_get(lista,indice);
+
+			if(miDTB->id_GDT == idDTB){
+
+				return miDTB;
+			}
+	}
+	return NULL;
+}
+
+void mostrarDTB(tp_DTB mostrado){
+
+	printf("	id_GDT - %d\n",mostrado->id_GDT);
+	printf("	Escriptorio - %s\n",mostrado->escriptorio);
+	printf("	ProgramCounter - %d\n",mostrado->program_counter);
+	printf("	IniGDT - %d\n",mostrado->iniGDT);
+	printf("    Quantum - %d/n",mostrado->quantum);
+
+	mostrarTablaArchivosAbiertos(mostrado->tabla_dir_archivos);
+}
+
+void mostrarTablaArchivosAbiertos(t_list* lista){
+	int cant_elem = list_size(lista);
+	printf("    Tabla Dir Archivos:  \n");
+	for(int i = 0; i < cant_elem; i++){
+		char* elem = list_get(lista, i);
+		printf("    %d - %s\n", i, elem);
+		free(elem);
+	}
+}
+
+void finalizarDTB(t_list* lista, int idDTB){
+	int buscar_ID(tp_DTB elemento){
+		return elemento->id_GDT == idDTB;
+	}
+	tp_DTB DTBdelID = list_remove_by_condition(lista, (void*)buscar_ID);
+	if(DTBdelID == NULL){
+		printf("No se encontro el DTB con el %d para finalizarlo\n",idDTB);
+																								// 1 No se encontro el String en la lista
+	}
+	list_add(terminados,DTBdelID);																// 0 Se paso finalizo correctamente el DTB
+}
+
+void pase_DTB_de_EJECUTANDO_a_FINALIZADO(t_list* lista, int idDTB){
+	bool estaEjecutando = true;
+	tp_DTB tpDTB;
+	while(estaEjecutando){
+		tpDTB = buscar_DTB_Por_ID_en_Lista(ejecutando, idDTB);
+		if(tpDTB != NULL){
+			estaEjecutando = false;
+		}
+	}
+	finalizarDTB(ejecutando, idDTB);
+}
 
 int iniciarPLP(){
 	printf("entra a iniciarPLP");
@@ -878,7 +1183,7 @@ int calcularDTBAPlanificarConBOAF(){ /*Priorización de aquellos DTB que tengan 
 	Queda a criterio de cada grupo definir qué equipos se consideran "grandes" TODO ver cuando abre archivo si es de equipo grande*/
 	int id;
 	if(list_size(dtbConEqGrandeAbierto)>0){
-		id = obtenerPrimerId(dtbConEqGrandeAbierto);
+		id = obtenerPrimerIdConEG(dtbConEqGrandeAbierto);
 	}else{
 		id = obtenerPrimerId(listos);
 	}
@@ -886,7 +1191,13 @@ int calcularDTBAPlanificarConBOAF(){ /*Priorización de aquellos DTB que tengan 
 }
 
 int obtenerPrimerId(t_list* lista){
-	tp_DTB primerDTB = list_get(lista, 0);
+	tp_DTB primerDTB = list_remove(lista, 0);
+	return primerDTB->id_GDT;
+}
+
+int obtenerPrimerIdConEG(t_list* lista){
+	tp_DTB primerDTB = list_remove(lista, 0);
+	list_add(dtbConEqGrandeAbierto, primerDTB);
 	return primerDTB->id_GDT;
 }
 
@@ -945,40 +1256,21 @@ void agregarGdtAColaRecurso(tp_tipoRecurso recurso){
 	pthread_mutex_unlock(&mutex_TABLAREC);
 }
 
-/*void captura_sigpipe(int signo){
-
-    if(signo == SIGINT)
-    {
-    	log_info(LOG_SAFA,"Finalizando proceso... Gracias vuelva prontos.");
-    	//GLOBAL_SEGUIR = 0;
-    	liberarMemoria();
-    	finalizarTodo();
-    }
-    else if(signo == SIGPIPE)
-    {
-    	log_error(LOG_SAFA,"Tecla no reconocida");
-    }
-
+bool tieneEquipoGrande(tp_DTB miDTB){
+	int cant = list_size(miDTB->tabla_dir_archivos);
+	bool es_Grande(void*node){
+		return string_contains(((char*) node), "Boca");
+	}
+	if(cant > 0){
+		return list_any_satisfy(miDTB->tabla_dir_archivos, es_Grande);
+	}
+	return false;
 }
 
-void configurar_signals(void){
-	struct sigaction signal_struct;
-	signal_struct.sa_handler = captura_sigpipe;
-	signal_struct.sa_flags   = 0;
-
-	sigemptyset(&signal_struct.sa_mask);
-
-	sigaddset(&signal_struct.sa_mask, SIGPIPE);
-    if (sigaction(SIGPIPE, &signal_struct, NULL) < 0)
-    {
-    	log_error(LOG_SAFA," SIGACTION error ");
-    }
-
-    sigaddset(&signal_struct.sa_mask, SIGINT);
-    if (sigaction(SIGINT, &signal_struct, NULL) < 0)
-    {
-    	log_error(LOG_SAFA," SIGACTION error ");
-    }
-
-}*/
+bool noEstaEnLista(t_list* lista, tp_DTB unDTB){
+	bool coincideIDL(void* node) {
+		return ((((tp_DTB) node)->id_GDT)==unDTB->id_GDT);
+		}
+	return list_any_satisfy(dtbConEqGrandeAbierto, coincideIDL);
+}
 

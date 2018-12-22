@@ -244,13 +244,14 @@ tp_datosObtenidos pedir_datos_a_Mdj(char* ruta, int offset_Mdj, int socket_mdj, 
 	return datos;
 }
 
-int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, tp_datosObtenidos parte_archivo) {
+int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, tp_datosObtenidos parte_archivo
+		, int size) {
 	t_cargarEnMemoria a_cargar;
 	a_cargar.pid=info_cpu->pid;
 	a_cargar.path=info_cpu->path;
 	a_cargar.buffer=parte_archivo->datos;
 	a_cargar.offset=offset_Fm9;
-	a_cargar.transfer_size=transfer_size;
+	a_cargar.transfer_size=size;
 	a_cargar.file_size=parte_archivo->tamanio_total_archivo;
 	pthread_mutex_lock(&MX_MEMORIA);
 	enviarCabecera(socket_fm9, CargarParteEnMemoria, sizeof(CargarParteEnMemoria));
@@ -285,12 +286,12 @@ bool todavia_no_se_recibio_todo_el_archivo(int tamanio_parcial_archivo, int tama
 
 int loguear_cantidad_datos_y_cargar(tp_datosObtenidos parte_archivo,
 		int direccion_de_memoria, int socket_fm9, tp_abrirPath info_cpu,
-		int offset_Fm9) {
+		int offset_Fm9, int size) {
 	logger_DAM(escribir_loguear, l_info,
 			"Se recibio un fragmento de archivo de %d bytes",
 			parte_archivo->size);
 	direccion_de_memoria = cargar_datos_en_Fm9(socket_fm9, info_cpu, offset_Fm9,
-			parte_archivo);
+			parte_archivo, size);
 	return direccion_de_memoria;
 }
 
@@ -319,18 +320,19 @@ void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath i
 		logger_DAM(escribir_loguear, l_info,"El archivo %s tiene %d bytes",info_cpu->path,tamanio_total);
 		offset_Mdj+=parte_archivo->size;
 		int direccion_de_memoria;
+		int bytes_a_pedir=transfer_size;
 		while (todavia_no_se_recibio_todo_el_archivo(offset_Mdj, parte_archivo->tamanio_total_archivo)) {
 			int tamanio_pedazo_archivo=parte_archivo->size;
 			direccion_de_memoria = loguear_cantidad_datos_y_cargar(
 					parte_archivo, direccion_de_memoria, socket_fm9, info_cpu,
-					offset_Fm9);
+					offset_Fm9,bytes_a_pedir);
 			if(direccion_de_memoria==-1){
 				informar_carga_en_memoria_erronea(socket_safa, info_cpu);
 				return;
 			}
 			logger_DAM(escribir_loguear, l_info,"Se cargo el fragmento en memoria");
 			offset_Fm9+=tamanio_pedazo_archivo;
-			int bytes_a_pedir = calcular_bytes_a_pedir(tamanio_total,
+			bytes_a_pedir = calcular_bytes_a_pedir(tamanio_total,
 					offset_Mdj);
 			parte_archivo=pedir_datos_a_Mdj(info_cpu->path, offset_Mdj, socket_mdj,bytes_a_pedir);
 			if(validar_fragmento_archivo(parte_archivo, socket_safa, info_cpu)==false){
@@ -343,7 +345,7 @@ void tratar_validez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath i
 		if(parte_archivo->size>0){
 			direccion_de_memoria = loguear_cantidad_datos_y_cargar(
 								parte_archivo, direccion_de_memoria, socket_fm9, info_cpu,
-								offset_Fm9);
+								offset_Fm9,bytes_a_pedir);
 			if(direccion_de_memoria==-1){
 				informar_carga_en_memoria_erronea(socket_safa, info_cpu);
 				return;
@@ -547,19 +549,26 @@ void operacion_crear_archivo(int *sockets){
 	int socket_mdj=sockets[2];
 	free(sockets);
 	tp_crearLineasArch pedido_creacion=prot_recibir_CPU_DMA_crear_lineas_arch(socket_CPU);
-	logger_DAM(escribir_loguear, l_trace,"Ehhh, voy a crear [%s] con [%d] lineas",
-			pedido_creacion->path, pedido_creacion->cant_lineas);
 	enviarCabecera(socket_CPU,CrearLineasEnArchivoEjecutandose,sizeof(CrearLineasEnArchivoEjecutandose));
 	t_cabecera respuesta_creacion_path = crear_archivo(socket_mdj, pedido_creacion);
 	if(!cabecera_correcta(&respuesta_creacion_path)){
 		//informa el error de creacion a safa
 		loguear_y_avisar_a_safa_creacion_erronea(socket_safa,pedido_creacion->id_GDT);
 	} else {
-		loguear_cabecera_recibida(CONST_NAME_MDJ);
 		//valida el enum respuesta TODO falta diferenciar falta de espacio o archivo ya existe
-		if(ArchivoNoCreado==respuesta_creacion_path.tipoDeMensaje){
+		if(EspacionInsuficiente==respuesta_creacion_path.tipoDeMensaje){
 			//informar el error de creacion a safa
 			logger_DAM(escribir_loguear, l_warning,"Hubo un error de espacio insuficiente en MDJ al crear el archivo");
+			informar_operacion_crear_erronea(socket_safa, pedido_creacion->id_GDT);
+			return;
+		} else if(ArchivoYaExiste==respuesta_creacion_path.tipoDeMensaje){
+			//informar el error de creacion a safa
+			printf("MDJ indica que el archivo ya existia");
+			informar_operacion_crear_erronea(socket_safa, pedido_creacion->id_GDT);
+			return;
+		} else if(ArchivoNoCreado==respuesta_creacion_path.tipoDeMensaje){
+			//informar el error de creacion a safa
+			logger_DAM(escribir_loguear, l_warning,"MDJ no creo el archivo");
 			informar_operacion_crear_erronea(socket_safa, pedido_creacion->id_GDT);
 			return;
 		}

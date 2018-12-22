@@ -49,7 +49,7 @@ int * adaptar_sockets_para_hilo(int CPU_Fd, int fm9_Fd, int Safa_fd, int filesys
 t_cabecera validar_archivo(int socket_mdj, tp_abrirPath mensaje_cpu);
 bool validar_fragmento_archivo(tp_datosObtenidos fragmento_archivo, int socket_safa, tp_abrirPath mensaje_cpu);
 void informar_carga_en_memoria_erronea(int socket_safa, tp_abrirPath mensaje_cpu);
-int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, tp_datosObtenidos parte_archivo);
+int cargar_datos_en_Fm9(int socket_fm9, tp_abrirPath info_cpu, int offset_Fm9, tp_datosObtenidos parte_archivo, int size);
 void loguear_no_obtencion_de_fragmento_archivo();
 tp_datosObtenidos pedir_datos_a_Mdj(char * ruta, int offset_Mdj, int socket_mdj, int bytes_a_pedir);
 enum MENSAJES tratar_invalidez_archivo(t_cabecera respuesta_validez_archivo, tp_abrirPath path_y_pid, int socket_safa);
@@ -68,7 +68,7 @@ enum MENSAJES guardar_datos_en_disco(int socket_mdj, char * ruta, int offset_Mdj
 void loguear_informar_error_comunicacion_flush(int socket_safa, tp_datosEnMemoria pedido_flush);
 int loguear_cantidad_datos_y_cargar(tp_datosObtenidos parte_archivo,
 		int direccion_de_memoria, int socket_fm9, tp_abrirPath info_cpu,
-		int offset_Fm9);
+		int offset_Fm9, int size);
 enum MENSAJES loguear_cantidad_datos_y_guardar_en_disco(
 		tp_datosObtenidosDeProtocolo datos_obtenidos,
 		enum MENSAJES resultado_guardado, int socket_mdj,
