@@ -637,7 +637,80 @@ void *funcionHiloConsola(void *arg){
 			 *En caso de tener un parámetro, deberá informar todos los datos almacenados en el DT Block
 			 *En (tanto mínimos como agregados por el grupo).
 			 */
-			//statusConsola();
+			 int idDtb;
+			 if(instruccion[1]==NULL){
+				 printf("Mostrando el estado de las colas de planificacion\n\n");
+
+				 printf("Cola NUEVOS - ");
+				 mostrarLista(nuevos);
+
+				 printf("Cola LISTOS - ");
+				 mostrarLista(listos);
+
+				 printf("Cola AUXILIAR VRR");
+				 mostrarLista(auxVirtualRR);
+
+				 printf("Cola EJECUTANDO");
+				 mostrarLista(ejecutando);
+
+				 printf("Cola BLOQUEADOS - ");
+				 mostrarLista(bloqueados);
+
+				 printf("Cola TERMINADOS - ");
+				 mostrarLista(terminados);
+			 }else{
+
+			    	idDtb = atoi(instruccion[1]); //transformo el string a numero, retorna zero si no es valido, es importante que los id empiezen en 1 TODO
+
+			    	int colaDelDTB = 1;
+
+			    	tp_DTB buscado = buscar_DTB_Por_ID(idDtb, &colaDelDTB); //NUEVO = 1 . LISTO = 2 . EJECUTANDO = 3 . BLOQUEADO = 4 . FINALIZADO = 5 . AUXVRR = 6
+
+			    	if(buscado != NULL){	//lo encontre entonces lo muestro
+
+			    		char* imprimirCola;
+
+			    		switch(colaDelDTB){
+
+			    			case 1: imprimirCola = "NUEVO";
+			    					break;
+
+			    			case 2: imprimirCola = "LISTO";
+			    					break;
+
+			    			case 3: imprimirCola = "EJECUTANDO";
+			    					break;
+
+			    			case 4: imprimirCola = "BLOQUEADO";
+			    					break;
+
+			    			case 5: imprimirCola = "FINALIZADO";
+			    					break;
+
+			    			case 6: imprimirCola = "AUXVRR";
+			    					break;
+
+			    			default: imprimirCola = "ERROR AL IMPRIMIR COLA";
+			    		}
+
+			    		printf("\n	Estado %s\n", imprimirCola);
+
+			    		mostrarDTB(buscado);
+			    		free(imprimirCola);
+			    	}
+			    	else{
+
+			    		if(idDtb == 0){
+
+			    			printf("El id ingresado debe ser un numero entero mayor a cero\n");
+			    		}
+			    		else{
+
+			    			printf("Imposible chequear el status\nEl DTB con ID %d no se encuentra en el sistema\n",idDtb);
+			    		}
+			    	}
+			    }
+
 			}else{
 		if(strcmp(instruccion[0],"finalizar")==0){
 			/* Obligará a un DTB a pasar a la cola de EXIT para poder destrabar la ejecución y
@@ -686,6 +759,143 @@ tp_DTB crear_DTB(char* path){
 	return new_DTB;
 }
 
+int mostrarLista(t_list *lista){
+
+	int cantidadElementos = list_size(lista);
+
+	if(cantidadElementos == 0){
+		printf("Cola vacia\n");
+		printf("/n");
+		return 0; 													// 0 Lista vacia
+	}
+	else{
+		printf("Cantidad de DTBs = %d\n", cantidadElementos);
+	}
+
+	int contadorLista = 1;
+	void mostrarIdDTB(void *elemento){					 				// Declaro la funcion "closure"
+		tp_DTB DTBdeBloqueado = elemento;
+		printf("     %d) ID %d\n",contadorLista, DTBdeBloqueado->id_GDT);
+		contadorLista++;
+	}
+	list_iterate(lista, (void*)mostrarIdDTB);
+	printf("/n");
+	return cantidadElementos;  				      	   					 //Cantidad de elementos de la cola si se imprimio bien
+}
+
+tp_DTB buscar_DTB_Por_ID(int idDTB, int* colaDondeEsta){
+	tp_DTB el_DTB;
+	bool coincideIDBuscar(void* node) {
+			return ((((tp_DTB) node)->id_GDT)==idDTB);
+			}
+		el_DTB = buscar_DTB_Por_ID_en_Lista(ejecutando, idDTB);
+		if(el_DTB != NULL){
+
+			if(colaDondeEsta != NULL){
+
+				*colaDondeEsta = 3;
+			}
+
+			return el_DTB;
+		}
+
+		el_DTB = buscar_DTB_Por_ID_en_Lista(nuevos, idDTB);
+
+		if(el_DTB != NULL){
+
+			if(colaDondeEsta != NULL){
+
+				*colaDondeEsta = 1;
+			}
+
+			return el_DTB;
+		}
+
+		el_DTB = buscar_DTB_Por_ID_en_Lista(listos, idDTB);
+
+		if(el_DTB != NULL){
+
+			if(colaDondeEsta != NULL){
+
+				*colaDondeEsta = 2;
+			}
+
+			return el_DTB;
+		}
+
+		el_DTB = buscar_DTB_Por_ID_en_Lista(bloqueados, idDTB);
+
+		if(el_DTB != NULL){
+
+			if(colaDondeEsta != NULL){
+
+				*colaDondeEsta = 4;
+			}
+
+			return el_DTB;
+		}
+
+		el_DTB = buscar_DTB_Por_ID_en_Lista(terminados, idDTB);
+
+		if(el_DTB != NULL){
+
+			if(colaDondeEsta != NULL){
+
+				*colaDondeEsta = 5;
+			}
+
+			return el_DTB;
+		}
+
+		el_DTB = buscar_DTB_Por_ID_en_Lista(auxVirtualRR, idDTB);
+
+			if(el_DTB != NULL){
+
+				if(colaDondeEsta != NULL){
+
+					*colaDondeEsta = 6;
+				}
+
+				return el_DTB;
+			}
+
+	return NULL;
+}
+
+tp_DTB buscar_DTB_Por_ID_en_Lista(t_list *lista, int idDTB){
+
+	for (int indice = 0; indice < list_size(lista); indice++){
+
+			tp_DTB miDTB= list_get(lista,indice);
+
+			if(miDTB->id_GDT == idDTB){
+
+				return miDTB;
+			}
+	}
+	return NULL;
+}
+
+void mostrarDTB(tp_DTB mostrado){
+
+	printf("	id_GDT - %d\n",mostrado->id_GDT);
+	printf("	Escriptorio - %s\n",mostrado->escriptorio);
+	printf("	ProgramCounter - %d\n",mostrado->program_counter);
+	printf("	IniGDT - %d\n",mostrado->iniGDT);
+	printf("    Quantum - %d/n",mostrado->quantum);
+
+	mostrarTablaArchivosAbiertos(mostrado->tabla_dir_archivos);
+}
+
+void mostrarTablaArchivosAbiertos(t_list* lista){
+	int cant_elem = list_size(lista);
+	printf("    Tabla Dir Archivos:  \n");
+	for(int i = 0; i < cant_elem; i++){
+		char* elem = list_get(lista, i);
+		printf("    %d - %s\n", i, elem);
+		free(elem);
+	}
+}
 
 int iniciarPLP(){
 	printf("entra a iniciarPLP");
