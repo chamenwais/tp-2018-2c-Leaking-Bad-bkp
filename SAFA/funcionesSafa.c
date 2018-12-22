@@ -122,11 +122,11 @@ int inicializarSemaforosSAFA(){
 	pthread_mutex_init(&mutex_BLOQUEADOS, NULL);
 	pthread_mutex_init(&mutex_EJECUTANDO, NULL);
 	pthread_mutex_init(&mutex_TERMINADOS, NULL);
-	pthread_mutex_init(&mutex_AUXVRR, 0);
-	pthread_mutex_init(&mutex_CPULIBRES, 0);
-	pthread_mutex_init(&mutex_CPUEJEC, 0);
-	pthread_mutex_init(&mutex_EQGRANDE, 0);
-	pthread_mutex_init(&mutex_TABLAREC, 0);
+	pthread_mutex_init(&mutex_AUXVRR, NULL);
+	pthread_mutex_init(&mutex_CPULIBRES, NULL);
+	pthread_mutex_init(&mutex_CPUEJEC, NULL);
+	pthread_mutex_init(&mutex_EQGRANDE, NULL);
+	pthread_mutex_init(&mutex_TABLAREC, NULL);
 	return EXIT_SUCCESS;
  }
 
@@ -212,7 +212,7 @@ int liberarMemoria(){
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
 			list_add(DTB_Listo->tabla_dir_archivos, datos_recibidos->path);
 			if(algoritmo_planificacion == BOAF){
-				if(tieneEquipoGrande(DTB_Listo) && noEstaEnLista(dtbConEqGrandeAbierto, DTB_Listo)){
+				if(tieneEquipoGrande(DTB_Listo) && (noEstaEnLista(dtbConEqGrandeAbierto, DTB_Listo))){
 					pthread_mutex_lock(&mutex_EQGRANDE);
 					list_add(dtbConEqGrandeAbierto, DTB_Listo);
 					pthread_mutex_unlock(&mutex_EQGRANDE);
@@ -220,7 +220,7 @@ int liberarMemoria(){
 				}
 			}
 			log_info(LOG_SAFA, "Se agrego el path %s a la tabla de dir de archivos", datos_recibidos->path);
-			if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
+			if(algoritmo_planificacion == ROUND_ROBIN){
 				pthread_mutex_lock(&mutex_LISTOS);
 				list_add(listos, DTB_Listo);
 				pthread_mutex_unlock(&mutex_LISTOS);
@@ -230,6 +230,11 @@ int liberarMemoria(){
 				list_add(auxVirtualRR, DTB_Listo);
 				pthread_mutex_unlock(&mutex_AUXVRR);
 				log_info(LOG_SAFA, "El DTB %i ahora pasa a lista Auxiliar de VRR", datos_recibidos->pid);
+			}else if(algoritmo_planificacion == BOAF){
+				pthread_mutex_lock(&mutex_LISTOS);
+				list_add(listos, DTB_Listo);
+				pthread_mutex_unlock(&mutex_LISTOS);
+				log_info(LOG_SAFA, "El DTB %i ahora pasa a LISTOS", datos_recibidos->pid);
 			}
 			//free(datos_recibidos);
 			pthread_mutex_unlock(&mutexDePausaPCP);
@@ -259,7 +264,7 @@ int liberarMemoria(){
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
-			if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
+			if(algoritmo_planificacion == ROUND_ROBIN){
 				pthread_mutex_lock(&mutex_LISTOS);
 				list_add(listos, DTB_Listo);
 				pthread_mutex_unlock(&mutex_LISTOS);
@@ -269,6 +274,11 @@ int liberarMemoria(){
 				list_add(auxVirtualRR, DTB_Listo);
 				pthread_mutex_unlock(&mutex_AUXVRR);
 				log_info(LOG_SAFA, "El DTB &i pasa a la lista de auxVRR", DTB_Listo->id_GDT);
+			}else if(algoritmo_planificacion == BOAF){
+				pthread_mutex_lock(&mutex_LISTOS);
+				list_add(listos, DTB_Listo);
+				pthread_mutex_unlock(&mutex_LISTOS);
+				log_info(LOG_SAFA, "El DTB &i pasa a la lista de LISTOS", DTB_Listo->id_GDT);
 			}
 			//free(pathPid);
 		break;
@@ -297,7 +307,7 @@ int liberarMemoria(){
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady2);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
-			if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
+			if(algoritmo_planificacion == ROUND_ROBIN){
 				pthread_mutex_lock(&mutex_LISTOS);
 				list_add(listos, DTB_Listo);
 				pthread_mutex_unlock(&mutex_LISTOS);
@@ -307,6 +317,11 @@ int liberarMemoria(){
 				list_add(auxVirtualRR, DTB_Listo);
 				pthread_mutex_unlock(&mutex_AUXVRR);
 				log_info(LOG_SAFA, "El DTB &i pasa a la lista de AUXVRR", DTB_Listo->id_GDT);
+			}else if(algoritmo_planificacion == BOAF){
+				pthread_mutex_lock(&mutex_LISTOS);
+				list_add(listos, DTB_Listo);
+				pthread_mutex_unlock(&mutex_LISTOS);
+				log_info(LOG_SAFA, "El DTB &i pasa a la lista de LISTOS", DTB_Listo->id_GDT);
 			}
 			//free(i);
 		break;
@@ -335,7 +350,7 @@ int liberarMemoria(){
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady3);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
-			if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
+			if(algoritmo_planificacion == ROUND_ROBIN){
 				pthread_mutex_lock(&mutex_LISTOS);
 				list_add(listos, DTB_Listo);
 				pthread_mutex_unlock(&mutex_LISTOS);
@@ -345,6 +360,11 @@ int liberarMemoria(){
 				list_add(auxVirtualRR, DTB_Listo);
 				pthread_mutex_unlock(&mutex_AUXVRR);
 				log_info(LOG_SAFA, "El DTB %i ahora está en la cola de AUXVRR", DTB_Listo->id_GDT);
+			}else if(algoritmo_planificacion == BOAF){
+				pthread_mutex_lock(&mutex_LISTOS);
+				list_add(listos, DTB_Listo);
+				pthread_mutex_unlock(&mutex_LISTOS);
+				log_info(LOG_SAFA, "El DTB %i ahora está en la cola de LISTOS", DTB_Listo->id_GDT);
 			}
 			//free(iddtb);
 		break;
@@ -507,7 +527,7 @@ int liberarMemoria(){
 	 			 pthread_mutex_lock(&mutex_BLOQUEADOS);
 	 			 bloqDTB = list_remove_by_condition(bloqueados, coincideId);
 	 			 pthread_mutex_unlock(&mutex_BLOQUEADOS);
-	 			 if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
+	 			 if(algoritmo_planificacion == ROUND_ROBIN){
 	 				 pthread_mutex_lock(&mutex_LISTOS);
 	 				 list_add(listos, bloqDTB);
 	 				 pthread_mutex_unlock(&mutex_LISTOS);
@@ -517,6 +537,11 @@ int liberarMemoria(){
 	 				 list_add(auxVirtualRR, bloqDTB);
 	 				 pthread_mutex_unlock(&mutex_AUXVRR);
 	 				 log_info(LOG_SAFA, "DTB %i pasa a AUXVRR", bloqDTB->id_GDT);
+	 			 }else if (algoritmo_planificacion == BOAF){
+	 				pthread_mutex_lock(&mutex_LISTOS);
+	 				list_add(listos, bloqDTB);
+	 				pthread_mutex_unlock(&mutex_LISTOS);
+	 				log_info(LOG_SAFA, "DTB %i pasa a LISTOS", bloqDTB->id_GDT);
 	 			 }
 	 			 //TODO deberia arrancar PCP?
 	 			 log_info(LOG_SAFA, "El GDT %i ahora esta en READY", bloqDTB->id_GDT);
@@ -1103,7 +1128,7 @@ int planificar(){
 		pthread_mutex_lock(&mutex_CPUEJEC);
 		list_add(cpu_ejecutando, proxCPUaUsar);
 		pthread_mutex_unlock(&mutex_CPUEJEC);
-		//log_info(LOG_SAFA, "id_GDT: %i program_counter %i iniGDT %i escriptorio %s quantum %i cpu %i", DTB->id_GDT, DTB->program_counter, DTB->iniGDT, DTB->escriptorio, DTB->quantum, proxCPUaUsar);
+		log_info(LOG_SAFA, "id_GDT: %i program_counter %i iniGDT %i escriptorio %s quantum %i cpu %i", DTB->id_GDT, DTB->program_counter, DTB->iniGDT, DTB->escriptorio, DTB->quantum, proxCPUaUsar);
 		prot_enviar_SAFA_CPU_DTB(DTB->id_GDT, DTB->program_counter, DTB->iniGDT, DTB->escriptorio, DTB->tabla_dir_archivos, DTB->quantum, proxCPUaUsar);
 		log_info(LOG_SAFA, "Se envio el DTB %i a la CPU %i", DTB->id_GDT, proxCPUaUsar);
 		pthread_mutex_lock(&mutex_LISTOS);
@@ -1191,12 +1216,12 @@ int calcularDTBAPlanificarConBOAF(){ /*Priorización de aquellos DTB que tengan 
 }
 
 int obtenerPrimerId(t_list* lista){
-	tp_DTB primerDTB = list_remove(lista, 0);
+	tp_DTB primerDTB = list_get(lista, 0);
 	return primerDTB->id_GDT;
 }
 
 int obtenerPrimerIdConEG(t_list* lista){
-	tp_DTB primerDTB = list_remove(lista, 0);
+	tp_DTB primerDTB = list_get(lista, 0);
 	list_add(dtbConEqGrandeAbierto, primerDTB);
 	return primerDTB->id_GDT;
 }
@@ -1208,8 +1233,10 @@ tp_DTB buscarDTBPorId(int idDTB){
 			}
 	if(list_size(auxVirtualRR)>0){
 		el_DTB = list_find(auxVirtualRR, coincideID);
+		//log_info(LOG_SAFA, "id_GDT: %i program_counter %i iniGDT %i escriptorio %s quantum %i", el_DTB->id_GDT, el_DTB->program_counter, el_DTB->iniGDT, el_DTB->escriptorio, el_DTB->quantum);
 	}else{
 		el_DTB = list_find(listos, coincideID);
+		//log_info(LOG_SAFA, "id_GDT: %i program_counter %i iniGDT %i escriptorio %s quantum %i", el_DTB->id_GDT, el_DTB->program_counter, el_DTB->iniGDT, el_DTB->escriptorio, el_DTB->quantum);
 	}
 	return el_DTB;
 }

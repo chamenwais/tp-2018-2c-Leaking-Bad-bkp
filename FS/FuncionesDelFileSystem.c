@@ -1277,6 +1277,7 @@ int borrarBloque(int numeroDeBloque){
 	string_append(&ubicacionDelArchivoDeMetadata, "/Bloques/");
 	sprintf(str, "%d", numeroDeBloque);
 	string_append(&ubicacionDelArchivoDeMetadata,str);
+	string_append(&ubicacionDelArchivoDeMetadata, ".bin");
 	if(existeElArchivo(ubicacionDelArchivoDeMetadata)){
 		FILE * archivo = fopen(ubicacionDelArchivoDeMetadata,"w");
 		log_info(LOGGER,"Se removio el bloque %d",numeroDeBloque);
