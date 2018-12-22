@@ -191,12 +191,83 @@ int copiar_archivo_en_marcos_libres(char * archivo, int lineas, t_list * marcos_
 	return indice_en_tabla;
 }
 
-void destruir_estructuras_esquema_segmentacion_paginada(){
-
+void eliminar_lista_de_entradas_seg_pag(void * tabla_segmentos){
+	//list_destroy_and_destroy_elements((*(t_tabla_segmentos*)tabla_segmentos).entradas,);
 }
 
-void buscar_informacion_administrativa_esquema_segmentacion_paginada(int pid){
+void destruir_estructuras_esquema_segmentacion_paginada(){
+	if(tablas_de_segmentos!=NULL){
+		//list_destroy_and_destroy_elements(tablas_de_segmentos,&eliminar_lista_de_entradas_seg_pag);
+	}
+	if(bitmap_marcos_libres!=NULL){
+		list_destroy(bitmap_marcos_libres);
+	}
+	if(archivos_cargandose!=NULL){
+		list_destroy(archivos_cargandose);
+	}
+	if(archivos_devolviendose!=NULL){
+		list_destroy(archivos_devolviendose);
+	}
+}
 
+t_tabla_segmentos* buscar_tabla_de_segmentos_seg_pag(int pid) {
+	return (t_tabla_segmentos*) list_get(list_filter_comparing(tablas_de_segmentos,
+			&tiene_tabla_de_segmentos_seg_pag, pid),0);
+}
+
+void buscar_informacion_administrativa_esquema_segmentacion_paginada(int id){
+	if(id == -1){
+		logger_funesMemory9(escribir_loguear, l_error,"Falta el ID del DTB, proba de nuevo\n");
+	}else{
+		t_entrada_tabla_segmentos_pag * entrada_segmento;
+		if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos_seg_pag,id)){
+			t_tabla_segmentos * tabla_segmentos = buscar_tabla_de_segmentos_seg_pag(id);
+
+			int cant_entradas = list_size(tabla_segmentos->entradas);
+			logger_funesMemory9(escribir_loguear, l_info, "Utilizando el esquema de segmentacion paginada y dado el ID del DTB indicado, el proceso tiene una tabla de "
+					"segmentos con %d entradas\n", cant_entradas);
+
+			for(int i = 0; i<cant_entradas; i++){
+				logger_funesMemory9(escribir_loguear, l_info, "En la entrada %d, se encuentra la sgte informacion: \n",i);
+				entrada_segmento = list_get(tabla_segmentos->entradas,i);
+				logger_funesMemory9(escribir_loguear, l_info, "Contiene el archivo %s.\n",entrada_segmento->archivo);
+				int cant_de_paginas = list_size(entrada_segmento->base);
+				logger_funesMemory9(escribir_loguear, l_info, "Contiene una tabla de paginas con %d entradas, y en c/u hay: \n",cant_de_paginas);
+
+				for(int i=0;i<cant_de_paginas;i++){
+					t_entrada_tabla_paginas * tabla_de_paginas = list_get(entrada_segmento->base,i);
+					logger_funesMemory9(escribir_loguear, l_info, "En la entrada %d esta la pagina nro %d y tiene asociado el marco"
+							"%d \n",i,tabla_de_paginas->pagina, tabla_de_paginas->marco);
+				}
+
+				for(int i=0;i<cant_de_paginas;i++){
+					t_entrada_tabla_paginas * tabla_de_paginas = list_get(entrada_segmento->base,i);
+					int indice_marco = tabla_de_paginas->marco;
+					int primer_byte_de_mp_del_marco=indice_marco*TAMANIO_PAGINA;
+
+					char * lo_que_esta_en_mem_fisica_del_marco = malloc(TAMANIO_PAGINA);
+					memcpy(lo_que_esta_en_mem_fisica_del_marco,MEMORIA_FISICA+primer_byte_de_mp_del_marco,TAMANIO_PAGINA);
+					lo_que_esta_en_mem_fisica_del_marco[TAMANIO_PAGINA]='\0';
+
+					//no estoy considerando el limite de la ultima pagina
+
+					char ** lineas=string_split(lo_que_esta_en_mem_fisica_del_marco, "\n");
+					logger_funesMemory9(escribir_loguear, l_info,
+							"La información contenida en la memoria fisica para el marco %d es: \n", tabla_de_paginas->marco);
+					for(int cant_lineas=0;lineas[cant_lineas]!=NULL;cant_lineas++){
+						char * linea=lineas[cant_lineas];
+						remover_caracter(linea,'$');
+						logger_funesMemory9(escribir_loguear, l_info,"%s\n",linea);
+					}
+
+					free(lo_que_esta_en_mem_fisica_del_marco);
+				}
+			}
+
+		}else{
+			logger_funesMemory9(escribir_loguear, l_warning, "No hay información administrativa para el ID %d del DTB indicado.\n",id);
+		}
+	}
 }
 
 void obtener_parte_archivo_con_segmentacion_paginada(int DAM_fd){
@@ -211,6 +282,46 @@ void asignar_datos_a_linea_segmentacion_paginada(int sock){
 
 }
 
-void liberar_archivo_abierto_segmentacion_paginada(int sock){
+bool tiene_tabla_de_segmentos_seg_pag(void * tabla_segmentos, int pid){
+	return pid == (*(t_tabla_segmentos*)tabla_segmentos).pid;
+}
 
+bool tienen_el_mismo_nombre_seg_pag(void * arch1){
+	return string_equals_ignore_case(path_archivo_para_comparar, (*(t_entrada_tabla_segmentos_pag*)arch1).archivo);
+}
+
+bool realizar_operacion_liberar_seg_paginada(tp_liberarArchivo paquete_liberar){
+	t_entrada_tabla_segmentos_pag * entrada_segmento;
+	path_archivo_para_comparar = paquete_liberar->path;
+
+	if(list_any_satisfy_comparing(tablas_de_segmentos,&tiene_tabla_de_segmentos_seg_pag,paquete_liberar->id_GDT)){
+		entrada_segmento = obtener_entrada_segmentos_relacionada_al_path(tablas_de_segmentos,paquete_liberar->path);
+		int cant_de_paginas = list_size(entrada_segmento->base);
+
+		for(int i=0;i<cant_de_paginas;i++){
+			t_entrada_tabla_paginas * tabla_de_paginas = list_get(entrada_segmento->base,i);
+			t_disponibilidad_marco marco_nuevo;
+			marco_nuevo.disponibilidad = 0;
+			marco_nuevo.indice = tabla_de_paginas->marco;
+			list_add(bitmap_marcos_libres,&marco_nuevo);
+		}
+
+		list_remove_by_condition(tablas_de_segmentos, &tienen_el_mismo_nombre_seg_pag);
+
+		return true;
+	}else{
+		return false;
+	}
+}
+
+void liberar_archivo_abierto_segmentacion_paginada(int sock){
+	tp_liberarArchivo paquete_liberar = prot_recibir_CPU_FM9_liberar_archivo(sock);
+	if(realizar_operacion_liberar_seg_paginada(paquete_liberar)){
+		enviarCabecera(sock, LiberarArchivoAbiertoEjecutandose, sizeof(LiberarArchivoAbiertoEjecutandose));
+		logger_funesMemory9(escribir_loguear, l_info,"Se le aviso al CPU solicitante que se esta liberando el archivo deseado\n");
+	}else{
+		logger_funesMemory9(escribir_loguear, l_error,"40002\n");
+		enviarCabecera(sock, LiberarArchivoAbiertoNoFinalizado, sizeof(LiberarArchivoAbiertoNoFinalizado));
+	}
+	free(paquete_liberar);
 }

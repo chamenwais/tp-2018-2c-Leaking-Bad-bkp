@@ -47,5 +47,7 @@ bool el_segmento_paginado_tiene_paginas(t_tabla_segmentos* p_tabla_segmentos, ch
 t_entrada_tabla_segmentos_pag * obtener_entrada_segmentos_relacionada_al_path(t_tabla_segmentos* p_tabla_segmentos
 		, char * path);
 t_entrada_tabla_paginas* crear_nueva_entrada_tabla_paginas(int marco, int pagina);
+void eliminar_lista_de_entradas_seg_pag(void * tabla_segmentos);
+bool tiene_tabla_de_segmentos_seg_pag(void * tabla_segmentos, int pid);
 
 #endif /* SEGMENTACION_PAGINADA_H_ */
