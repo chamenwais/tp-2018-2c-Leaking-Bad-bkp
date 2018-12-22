@@ -158,6 +158,19 @@ int liberarMemoria(){
 	list_destroy_and_destroy_elements(dtbConEqGrandeAbierto, free);
 	list_destroy_and_destroy_elements(tabla_recursos, free);
 
+	pthread_mutex_destroy(&mutexDePausaDePlanificacion);
+	pthread_mutex_destroy(&mutexDePausaPCP);
+	pthread_mutex_destroy(&mutex_AUXVRR);
+	pthread_mutex_destroy(&mutex_BLOQUEADOS);
+	pthread_mutex_destroy(&mutex_CPUEJEC);
+	pthread_mutex_destroy(&mutex_CPULIBRES);
+	pthread_mutex_destroy(&mutex_EJECUTANDO);
+	pthread_mutex_destroy(&mutex_EQGRANDE);
+	pthread_mutex_destroy(&mutex_LISTOS);
+	pthread_mutex_destroy(&mutex_NUEVOS);
+	pthread_mutex_destroy(&mutex_TABLAREC);
+	pthread_mutex_destroy(&mutex_TERMINADOS);
+
 	log_info(LOG_SAFA, "Habemus memoria liberada");
 	return EXIT_SUCCESS;
 }
