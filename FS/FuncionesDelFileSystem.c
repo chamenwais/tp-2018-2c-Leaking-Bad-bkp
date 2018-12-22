@@ -1085,6 +1085,7 @@ int validarArchivoDeDMA(int FDDMA){
 	enviarCabecera(FDDMA, validarArchivo(path), 1);
 	log_info(LOGGER,"Enviando respuesta de validar archivo al DMA");
 	free(path);
+	aplicarRetardo();
 	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return EXIT_SUCCESS;
 }
@@ -1145,6 +1146,7 @@ int crearArchivoDeDMA(int FDDMA){
 	free(ubicacionDelArchivo);
 	free(dataParaCrearElArchivo->path);
 	free(dataParaCrearElArchivo);
+	aplicarRetardo();
 	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return resultadoDeCrearElArchivo;
 }
@@ -1265,6 +1267,7 @@ int borrarArchivoDeDMA(int fileDescriptorActual){
 	enviarCabecera(fileDescriptorActual, resultadoDelBorrado, 1);
 	log_info(LOGGER,"Resultado de borrar al archivo enviado al DMA (%d)",resultadoDelBorrado);
 	free(path);
+	aplicarRetardo();
 	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return EXIT_SUCCESS;
 }
@@ -1362,6 +1365,7 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 	//free(datosObtenidos.datos);
 	free(parametrosDeObtenerDatos->path);
 	free(parametrosDeObtenerDatos);
+	aplicarRetardo();
 	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return EXIT_SUCCESS;
 }
@@ -1540,6 +1544,7 @@ int guardarDatosDeDMA(int fileDescriptorActual){
 	free(datos->buffer);
 	free(datos->path);
 	free(datos);
+	aplicarRetardo();
 	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return EXIT_SUCCESS;
 }
@@ -1745,7 +1750,8 @@ tp_metadata recuperarMetaData(char *ubicacionDelArchivoDeMetadata){
 }
 
 int aplicarRetardo(){
-	log_info(LOGGER,"Aplicando retardo de %d",configuracionDelFS.retardo);
-	sleep(configuracionDelFS.retardo);
+	int retraso=configuracionDelFS.retardo/1000;
+	log_info(LOGGER,"Aplicando retardo de %d",retraso);
+	sleep(retraso);
 	return EXIT_SUCCESS;
 }
