@@ -211,8 +211,16 @@ int liberarMemoria(){
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDListo);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
 			list_add(DTB_Listo->tabla_dir_archivos, datos_recibidos->path);
+			if(algoritmo_planificacion == BOAF){
+				if(tieneEquipoGrande(DTB_Listo) && noEstaEnLista(dtbConEqGrandeAbierto, DTB_Listo)){
+					pthread_mutex_lock(&mutex_EQGRANDE);
+					list_add(dtbConEqGrandeAbierto, DTB_Listo);
+					pthread_mutex_unlock(&mutex_EQGRANDE);
+					log_info(LOG_SAFA, "Se agrego el DTB %i a lista de Equipos Grandes");
+				}
+			}
 			log_info(LOG_SAFA, "Se agrego el path %s a la tabla de dir de archivos", datos_recibidos->path);
-			if(algoritmo_planificacion == ROUND_ROBIN){
+			if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
 				pthread_mutex_lock(&mutex_LISTOS);
 				list_add(listos, DTB_Listo);
 				pthread_mutex_unlock(&mutex_LISTOS);
@@ -251,7 +259,7 @@ int liberarMemoria(){
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
-			if(algoritmo_planificacion == ROUND_ROBIN){
+			if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
 				pthread_mutex_lock(&mutex_LISTOS);
 				list_add(listos, DTB_Listo);
 				pthread_mutex_unlock(&mutex_LISTOS);
@@ -289,7 +297,7 @@ int liberarMemoria(){
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady2);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
-			if(algoritmo_planificacion == ROUND_ROBIN){
+			if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
 				pthread_mutex_lock(&mutex_LISTOS);
 				list_add(listos, DTB_Listo);
 				pthread_mutex_unlock(&mutex_LISTOS);
@@ -327,7 +335,7 @@ int liberarMemoria(){
 			pthread_mutex_lock(&mutex_BLOQUEADOS);
 			DTB_Listo = list_remove_by_condition(bloqueados, coincideIDReady3);
 			pthread_mutex_unlock(&mutex_BLOQUEADOS);
-			if(algoritmo_planificacion == ROUND_ROBIN){
+			if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
 				pthread_mutex_lock(&mutex_LISTOS);
 				list_add(listos, DTB_Listo);
 				pthread_mutex_unlock(&mutex_LISTOS);
@@ -499,7 +507,7 @@ int liberarMemoria(){
 	 			 pthread_mutex_lock(&mutex_BLOQUEADOS);
 	 			 bloqDTB = list_remove_by_condition(bloqueados, coincideId);
 	 			 pthread_mutex_unlock(&mutex_BLOQUEADOS);
-	 			 if(algoritmo_planificacion == ROUND_ROBIN){
+	 			 if(algoritmo_planificacion == ROUND_ROBIN || algoritmo_planificacion == BOAF){
 	 				 pthread_mutex_lock(&mutex_LISTOS);
 	 				 list_add(listos, bloqDTB);
 	 				 pthread_mutex_unlock(&mutex_LISTOS);
@@ -1175,7 +1183,7 @@ int calcularDTBAPlanificarConBOAF(){ /*Priorización de aquellos DTB que tengan 
 	Queda a criterio de cada grupo definir qué equipos se consideran "grandes" TODO ver cuando abre archivo si es de equipo grande*/
 	int id;
 	if(list_size(dtbConEqGrandeAbierto)>0){
-		id = obtenerPrimerId(dtbConEqGrandeAbierto);
+		id = obtenerPrimerIdConEG(dtbConEqGrandeAbierto);
 	}else{
 		id = obtenerPrimerId(listos);
 	}
@@ -1183,7 +1191,13 @@ int calcularDTBAPlanificarConBOAF(){ /*Priorización de aquellos DTB que tengan 
 }
 
 int obtenerPrimerId(t_list* lista){
-	tp_DTB primerDTB = list_get(lista, 0);
+	tp_DTB primerDTB = list_remove(lista, 0);
+	return primerDTB->id_GDT;
+}
+
+int obtenerPrimerIdConEG(t_list* lista){
+	tp_DTB primerDTB = list_remove(lista, 0);
+	list_add(dtbConEqGrandeAbierto, primerDTB);
 	return primerDTB->id_GDT;
 }
 
@@ -1242,40 +1256,21 @@ void agregarGdtAColaRecurso(tp_tipoRecurso recurso){
 	pthread_mutex_unlock(&mutex_TABLAREC);
 }
 
-/*void captura_sigpipe(int signo){
-
-    if(signo == SIGINT)
-    {
-    	log_info(LOG_SAFA,"Finalizando proceso... Gracias vuelva prontos.");
-    	//GLOBAL_SEGUIR = 0;
-    	liberarMemoria();
-    	finalizarTodo();
-    }
-    else if(signo == SIGPIPE)
-    {
-    	log_error(LOG_SAFA,"Tecla no reconocida");
-    }
-
+bool tieneEquipoGrande(tp_DTB miDTB){
+	int cant = list_size(miDTB->tabla_dir_archivos);
+	bool es_Grande(void*node){
+		return string_contains(((char*) node), "Boca");
+	}
+	if(cant > 0){
+		return list_any_satisfy(miDTB->tabla_dir_archivos, es_Grande);
+	}
+	return false;
 }
 
-void configurar_signals(void){
-	struct sigaction signal_struct;
-	signal_struct.sa_handler = captura_sigpipe;
-	signal_struct.sa_flags   = 0;
-
-	sigemptyset(&signal_struct.sa_mask);
-
-	sigaddset(&signal_struct.sa_mask, SIGPIPE);
-    if (sigaction(SIGPIPE, &signal_struct, NULL) < 0)
-    {
-    	log_error(LOG_SAFA," SIGACTION error ");
-    }
-
-    sigaddset(&signal_struct.sa_mask, SIGINT);
-    if (sigaction(SIGINT, &signal_struct, NULL) < 0)
-    {
-    	log_error(LOG_SAFA," SIGACTION error ");
-    }
-
-}*/
+bool noEstaEnLista(t_list* lista, tp_DTB unDTB){
+	bool coincideIDL(void* node) {
+		return ((((tp_DTB) node)->id_GDT)==unDTB->id_GDT);
+		}
+	return list_any_satisfy(dtbConEqGrandeAbierto, coincideIDL);
+}
 

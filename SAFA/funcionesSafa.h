@@ -58,5 +58,8 @@ tp_DTB buscar_DTB_Por_ID(int idDTB, int* colaDondeEsta);
 void mostrarDTB(tp_DTB mostrado);
 void mostrarTablaArchivosAbiertos(t_list* lista);
 void finalizarDTB(t_list* lista, int idDTB);
+bool tieneEquipoGrande(tp_DTB miDTB);
+int obtenerPrimerIdConEG(t_list* lista);
+bool noEstaEnLista(t_list* lista, tp_DTB unDTB);
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */
