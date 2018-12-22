@@ -337,13 +337,15 @@ tp_lineaCPU prot_recibir_CPU_FM9_pedir_linea(int sock){
 	int tam_linea;
 	int id_GDT;
 	int pc;
-	tp_lineaCPU recibido = malloc(sizeof(tp_lineaCPU));
+	tp_lineaCPU recibido = malloc(sizeof(t_lineaCPU));
 	recibir(sock, &tam_linea, sizeof(tam_linea));
 	recibido->linea = malloc(tam_linea+1);
 	recibir(sock,recibido->linea,tam_linea);
 	(recibido->linea)[tam_linea]='\0';
 	recibir(sock,&id_GDT,sizeof(int));
+	recibido->id_GTD=id_GDT;
 	recibir(sock,&pc,sizeof(int));
+	recibido->pc=pc;
 	return recibido;
 }
 
@@ -659,9 +661,9 @@ void prot_enviar_CPU_FM9_liberar_archivo(char * path, int id_GDT, int sock){
 }
 
 void prot_enviar_CPU_DMA_crear_lineas_arch(char * path, int cant_lineas, int id_GDT, int sock){
-	int tam_path = strlen(path);
+	int tam_path = strlen(path)+1;
 	int size_of_int = sizeof(int);
-	int tamanio_paquete_crear_lineas_arch = tam_path + 2*(size_of_int);
+	int tamanio_paquete_crear_lineas_arch = tam_path + 3*(size_of_int);
 	char * paquete_crear_lineas_arch = malloc(tamanio_paquete_crear_lineas_arch);
 	paquete_crear_lineas_arch[0]=tam_path;
 	memcpy(paquete_crear_lineas_arch+4,path,tam_path);
@@ -677,7 +679,6 @@ tp_crearLineasArch prot_recibir_CPU_DMA_crear_lineas_arch(int sock){
 	recibir(sock,&tam_path,sizeof(int));
 	crear_lineas_arch->path=malloc(tam_path+1);
 	recibir(sock,crear_lineas_arch->path,tam_path);
-	(crear_lineas_arch->path)[tam_path]='\0';
 	recibir(sock,&(crear_lineas_arch->cant_lineas),sizeof(int));
 	recibir(sock,&(crear_lineas_arch->id_GDT),sizeof(int));
 	return crear_lineas_arch;
@@ -740,7 +741,6 @@ void prot_enviar_SAFA_CPU_DTB(int id_GDT, int program_counter, int iniGDT, char*
 			tamanio_elem = strlen(elem)+1;
 			enviar(sock, &tamanio_elem, sizeof(tamanio_elem));
 			enviar(sock, elem, tamanio_elem);
-			printf("elem: %s\n", elem);
 			free(elem);
 	}
 	}else{
