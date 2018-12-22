@@ -57,5 +57,6 @@ tp_DTB buscar_DTB_Por_ID_en_Lista(t_list *lista, int idDTB);
 tp_DTB buscar_DTB_Por_ID(int idDTB, int* colaDondeEsta);
 void mostrarDTB(tp_DTB mostrado);
 void mostrarTablaArchivosAbiertos(t_list* lista);
+void finalizarDTB(t_list* lista, int idDTB);
 
 #endif /* SAFA_FUNCIONESSAFA_H_ */

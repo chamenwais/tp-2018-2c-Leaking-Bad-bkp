@@ -716,7 +716,57 @@ void *funcionHiloConsola(void *arg){
 			/* Obligará a un DTB a pasar a la cola de EXIT para poder destrabar la ejecución y
 			 * dar lugar a otro G.DT a operar sobre dicho equipo. Si el G.DT se encuentra en la cola
 			 * EXEC se deberá esperar a terminar la operación actual, para luego moverlo a la cola EXIT*/
+			if(instruccion[1]==NULL){
+				printf("Por favor ingrese un numero de DTB");
+			}else{
+			int idDTB;
+			idDTB = atoi(instruccion[1]);//transformo el string a numero
 
+			    	   	int colaDelDTB = -1;
+			    	    tp_DTB DTBaFinalizar = buscar_DTB_Por_ID(idDTB, &colaDelDTB);
+			    	    char* imprimirCola;
+			    	    if(DTBaFinalizar != NULL){	//lo encontre entonces lo muestro
+
+			     			   switch(colaDelDTB){
+
+			   	        		case 1: imprimirCola = "NUEVOS";
+			   	        				finalizarDTB(nuevos,idDTB);
+			   	    					break;
+
+			   	   	    		case 2: imprimirCola = "LISTOS";
+			   	   	    				finalizarDTB(listos,idDTB);
+			   	   	    				break;
+
+			   	   	    		case 3: imprimirCola = "EJECUTANDO";
+			   	   	    				pase_DTB_de_EJECUTANDO_a_FINALIZADO(ejecutando, idDTB);
+			   	   	    				break;
+
+			   	   	    		case 4: imprimirCola = "BLOQUEADOS";
+			    	       				finalizarDTB(bloqueados,idDTB);
+			       	    				break;
+
+			   	   	    		case 6: imprimirCola = "AUXVRR";
+			   	   	    				finalizarDTB(auxVirtualRR, idDTB);
+			   	    					break;
+
+			   	    			default:imprimirCola = "ERROR AL IMPRIMIR COLA";
+			     			}
+			     			    		if(colaDelDTB == 5){
+			     			    			printf("El DTB de id: %d ya fue finalizado\n",idDTB);
+			     			    		}
+			     			    		else{
+			     			    			printf("Finalizando DTB de id: %d de la cola %s\n",idDTB, imprimirCola);
+			     			    		}
+			    	        	}
+			    	        	else{
+			    	        		if(idDTB == 0){
+			    	        		    printf("El id ingresado debe ser un numero entero mayor a cero\n");
+			    	        		}
+			    	        		else{
+			    	        			printf("Imposible finalizar\nEl DTB con ID %d no se encuentra en el sistema\n",idDTB);
+			    	        		}
+			    	        	}
+			}
 			}else{
 		if(strcmp(instruccion[0],"metricas")==0){
 			/* Detalla las siguientes métricas:
@@ -895,6 +945,30 @@ void mostrarTablaArchivosAbiertos(t_list* lista){
 		printf("    %d - %s\n", i, elem);
 		free(elem);
 	}
+}
+
+void finalizarDTB(t_list* lista, int idDTB){
+	int buscar_ID(tp_DTB elemento){
+		return elemento->id_GDT == idDTB;
+	}
+	tp_DTB DTBdelID = list_remove_by_condition(lista, (void*)buscar_ID);
+	if(DTBdelID == NULL){
+		printf("No se encontro el DTB con el %d para finalizarlo\n",idDTB);
+																								// 1 No se encontro el String en la lista
+	}
+	list_add(terminados,DTBdelID);																// 0 Se paso finalizo correctamente el DTB
+}
+
+void pase_DTB_de_EJECUTANDO_a_FINALIZADO(t_list* lista, int idDTB){
+	bool estaEjecutando = true;
+	tp_DTB tpDTB;
+	while(estaEjecutando){
+		tpDTB = buscar_DTB_Por_ID_en_Lista(ejecutando, idDTB);
+		if(tpDTB != NULL){
+			estaEjecutando = false;
+		}
+	}
+	finalizarDTB(ejecutando, idDTB);
 }
 
 int iniciarPLP(){
