@@ -273,10 +273,12 @@ tp_abrirPath prot_recibir_CPU_DMA_abrirPath(int sock){
 	free(size_aux);
 	recibido->path = malloc(size);
 	recibir(sock,recibido->path,size);
+	recibir(sock,&(recibido->pid),sizeof(int));
+	/*
 	int * pid_aux=malloc(sizeof(int));
 	recibir(sock,pid_aux,sizeof(int));
 	recibido->pid=*pid_aux;
-	free(pid_aux);
+	free(pid_aux);*/
 	return recibido;
 }
 
