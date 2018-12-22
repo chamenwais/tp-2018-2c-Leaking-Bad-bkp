@@ -264,11 +264,7 @@ void logger_DAM(int tipo_esc, int tipo_log, const char* mensaje, ...){
 }
 
 void loguear_cabecera_recibida(char * proceso) {
-	char* mensaje_cabecera_recibida = string_new();
-	string_append(&mensaje_cabecera_recibida, "Se recibio una cabecera de ");
-	string_append(&mensaje_cabecera_recibida, proceso);
-	logger_DAM(escribir_loguear, l_trace,mensaje_cabecera_recibida);
-	free(mensaje_cabecera_recibida);
+	logger_DAM(escribir_loguear, l_trace,"Se recibio una cabecera de %s",proceso);
 }
 
 void inicializar_semaforos_de_procesos() {
