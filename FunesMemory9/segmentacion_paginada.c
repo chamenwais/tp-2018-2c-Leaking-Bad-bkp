@@ -23,7 +23,7 @@ void cargar_parte_archivo_en_segmento_paginado(int DAM_fd){
 	}
 	logger_funesMemory9(escribir_loguear, l_info,
 			"Ya se obtuvo el archivo y se intentara agregar el segmento paginado en la memoria principal\n");
-	if(!hay_marcos_libres()){
+	if(hay_marcos_libres()==false){
 		informar_espacio_insuficiente(DAM_fd);
 		return;
 	}
@@ -125,11 +125,11 @@ int agregar_nueva_tabla_segmentos_paginados_para_proceso(int pid, char* path, in
 void inicializar_bitmap_de_marcos_libres() {
 	bitmap_marcos_libres = list_create();
 	int cantidad_de_marcos=(int)TAMANIO_MEMORIA / TAMANIO_PAGINA;
-	t_disponibilidad_marco marco_libre;
-	marco_libre.disponibilidad=0;
+	t_disponibilidad_marco * marco_libre=malloc(sizeof(t_disponibilidad_marco));
 	for(int marco=0;marco<cantidad_de_marcos;marco++){
-		marco_libre.indice=marco;
-		list_add(bitmap_marcos_libres,&marco_libre);
+		marco_libre->disponibilidad=0;
+		marco_libre->indice=marco;
+		list_add(bitmap_marcos_libres,marco_libre);
 	}
 }
 
