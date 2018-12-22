@@ -108,6 +108,7 @@ int crear_nueva_entrada_tabla_de_segmentos_paginados(char * path, int marco,
 		list_add(entrada_tabla_segmentos_pag->base, nueva_entrada_tabla_paginas);
 		entrada_tabla_segmentos_pag->limite=ultima_linea_marco;
 		list_add(p_tabla_segmentos->entradas,entrada_tabla_segmentos_pag);
+		list_add(tablas_de_segmentos,p_tabla_segmentos);
 		return list_size(p_tabla_segmentos->entradas)-1;
 	}
 	return entrada;
@@ -125,8 +126,8 @@ int agregar_nueva_tabla_segmentos_paginados_para_proceso(int pid, char* path, in
 void inicializar_bitmap_de_marcos_libres() {
 	bitmap_marcos_libres = list_create();
 	int cantidad_de_marcos=(int)TAMANIO_MEMORIA / TAMANIO_PAGINA;
-	t_disponibilidad_marco * marco_libre=malloc(sizeof(t_disponibilidad_marco));
 	for(int marco=0;marco<cantidad_de_marcos;marco++){
+		t_disponibilidad_marco * marco_libre=malloc(sizeof(t_disponibilidad_marco));
 		marco_libre->disponibilidad=0;
 		marco_libre->indice=marco;
 		list_add(bitmap_marcos_libres,marco_libre);
