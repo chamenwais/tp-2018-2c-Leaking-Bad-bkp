@@ -1750,8 +1750,20 @@ tp_metadata recuperarMetaData(char *ubicacionDelArchivoDeMetadata){
 }
 
 int aplicarRetardo(){
-	int retraso=configuracionDelFS.retardo/1000;
+	struct timespec tim, tim2;
+	log_info(LOGGER,"Aplicando retardo de %d",configuracionDelFS.retardo);
+	tim.tv_sec = 0;
+	tim.tv_nsec = configuracionDelFS.retardo;
+
+	if(nanosleep(&tim , &tim2) < 0 ){
+		log_info(LOGGER,"Nano sleep fallo");
+		return EXIT_FAILURE;
+		}
+	log_info(LOGGER,"Nano sleep exitoso");
+	return EXIT_SUCCESS;
+
+	/*int retraso=configuracionDelFS.retardo/1000;
 	log_info(LOGGER,"Aplicando retardo de %d",retraso);
 	sleep(retraso);
-	return EXIT_SUCCESS;
+	return EXIT_SUCCESS;*/
 }
