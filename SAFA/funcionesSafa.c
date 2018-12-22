@@ -978,7 +978,7 @@ void mostrarDTB(tp_DTB mostrado){
 	printf("	Escriptorio - %s\n",mostrado->escriptorio);
 	printf("	ProgramCounter - %d\n",mostrado->program_counter);
 	printf("	IniGDT - %d\n",mostrado->iniGDT);
-	printf("    Quantum - %d/n",mostrado->quantum);
+	printf("    Quantum - %d\n",mostrado->quantum);
 
 	mostrarTablaArchivosAbiertos(mostrado->tabla_dir_archivos);
 }
@@ -1114,7 +1114,7 @@ void* funcionHiloPlanif(void *arg){
 int planificar(){
 
 	log_info(LOG_SAFA,"Vamo a planificarno");
-	if(list_size(listos)>0){
+	if((list_size(listos)>0) && (list_size(cpu_libres)>0)){
 		tp_DTB DTB;
 		int idDTB;
 		//lockearListas();
