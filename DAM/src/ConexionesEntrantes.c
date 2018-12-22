@@ -547,8 +547,6 @@ void operacion_crear_archivo(int *sockets){
 	int socket_mdj=sockets[2];
 	free(sockets);
 	tp_crearLineasArch pedido_creacion=prot_recibir_CPU_DMA_crear_lineas_arch(socket_CPU);
-	logger_DAM(escribir_loguear, l_trace,"Ehhh, voy a crear [%s] con [%d] lineas",
-			pedido_creacion->path, pedido_creacion->cant_lineas);
 	enviarCabecera(socket_CPU,CrearLineasEnArchivoEjecutandose,sizeof(CrearLineasEnArchivoEjecutandose));
 	t_cabecera respuesta_creacion_path = crear_archivo(socket_mdj, pedido_creacion);
 	if(!cabecera_correcta(&respuesta_creacion_path)){
