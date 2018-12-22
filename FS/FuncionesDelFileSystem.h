@@ -89,6 +89,7 @@ int crearCarpetas(char *carpetasACrear);
 int crearArchivo(char *ubicacionDelArchivo, int cantidadDeBytes, char *path);
 int borrarArchivoDeConsola(char *path);
 int borrarArchivoDeDMA(int fileDescriptorActual);
+int borrarBloque(int numeroDeBloque);
 int borrarArchivo(char *path);
 int obtenerDatosDeConsola(char *path, long int offset, long int Size);
 int obtenerDatosDeDMA(int FDDMA);
@@ -98,5 +99,6 @@ int guardarDatosDeDMA(int fileDescriptorActual);
 int guardarDatos(char *path, long int offset, long int size, char *Buffer);
 int actualizarMetaData(char* ubicacionDelArchivoDeMetadata,tp_metadata metadata);
 tp_metadata recuperarMetaData(char *ubicacionDelArchivoDeMetadata);
+int aplicarRetardo();
 
 #endif /* FUNCIONESDELFILESYSTEM_H_ */

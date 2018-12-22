@@ -1085,6 +1085,7 @@ int validarArchivoDeDMA(int FDDMA){
 	enviarCabecera(FDDMA, validarArchivo(path), 1);
 	log_info(LOGGER,"Enviando respuesta de validar archivo al DMA");
 	free(path);
+	aplicarRetardo();
 	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return EXIT_SUCCESS;
 }
@@ -1112,12 +1113,13 @@ int validarArchivo(char *ubicacionDelArchivo){
 }
 
 int crearArchivoDeConsola(char *path, int cantidadDeBytes){
-	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo, con %d bytes",path,cantidadDeBytes);
+	char*nuevoPath=string_substring_from(1,path);
+	log_info(LOGGER,"Recibiendo el path: %s, para crear el archivo, con %d bytes",nuevoPath,cantidadDeBytes);
 	char*ubicacionDelArchivo=string_new();
 	string_append(&ubicacionDelArchivo, configuracionDelFS.punto_montaje);
 	string_append(&ubicacionDelArchivo, "/Archivos/");
-	string_append(&ubicacionDelArchivo, path);
-	if(crearArchivo(ubicacionDelArchivo, cantidadDeBytes, path)==ArchivoCreado){
+	string_append(&ubicacionDelArchivo, nuevoPath);
+	if(crearArchivo(ubicacionDelArchivo, cantidadDeBytes, nuevoPath)==ArchivoCreado){
 		free(ubicacionDelArchivo);
 		return EXIT_SUCCESS;
 	}else{
@@ -1144,6 +1146,7 @@ int crearArchivoDeDMA(int FDDMA){
 	free(ubicacionDelArchivo);
 	free(dataParaCrearElArchivo->path);
 	free(dataParaCrearElArchivo);
+	aplicarRetardo();
 	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return resultadoDeCrearElArchivo;
 }
@@ -1264,8 +1267,26 @@ int borrarArchivoDeDMA(int fileDescriptorActual){
 	enviarCabecera(fileDescriptorActual, resultadoDelBorrado, 1);
 	log_info(LOGGER,"Resultado de borrar al archivo enviado al DMA (%d)",resultadoDelBorrado);
 	free(path);
+	aplicarRetardo();
 	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return EXIT_SUCCESS;
+}
+
+int borrarBloque(int numeroDeBloque){
+	char str[20];
+	log_info(LOGGER,"Voy a borrar el bloque: %d",numeroDeBloque);
+	char *ubicacionDelArchivoDeMetadata=string_new();
+	string_append(&ubicacionDelArchivoDeMetadata,configuracionDelFS.punto_montaje);
+	string_append(&ubicacionDelArchivoDeMetadata, "/Bloques/");
+	sprintf(str, "%d", numeroDeBloque);
+	string_append(&ubicacionDelArchivoDeMetadata,str);
+	if(existeElArchivo(ubicacionDelArchivoDeMetadata)){
+		FILE * archivo = fopen(ubicacionDelArchivoDeMetadata,"w");
+		log_info(LOGGER,"Se removio el bloque %d",numeroDeBloque);
+		return EXIT_SUCCESS;
+		}
+	log_info(LOGGER,"No se encontro el archivo del bloque %d para remover",numeroDeBloque);
+	return EXIT_FAILURE;
 }
 
 int borrarArchivo(char *path){
@@ -1283,6 +1304,7 @@ int borrarArchivo(char *path){
 			log_info(LOGGER,"Liberando el bloque: %d",numeroDeBloque);
 			bitarray_clean_bit(bitmap,numeroDeBloque);
 			bajarADiscoBitmap();
+			borrarBloque(numeroDeBloque);
 			}
 		list_destroy(metadata->bloques);
 		free(metadata);
@@ -1342,6 +1364,7 @@ int obtenerDatosDeDMA(int fileDescriptorActual){
 	//free(datosObtenidos.datos);
 	free(parametrosDeObtenerDatos->path);
 	free(parametrosDeObtenerDatos);
+	aplicarRetardo();
 	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return EXIT_SUCCESS;
 }
@@ -1520,6 +1543,7 @@ int guardarDatosDeDMA(int fileDescriptorActual){
 	free(datos->buffer);
 	free(datos->path);
 	free(datos);
+	aplicarRetardo();
 	pthread_mutex_unlock(&mutexNoTocarArchivos);
 	return EXIT_SUCCESS;
 }
@@ -1724,3 +1748,8 @@ tp_metadata recuperarMetaData(char *ubicacionDelArchivoDeMetadata){
 	return metadata;
 }
 
+int aplicarRetardo(){
+	log_info(LOGGER,"Aplicando retardo de %d",configuracionDelFS.retardo);
+	sleep(configuracionDelFS.retardo);
+	return EXIT_SUCCESS;
+}
